@@ -14,8 +14,9 @@ Offline, turn-based, modern-era grand strategy game for phones (installable PWA)
 ## Current status — update at the end of every session
 
 - **Phase 0a: design documents approved by the user (2026-10-05).** Decided: Phaser 4.2.1 · no bundler · `gh-pages` branch with per-branch previews · 16-country Middle East roster · Regional Power score goal · approval gate after 0b and after each phase · **G-30: English only, all UI text in `data/i18n/en.json`**.
-- **Phase 0b (scaffold) is in progress** — see ARCHITECTURE §16. When it is done the user installs it on their phone and approves; only then Phase 1 (five milestones, GAME_DESIGN Appendix C). At the start of Phase 1, send the user the 16-country classification table to veto (Q7).
-- **Open, not blocking:** the user's phone (iPhone or Android — unknown, support both), repo rename (default keep), game title (default "Grand Strategy").
+- **Phase 0b (scaffold) is built and tested** (ARCHITECTURE §16): installable offline PWA shell with a test game, saves, Diagnostics, build + service worker, CI with `gh-pages` previews. **CI is green** (first run: checks incl. e2e, then deploy; the `gh-pages` branch exists with the preview). **Waiting for the user to try it on their phone** (README → "Try it on your phone") and approve. Only then Phase 1 (five milestones, GAME_DESIGN Appendix C). At the start of Phase 1, send the user the 16-country classification table to veto (Q7).
+- **Things only a real phone can confirm** (the sandbox cannot): installing to the Home Screen, airplane-mode launch, export/import through the iOS share sheet, touch feel, and real Phaser speed (Diagnostics → Map speed test; sandbox Node reference for the CPU benchmark is about 15 ms via `npm run simulate -- --bench`).
+- **Open, not blocking:** the user's phone (iPhone or Android — unknown, support both), repo rename (default keep), game title (default "Grand Strategy"). The one-time GitHub Pages setting (Settings → Pages → `gh-pages` / root) is the user's to do; the sandbox cannot reach `github.io` (proxy 403), so the live URL can only be checked by the user. After they switch it on, confirm that a CI push triggers the Pages build (RISKS R7).
 - **Git:** develop only on the branch the session names; never push elsewhere; no pull requests unless asked.
 
 ## The user
@@ -52,7 +53,7 @@ Develops entirely from a phone through Claude Code. Therefore:
 
 ## Conventions
 
-- ES modules, named exports, 2-space indent, semicolons, single quotes. JSDoc types and `// @ts-check`; `npm run typecheck` must pass.
+- ES modules, named exports, 2-space indent, semicolons, single quotes. JSDoc types, checked by `npm run typecheck` (covers `src/` and `types/`; `tools/` and `tests/` are covered by their own tests). It must pass.
 - Files `camelCase.js`; ids `snake_case`; countries by Natural Earth `ADM0_A3`; regions `ISO3-slug`.
 - Commit messages: `area: imperative summary` (areas: core, formulas, systems, ai, ui, data, tools, ci, docs), with the *why* in the body.
 - **No new dependencies without asking.** Runtime: none (Phaser is vendored). Dev only: `ajv`, `typescript`, `playwright-core`, `mapshaper`.
@@ -65,9 +66,11 @@ Develops entirely from a phone through Claude Code. Therefore:
 - UI changes: take phone-sized screenshots and **look at them** (recipe below).
 - Balance changes: run the simulator and report the numbers.
 
-## Commands (created in Phase 0b — not available yet)
+## Commands
 
-`npm test` · `npm run typecheck` · `npm run build` · `npm run serve` · `npm run simulate` · `npm run e2e` · `npm run screenshot`
+`npm test` (unit + data + soak) · `npm run typecheck` (covers `src/`) · `npm run build` → `dist/` · `npm run serve` · `npm run e2e` (Playwright, phone-sized Chromium) · `npm run screenshot` (→ `tmp/screenshots/`, then read the PNGs) · `npm run validate` · `npm run simulate` · `npm run icons` · `npm run vendor:phaser`
+
+Before every commit: `npm run typecheck && npm test`; run `npm run e2e` whenever UI, build or service-worker code changed. CI (`.github/workflows/ci.yml`) runs all of them, then publishes `main` to the site root and every other branch to `/preview/<branch>/` on `gh-pages`.
 
 ## Environment notes (cloud sandbox, verified 2026-10-05)
 
@@ -76,5 +79,10 @@ Develops entirely from a phone through Claude Code. Therefore:
 - **Headless WebGL** works with `--no-sandbox --use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist`. Phone emulation: viewport 844×390 (landscape) or 390×844 (portrait), `deviceScaleFactor: 2`, `isMobile`, `hasTouch`. Read the PNG to see the screen.
 - Phaser 3.90's ESM build has no default export (`import * as`); 4.x has both. Use the adapter.
 - On this Node version `node --test <directory>` fails; use globs: `node --test "tests/**/*.test.js"`.
+- **Do not set `TMPDIR` to the scratchpad when launching Chromium:** its profile path becomes too long for a Unix socket and the browser dies with SIGTRAP. Tools use `/tmp` and clean up after themselves.
+- Debug scripts that import project modules or `playwright-core` must live inside the repo (use the git-ignored `tmp/` folder) so `node_modules` resolves.
+- `sleep` is blocked in the shell; to wait for CI, poll with the GitHub MCP tools (`actions_list` / `list_workflow_jobs` / `get_job_logs`).
+- Tests that depend on async saving must wait for the save (`waitForSaved` in `tools/lib/drive.mjs`), exactly as a real player's tap would be seconds later.
+- After a page reload the URL keeps its `#/route`, so e2e tests must not wait for the title screen unless they navigate there.
 - Put scratch work in the scratchpad directory, never in the repo.
 - The container is discarded at session end: commit and push anything worth keeping.

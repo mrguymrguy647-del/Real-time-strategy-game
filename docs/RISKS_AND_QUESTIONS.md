@@ -15,6 +15,8 @@
 **Comes up at the start of Phase 1:** Q7 — I send you the 16-country classification table to veto.
 **Parked for later phases:** Q11 (Phase 4), Q12 (Phase 2).
 
+**Needs you now (the Phase 0b gate):** (1) switch on GitHub Pages once (README, "Try it on your phone"); (2) open the preview on your phone, install it, and run the four checks; (3) paste the Diagnostics report and say "approved" or tell me what felt wrong. Phase 1 starts only after that.
+
 ---
 
 ## A. Blocking decisions — all decided at approval
@@ -33,7 +35,7 @@
 **Q3 · Hosting and previews.**  ✔ **Decided: `gh-pages` branch — `main` → site root, every other branch → `/preview/<branch>/`.**
 - Your repo is **public**, so GitHub Pages is free. It is **not enabled yet**.
 - Why previews: you test from your phone while I work on a branch; previews let you try each push without merging anything.
-- **One-time step for you** (after my first deploy creates the branch): *Settings → Pages → Source: Deploy from a branch → `gh-pages` / `(root)`.* I will remind you with exact taps.
+- **One-time step for you** (the first deploy has created the branch): *Settings → Pages → Source: Deploy from a branch → `gh-pages` / `(root)`.* The exact taps are in the README.
 - Optional: the repo is named "Real-time-strategy-game" but the game is turn-based. Renaming is free *now* and breaks URLs later. If you rename, do it between sessions and tell me first.
 
 **Q4 · Phase 1 roster (G-23).**  ✔ **Decided: 16 countries, about 100 regions.**
@@ -74,13 +76,13 @@ Each entry: what could go wrong → what I do about it.
 
 **R3 · Map performance on mid-range phones.** *Measured:* redrawing 1,500 polygons as live vector graphics ran at about 10 fps, versus about 60 fps when baked into a texture (software GL, so read it as a ratio). → Bake the map, redraw only dirty regions, cap the pixel ratio at 2 and textures at 4096, keep a region budget (about 100 in Phase 1, about 1,200 in Phase 5), and show FPS in the Diagnostics screen.
 
-**R4 · I cannot see your phone.** Real Safari and Android Chrome differ from emulated Chromium (touch feel, memory, GPU). → Phone-sized screenshots in CI, a Diagnostics screen you can screenshot back to me, iOS-safe CSS (`dvh`, safe areas, no hover-only UI), and early installs on your phone (Phase 0b gate).
+**R4 · I cannot see your phone.** Real Safari and Android Chrome differ from emulated Chromium (touch feel, memory, GPU). → Phone-sized screenshots in CI, a Diagnostics screen you can screenshot back to me, iOS-safe CSS (`dvh`, safe areas, no hover-only UI), and early installs on your phone (Phase 0b gate). *What only a real device can confirm:* Home Screen install, an airplane-mode launch, the iOS share sheet for exporting a save, touch feel, and true Phaser speed (the Diagnostics map benchmark; the headless numbers come from software GL).
 
 **R5 · iOS storage eviction.** Safari may clear site data after about a week of non-use unless the app is installed to the Home Screen. → Encourage install, request persistent storage, one-tap export/import, rotating autosaves, a "last backup" reminder.
 
 **R6 · Service-worker staleness.** Old cached code could meet new saves or data. → Versioned precache, updates applied only between turns after you tap Reload, save migrations, a data-version check with a repair pass.
 
-**R7 · Pages deploy from CI.** One manual repo setting is required, and I still have to prove that a `GITHUB_TOKEN` push to `gh-pages` triggers the Pages build. → Prove it in Phase 0b; fallbacks are a deploy-key secret or `main`-only deploys through `actions/deploy-pages`.
+**R7 · Pages deploy from CI.** One manual repo setting is required. *Outcome so far (first CI run):* the checks and the deploy job both passed, and the deploy job's `GITHUB_TOKEN` created `gh-pages` with the preview in it. *Still to prove:* that a push from CI triggers the Pages build — visible only after you switch Pages on and the next push deploys. → If it does not, fallbacks are a deploy-key secret or `main`-only deploys through `actions/deploy-pages`.
 
 **R8 · World data workload and accuracy.** About 195 countries with economy, military and resource numbers, plus about 1,200 regions, is a lot of data and easy to get wrong. → Phase 1 is hand-curated for 16 countries; Phase 5 uses an import script from public datasets (World Bank, SIPRI, EIA…) with `source`/`asOf`; minor countries get coarse data; numbers are rounded and balanced for play, not published as statistics (G-22).
 

@@ -2,7 +2,7 @@
 
 **Modern-era offline grand strategy for phones** · working title *Grand Strategy (TBD)*
 
-> **Status:** Phase 0a approved on 2026-10-05 (with G-30). Phase 0b (scaffold) in progress.
+> **Status:** Phase 0a approved on 2026-10-05 (with G-30). Phase 0b (the installable offline app shell) is built and green in CI; waiting for your phone test and approval before Phase 1.
 > This file says **what the game is**. How it is built: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Data formats: [docs/DATA_SCHEMAS.md](docs/DATA_SCHEMAS.md). Open questions and risks: [docs/RISKS_AND_QUESTIONS.md](docs/RISKS_AND_QUESTIONS.md).
 >
 > Section numbers match your original spec (§1–§12). `[P1]`–`[P7]` mark the roadmap phase where a feature first appears. `G-nn` marks a decision I made where the spec was ambiguous (Appendix A) — tell me to change any of them.
@@ -407,6 +407,8 @@ Where the spec was ambiguous I chose the simplest version that keeps its intent.
 **G-29 · The world outside the theater (Phase 1).** Three abstract off-map **patrons** (great powers) can give aid, sell arms and impose sanctions, plus one **world market** for prices. They follow simple scripted rules, not the full AI. They are replaced by real countries in Phase 5.
 
 **G-30 · English only; all UI text in one file.** *(Added by you at approval.)* The game is English only. Every sentence, label, button, message, tooltip, error, news line and event text shown to the player lives in a single file, `data/i18n/en.json`, and is read with `t('key', params)`; nothing visible is hard-coded in code. Keys are flat and dotted (`title.newGame`), placeholders are `{name}`, plurals use `.one` / `.other` keys. The short display *name* (and one-line blurb) of a content item — a country, resource, government, technology — stays inline in that item's own data file, so adding content is still one entry in one file. *Text is easy to edit later, in one place.*
+
+**G-31 · The Five-Year Plan is a data-driven promise (§8).** The spec says "set a major goal; success gives a large bonus, failure shakes stability" without saying what a goal is. Simplest version that keeps the intent: a plan has a length in months, a goal that is a threshold on one stat (for example industrial output at least 1.3 times its start), and two effect lists applied when it ends, one for success and one for failure. The communist government ships with one plan (60 months); letting the player choose among several goals is a Phase 2 question. Format: DATA_SCHEMAS §7, `ability.plan`.
 
 ---
 

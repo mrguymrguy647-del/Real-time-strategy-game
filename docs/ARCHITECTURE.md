@@ -76,9 +76,9 @@ In priority order, the architecture optimizes for:
 
 **T-11 · Crash-safe turns.** `endTurn` snapshots state (`structuredClone`), runs the pipeline, checks invariants (finite numbers, non-negative stocks, valid ids) in tests and dev builds, and on any exception restores the snapshot, shows a "Turn failed" panel with a copy-able error, and keeps the last good autosave. *Why:* a bug in month 120 must never destroy a game.
 
-**T-12 · Relative URLs and gh-pages previews.** All URLs are relative, so one build works at the site root and under `/preview/<branch>/`. CI publishes `main` to the root and every other branch to `/preview/<branch>/` on the `gh-pages` branch, using only official GitHub Actions. *Why:* you can test each branch on your phone without merging.
+**T-12 · Relative URLs and gh-pages previews.** All URLs are relative, so one build works at the site root and under `/preview/<branch>/`. CI publishes `main` to the root and every other branch to `/preview/<branch>/` on the `gh-pages` branch, using only official GitHub Actions plus our own `tools/publish-pages.mjs` (plain git). *Why:* you can test each branch on your phone without merging.
 
-**T-13 · Types without TypeScript.** JSDoc types, `// @ts-check`, and `tsc --noEmit` as a dev-only check. *Why:* catches mistakes early when I cannot click through every screen.
+**T-13 · Types without TypeScript.** JSDoc types, `// @ts-check`, and `tsc --noEmit` as a dev-only check. It covers `src/` and `types/` (a one-line shim for the vendored Phaser module); `tools/` and `tests/` are exercised by the tests themselves. *Why:* catches mistakes early when I cannot click through every screen.
 
 **T-14 · Layering is a test.** `tests/unit/architecture.test.js` scans imports and fails on a violation (for example `systems` importing `ui`, or anything outside `src/ui` importing Phaser).
 
@@ -107,9 +107,9 @@ So the plan rests on measurements rather than guesses:
 The suggested structure, adapted. Additions are marked; reasons are in §2.
 
 ```text
-index.html                 shell + import map
-manifest.webmanifest       PWA manifest
+index.html                 shell + import map (manifest and service worker are generated into dist/ by the build)
 package.json               scripts; dev dependencies only (+ Phaser as a vendored file)
+tsconfig.json  types/      type-check setup (T-13)                   (+ added)
 CLAUDE.md  GAME_DESIGN.md  README.md
 docs/                      ARCHITECTURE.md, DATA_SCHEMAS.md, RISKS_AND_QUESTIONS.md, later PHASE_n_PLAN.md
 src/
@@ -132,8 +132,8 @@ vendor/phaser/             pinned Phaser build + license + VERSION   (+ added)
 assets/                    icons, later sounds
 tests/                     unit/, data/, e2e/
 tools/                     build, serve, validate-data, simulate, build-map, import-world-data,
-                           vendor-phaser, screenshot, make-icons     (+ added)
-.github/workflows/         ci.yml, deploy.yml                        (+ added)
+                           vendor-phaser, screenshot, make-icons, publish-pages   (+ added)
+.github/workflows/         ci.yml (checks, then deploy)              (+ added)
 ```
 
 File-size rule: soft limit 300 lines, hard limit 500 per source file (JSON data excluded).
@@ -301,11 +301,11 @@ Labels for the few visible major regions and countries are HTML elements positio
 
 ## 11. Persistence
 
-- **IndexedDB**, database `grand-strategy`, stores `saves` and `settings`. Slots: `auto-1…auto-3` (rotating) and `manual-1…manual-5`.
-- **Record:** `{ slot, savedAt, saveVersion, dataVersion, meta: { countryId, date, turn, scenarioId, difficulty, playTimeMs }, state }`. State is stored as a structured-cloneable object (no JSON round trip).
-- **Autosave:** after every `turn:end`, scheduled so it never blocks input; written to the *next* rotating slot and the "latest" pointer moves only after success.
-- **Failure handling:** every storage call is in try/catch. If storage is unavailable (private mode, blocked, quota), the game keeps running in memory with a visible banner and offers **Export**.
-- **Export/import:** JSON, optionally gzip via `CompressionStream`, as a downloadable file; import validates the header, migrates, and loads.
+- **IndexedDB**, database `grand-strategy`, stores `saves` (full records), `slots` (a small summary per slot, so the Saves screen never loads whole games) and `settings`. Slots: `auto-1…auto-3` (rotating) and `manual-1…manual-5`.
+- **Record:** `{ slot, savedAt, saveVersion, dataVersion, meta: { countryId, year, month, week, turn, scenarioId, difficulty }, state }`. State is stored as a structured-cloneable object (no JSON round trip).
+- **Autosave:** after every `turn:end`. The state is cloned at once (the game keeps running while the write happens), and writes are **serialized** so they land in order. Each write is **atomic**: the record, its summary and the rotation pointer go into one IndexedDB transaction, so quitting mid-save can never leave the pointer on a slot with no record. It goes to the *next* rotating slot, so the two previous autosaves survive.
+- **Failure handling:** every storage call is guarded and reports a `SaveError` with a code the UI can explain. A Safari "connection is closing" error reopens the database and retries once. If storage is unavailable (private mode, blocked, quota), the game keeps running from memory with a visible notice and offers **Export**.
+- **Export/import:** one `.gsave` file (gzip via `CompressionStream` when available, plain JSON otherwise) holding a format header plus the record. Export goes through the system share sheet when possible (the only way out of an installed iOS app), else a download; import accepts either form, checks the header, migrates and loads into a slot.
 - **Persistence request:** ask `navigator.storage.persist()` after the first save; Diagnostics shows persisted/quota. iOS Safari can evict storage of sites that are not installed to the Home Screen after about a week of non-use, so install is encouraged and exports are one tap away.
 - **Versioning:** `saveVersion` plus a chain of migrations (`migrations[n]: save → save`), with a fixture save per version in tests; `dataVersion` mismatches trigger a repair pass (drop unknown ids, report) or a clear "update the app" message.
 - Settings use IndexedDB as well; `localStorage` is used only for tiny UI conveniences, always in try/catch.
@@ -320,12 +320,12 @@ Labels for the few visible major regions and countries are HTML elements positio
 ## 13. Build, CI and deploy
 
 - **`tools/build.mjs`:** copies `index.html`, `manifest.webmanifest`, `assets/`, `src/`, `data/` (JSON minified) and `vendor/` into `dist/`; hashes the files; writes `build-info.json` and a generated `sw.js`; adds `.nojekyll`. `dist/` is exactly what is served.
-- **`ci.yml`** (every push and PR): checkout → Node 22 → `npm ci` → typecheck → `npm test` → build → e2e smoke (Chrome) → upload `dist` and screenshots as artifacts. A failure blocks deploy.
-- **`deploy.yml`** (after CI passes): `main` is published to the root of the `gh-pages` branch; any other branch to `preview/<branch-slug>/`. It regenerates `preview/index.html` (a list of previews with timestamps and commit ids) and prunes previews of deleted branches. Needs `contents: write`; uses a concurrency group so two deploys never race.
-- **One-time setup (you, on GitHub):** after the first deploy creates the `gh-pages` branch, open *Settings → Pages → Build and deployment → Source: Deploy from a branch → `gh-pages` / `/ (root)`.*
+- **`ci.yml`** is one workflow with two jobs. **`check`** runs on every push and pull request: checkout → Node 22 → `npm ci` → typecheck → `npm test` → build → e2e (Playwright with the runner's Chrome, phone-sized). **`deploy`** runs after `check` passes, on pushes to branches only: build → `tools/publish-pages.mjs --push`. A failing check blocks deploy. (The first run: both jobs green in about a minute.)
+- **`tools/publish-pages.mjs`** (plain git in a temporary worktree): `main` replaces the root of the `gh-pages` branch; any other branch goes to `preview/<branch-slug>/`. It regenerates `preview/index.html` (a list of previews with branch, commit and time), keeps a placeholder at the root until `main` exists, prunes previews of deleted branches, keeps at most 12, makes re-publishing the same commit a no-op, and retries when another deploy pushed first. Needs `contents: write`; deploys share a concurrency group so they never race. Tested against real local git repositories (`tests/unit/publish-pages.test.js`).
+- **One-time setup (you, on GitHub):** the first deploy creates the `gh-pages` branch (done). Then open *Settings → Pages → Build and deployment → Source: Deploy from a branch → `gh-pages` / `/ (root)`.* Until then the preview URL answers 404.
 - **URLs:** `https://mrguymrguy647-del.github.io/Real-time-strategy-game/` (main) and `…/preview/<branch>/` (any branch).
 - **Rollback:** revert on `main`; the next deploy publishes the previous good build. Previews can be deleted by deleting the branch.
-- **To prove in Phase 0b:** that a `GITHUB_TOKEN` push to `gh-pages` triggers the Pages build. Fallbacks: a deploy-key secret, or `actions/deploy-pages` for `main` only.
+- **Proven so far:** pushing the workflow file from the Claude Code environment worked, and the deploy job's `GITHUB_TOKEN` created and pushed `gh-pages`. **Not yet proven:** that such a push triggers the Pages build; that can only be seen once Pages is switched on. Fallbacks: a deploy-key secret, or `actions/deploy-pages` for `main` only.
 
 ## 14. Testing and QA
 
@@ -355,18 +355,20 @@ Rule of thumb (an assumption to calibrate with your Diagnostics benchmark): **No
 - JS heap ≤ 150 MB. Save ≤ 2 MB in Phase 5; autosave ≤ 150 ms and non-blocking; load ≤ 1 s.
 - Mitigations in order: stagger AI tiers → skip unchanged systems per country (dirty flags) → typed arrays for hot per-region data → worker (T-16).
 
-## 16. Phase 0b — scaffold plan (starts only after you approve)
+## 16. Phase 0b — scaffold (built; waiting for your phone test)
 
-1. `package.json` (ESM, scripts: `test`, `typecheck`, `build`, `serve`, `simulate`, `e2e`, `screenshot`), `.gitignore`, `.editorconfig`, `jsconfig.json`.
-2. Folder layout from §4; `index.html` with import map, `src/main.js`, a minimal shell: Title, Settings, **Diagnostics**.
-3. `manifest.webmanifest`, generated icons, `sw.js` template, update toast.
-4. `tools/build.mjs`, `tools/serve.mjs`, `tools/vendor-phaser.mjs`; vendor the chosen Phaser build.
-5. Core stubs with tests: `rng`, `clock`, `data` loader, `save` with an in-memory storage adapter plus real IndexedDB adapter, migrations stub, event bus.
-6. Minimal real data (`balance`, `resources`, `governments` with the six types, one stub scenario) and schemas; `tools/validate-data.mjs`.
-7. Tests: unit, data validation, layering; Playwright smoke (boot, SW ready, offline reload, save/load); phone screenshots.
-8. `ci.yml` and `deploy.yml` with previews; README section on enabling Pages.
+1. `package.json` (ESM; scripts `test`, `typecheck`, `build`, `serve`, `simulate`, `e2e`, `screenshot`, `validate`, `icons`, `vendor:phaser`), `.gitignore`, `.editorconfig`, `tsconfig.json`. ✔
+2. Folder layout from §4; `index.html` with import map, `src/main.js`, a shell with Title, **Play** (a small test game), **Saves**, Settings and **Diagnostics**. ✔
+3. Generated manifest and icons, a generated service worker with a content-hash cache, a user-confirmed update toast, iOS install hint, Android install button. ✔
+4. `tools/build.mjs`, `tools/serve.mjs`, `tools/vendor-phaser.mjs`; Phaser 4.2.1 vendored. ✔
+5. Core with tests: `rng`, `clock`, `bus`, `data` loader, `state`, crash-safe `turn` runner with invariants, `save` (3 autosaves + 5 slots, export/import, migrations) over a memory adapter and an IndexedDB adapter, `stats` and `actions` registries. A scaffold-only `demoRoll` system (a d100 roll) exercises the pipeline and is replaced in Phase 1. ✔
+6. Minimal real data (`balance`, `resources`, `governments` with the six types, one scaffold scenario, `i18n/en.json`) with schemas; `tools/validate-data.mjs`. ✔
+7. Tests: 139 unit tests (including layering and a build/service-worker test), data validation, a 3-seed determinism soak, 14 Playwright tests (boot, offline reload, saves surviving reload, export/import, update flow, turn-failure rollback, boot-failure retry, Diagnostics, Phaser map benchmark, tap-target and overflow rules at three phone sizes); `npm run screenshot` for phone screenshots. ✔
+8. `ci.yml` (checks, then deploy) with previews and `tools/publish-pages.mjs`; README steps for enabling Pages. ✔ (first run green)
 
-**Done when:** the preview URL opens on your phone, installs to the Home Screen, opens in airplane mode, a test save survives a reload, Diagnostics is green, and CI is green.
+**Deviations from the plan above:** one workflow file instead of two (§13); `tsconfig.json` instead of `jsconfig.json`; the manifest is generated by the build instead of kept in the repo; the Play and Saves screens and the `bus`, `state`, `turn`, `invariants`, `stats`, `actions` modules were added because the crash-safe turn and the Diagnostics checks need something real to run.
+
+**Done when:** the preview URL opens on your phone, installs to the Home Screen, opens in airplane mode, a test save survives a reload, Diagnostics is green, and CI is green. CI is green; **the rest needs your phone** (README, "Try it on your phone"). Only a real device can show Home Screen install, airplane-mode launch, the iOS share sheet for exports, touch feel and true Phaser speed. The Diagnostics "Copy report" button gives me the numbers; my Node reference for the CPU benchmark is about 15 ms.
 
 ## 17. Phase 1 technical plan (sketch)
 

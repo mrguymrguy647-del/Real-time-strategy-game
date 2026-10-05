@@ -21,16 +21,16 @@
 
 ```text
 data/
-  i18n/en.json       all UI text (G-30)                         P0b
-  balance.json       global constants and difficulty            P1
-  resources.json     oil, food, steel, rare minerals, water     P1
-  governments.json   the six government types                   P1 data, P2 logic
+  i18n/en.json       all UI text (G-30)                         P0b ✔ exists
+  balance.json       global constants and difficulty            P0b ✔ minimal, P1 grows it
+  resources.json     oil, food, steel, rare minerals, water     P0b ✔ (water disabled until later)
+  governments.json   the six government types                   P0b ✔ data, P2 logic
   traits.json        national traits and starting challenges    P1 few, P6 full
   personalities.json AI leader archetypes                       P1
   chokepoints.json   Hormuz, Suez, Bab-el-Mandeb              P1
   countries.json     one entry per country                      P1: 16, P5: ~195
   regions.json       one entry per region                       P1: ~100, P5: ~1,200
-  scenarios.json     start date, roster, goal                   P1: 1
+  scenarios.json     start date, roster, goal                   P0b ✔ one scaffold scenario, P1: the real one
   events.json        chaos events and world events              P2+
   technologies.json  the tech tree                              P4
   diplomacy.json     initial treaties and pair meters           P3
@@ -233,7 +233,7 @@ Six types in v1: `democracy`, `authoritarian`, `monarchy`, `junta`, `communist`,
   - `electionEveryMonths` (`null` if none), `successionRisk`, `hiddenDiscontent` (booleans)
   - `occupationBurden` (multiplier on what an occupier pays to hold your regions)
 - `modifiers` — standing strengths and prices, as effects (§3.2).
-- `ability` — `{ id, name, cooldownMonths, durationMonths, effects }`, or `null`.
+- `ability` — `{ id, name, cooldownMonths, durationMonths, effects, plan? }`, or `null`. `plan` is optional and exists for abilities that are a promise rather than a boost (the communist Five-Year Plan): `{ months, goal: { stat, atLeast }, onSuccess, onFailure }`, where `goal` is checked when the plan ends and the matching effect list is applied.
 - `transition` — `chaosMonths` (length of the chaotic period after a change) and `affinity` (how much this type leans toward each other type, −1 to 1).
 
 **Examples (illustrative)** — the two extremes: a democracy and the anarchist federation (no capital function, no formal alliances).
