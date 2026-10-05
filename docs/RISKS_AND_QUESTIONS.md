@@ -63,7 +63,7 @@ You rank the 16 countries by a score (regional GDP share, controlled population,
 **Q15 · Saves.**  ✔ Accepted: 3 rotating autosaves plus 5 manual slots, with export/import.
 **Q16 · "Not yet" on the capital-battle dialog (G-05).**  ✔ Accepted. My addition to the spec's two buttons, so nobody is forced into a hopeless assault.
 **Q17 · Your phone: iPhone or Android?**  ✔ Decided: Android (Chrome). The app still supports both; my install and test instructions lead with Chrome.
-**Q18 · A real download file (an Android APK)?**  Parked; you asked for a "download link" after the 0b hand-off. Default: **no, not now** — the plan (spec §2) is an installable web app, and on Android tapping Install in Chrome puts it on your Home Screen like any app. An APK would need new build tools (for example Capacitor plus an Android build in CI), your approval for the new dependencies, and extra work so save export and the back button behave. Revisit in Phase 7 (polish) if you want it.
+**Q18 · A real download file?**  You asked for a "download link" after the 0b hand-off, so there is now a **single-file download** (T-18): one HTML file, sent to you directly and published by CI as a GitHub Release asset. It plays offline but cannot be installed or update itself. An **Android APK** stays parked. Default: **no, not now** — the plan (spec §2) is an installable web app, and Chrome's Install puts it on your Home Screen like any app. An APK would need new build tools (for example Capacitor plus an Android build in CI), your approval for the new dependencies, and extra work so save export and the back button behave. Revisit in Phase 7 (polish) if you want it.
 
 ---
 
@@ -104,3 +104,5 @@ Each entry: what could go wrong → what I do about it.
 **R16 · Editing JSON blind from a phone.** A typo could break the data. → Strict schemas, CI as a gate, preview URLs; a broken data file never reaches `main`.
 
 **R17 · Session continuity.** Each cloud session starts cold, and the container is discarded when it ends. → Everything worth keeping is committed and pushed; `CLAUDE.md` holds status and decisions; each phase has a written plan.
+
+**R18 · The one-file download can drift from the web app.** It is built from the same sources, but it omits Phaser, so it stops being useful once the map arrives (Phase 1 M1.1), and a file opened from a phone's Downloads may get no storage or a stricter viewer. → Tests open it from disk and inside a locked-down frame (it falls back to memory saves and says so); screen switching does not depend on the URL; at M1.1 the bundler must inline Phaser (or load it from a data: URL) with a test that the map starts from the file. Until then Phaser-dependent checks say "not included".

@@ -1,7 +1,8 @@
 name: CI
 
 # Every push and pull request is checked. A push to any branch then publishes a build:
-# main -> the site root, any other branch -> /preview/<branch>/ (on the gh-pages branch).
+# main -> the site root, any other branch -> /preview/<branch>/ (on the gh-pages branch), and a
+# single-file download of the same build as a GitHub Release asset.
 
 on:
   push:
@@ -44,5 +45,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
       - run: node tools/build.mjs
       - run: node tools/publish-pages.mjs --push
+      # The same app as one file that runs from a plain download, published as a GitHub Release
+      # asset: a link that works on a phone with no Pages setting (ARCHITECTURE T-18).
+      - run: npm ci
+      - run: node tools/bundle-single.mjs
+      - name: Publish the single-file download
+        run: node tools/publish-download.mjs --file dist-single/grand-strategy.html
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}

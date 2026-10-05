@@ -15,6 +15,7 @@ Offline, turn-based, modern-era grand strategy game for phones (installable PWA)
 
 - **Phase 0a: design documents approved by the user (2026-10-05).** Decided: Phaser 4.2.1 · no bundler · `gh-pages` branch with per-branch previews · 16-country Middle East roster · Regional Power score goal · approval gate after 0b and after each phase · **G-30: English only, all UI text in `data/i18n/en.json`**.
 - **Phase 0b (scaffold) is built and tested** (ARCHITECTURE §16): installable offline PWA shell with a test game, saves, Diagnostics, build + service worker, CI with `gh-pages` previews. **CI is green** (first run: checks incl. e2e, then deploy; the `gh-pages` branch exists with the preview). **Waiting for the user to try it on their phone** (README → "Try it on your phone") and approve. Only then Phase 1 (five milestones, GAME_DESIGN Appendix C). At the start of Phase 1, send the user the 16-country classification table to veto (Q7).
+- **The one-file download exists** (T-18): the user asked for a download link instead of the Pages setting, so CI also publishes `grand-strategy.html` as a Release asset and it was sent to them directly. It has no Phaser, so **from Phase 1 M1.1 (the map) the bundler must include Phaser** (RISKS R18) or the download stops being useful. It is a way to try the game, not the product; the web build stays the real app.
 - **Things only a real phone can confirm** (the sandbox cannot): installing to the Home Screen, airplane-mode launch, export/import through the iOS share sheet, touch feel, and real Phaser speed (Diagnostics → Map speed test; sandbox Node reference for the CPU benchmark is about 15 ms via `npm run simulate -- --bench`).
 - **The user's phone is Android (Chrome)** (they said so after the 0b hand-off). Lead install and test instructions with Chrome, but keep iOS Safari working (T-17). **Open, not blocking:** repo rename (default keep), game title (default "Grand Strategy"). The one-time GitHub Pages setting (Settings → Pages → `gh-pages` / root) is the user's to do; the sandbox cannot reach `github.io` (proxy 403), so the live URL can only be checked by the user. After they switch it on, confirm that a CI push triggers the Pages build (RISKS R7).
 - **Git:** develop only on the branch the session names; never push elsewhere; no pull requests unless asked.
@@ -26,7 +27,7 @@ Develops entirely from a phone through Claude Code. Therefore:
 - Keep chat replies short and scannable: bullets, no wide tables, plain words. Say plainly what works, what doesn't, and what is next.
 - Ask for decisions with a recommended default, so "approved" is a valid answer.
 - Give links as plain URLs on their own line, never inside backticks: code-formatted text is not tappable in the Claude app.
-- "Download link" means a tappable link that gets the game onto the phone. There is no APK or zip (Q18): on Android, opening the link in Chrome and tapping Install is the download.
+- "Download link" means a tappable link that gets the game onto the phone. Give the **single-file download** (GitHub Release asset `download-<branch>/grand-strategy.html`, built by CI; or send `dist-single/grand-strategy.html` with SendUserFile) and the installable web link. There is no APK (Q18, parked).
 
 ## Working rules (from the user)
 
@@ -70,7 +71,7 @@ Develops entirely from a phone through Claude Code. Therefore:
 
 ## Commands
 
-`npm test` (unit + data + soak) · `npm run typecheck` (covers `src/`) · `npm run build` → `dist/` · `npm run serve` · `npm run e2e` (Playwright, phone-sized Chromium) · `npm run screenshot` (→ `tmp/screenshots/`, then read the PNGs) · `npm run validate` · `npm run simulate` · `npm run icons` · `npm run vendor:phaser`
+`npm test` (unit + data + soak) · `npm run typecheck` (covers `src/`) · `npm run build` → `dist/` · `npm run build:single` → `dist-single/grand-strategy.html` (one-file download, T-18) · `npm run serve` · `npm run e2e` (Playwright, phone-sized Chromium) · `npm run screenshot` (→ `tmp/screenshots/`, then read the PNGs) · `npm run validate` · `npm run simulate` · `npm run icons` · `npm run vendor:phaser`
 
 Before every commit: `npm run typecheck && npm test`; run `npm run e2e` whenever UI, build or service-worker code changed. CI (`.github/workflows/ci.yml`) runs all of them, then publishes `main` to the site root and every other branch to `/preview/<branch>/` on `gh-pages`.
 

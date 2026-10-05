@@ -88,6 +88,8 @@ In priority order, the architecture optimizes for:
 
 **T-17 · Support floor.** iOS/iPadOS Safari 16.4+ and the current and previous two versions of Chrome/Edge/Firefox on Android. *Why:* import maps (Safari 16.4), `<dialog>`, `structuredClone`, `CompressionStream`.
 
+**T-18 · A single-file download for trying the game without hosting.** `npm run build:single` makes `dist-single/grand-strategy.html`: the whole app, its data and styles in one page that runs from a plain file (no server, install or network). The native TypeScript compiler (already a dev dependency) turns every module in `src/` into plain CommonJS, `tools/single.runtime.js` runs them, the JSON in `data/` and the SVG icons are inlined, and the page sets `globalThis.__GS_INLINE__` so the app reads them from memory instead of fetching. CI publishes the file as a GitHub Release asset (tag `download-<branch>`), a link that downloads on any phone with no Pages setting. It cannot be installed or update itself; the app says so (`platform.singleFile`), and the web build stays the product. **Phaser is not included**, so the Diagnostics map speed test is absent; from Phase 1 M1.1 (the map) the bundler must include Phaser or the download stops being useful (R18). The app no longer depends on the URL hash to switch screens (some viewers refuse to change it); the hash only mirrors the screen. *Why:* the user works from a phone and asked for a download link; Pages needs a repo setting only they can change.
+
 ## 3. Verified in this sandbox (2026-10-05)
 
 So the plan rests on measurements rather than guesses:
@@ -132,7 +134,8 @@ vendor/phaser/             pinned Phaser build + license + VERSION   (+ added)
 assets/                    icons, later sounds
 tests/                     unit/, data/, e2e/
 tools/                     build, serve, validate-data, simulate, build-map, import-world-data,
-                           vendor-phaser, screenshot, make-icons, publish-pages   (+ added)
+                           vendor-phaser, screenshot, make-icons, publish-pages,
+                           bundle-single, publish-download   (+ added; T-18)
 .github/workflows/         ci.yml (checks, then deploy)              (+ added)
 ```
 
@@ -322,6 +325,7 @@ Labels for the few visible major regions and countries are HTML elements positio
 - **`tools/build.mjs`:** copies `index.html`, `manifest.webmanifest`, `assets/`, `src/`, `data/` (JSON minified) and `vendor/` into `dist/`; hashes the files; writes `build-info.json` and a generated `sw.js`; adds `.nojekyll`. `dist/` is exactly what is served.
 - **`ci.yml`** is one workflow with two jobs. **`check`** runs on every push and pull request: checkout → Node 22 → `npm ci` → typecheck → `npm test` → build → e2e (Playwright with the runner's Chrome, phone-sized). **`deploy`** runs after `check` passes, on pushes to branches only: build → `tools/publish-pages.mjs --push`. A failing check blocks deploy. (The first run: both jobs green in about a minute.)
 - **`tools/publish-pages.mjs`** (plain git in a temporary worktree): `main` replaces the root of the `gh-pages` branch; any other branch goes to `preview/<branch-slug>/`. It regenerates `preview/index.html` (a list of previews with branch, commit and time), keeps a placeholder at the root until `main` exists, prunes previews of deleted branches, keeps at most 12, makes re-publishing the same commit a no-op, and retries when another deploy pushed first. Needs `contents: write`; deploys share a concurrency group so they never race. Tested against real local git repositories (`tests/unit/publish-pages.test.js`).
+- **`tools/bundle-single.mjs` and `tools/publish-download.mjs` (T-18):** after the Pages publish, the `deploy` job runs `npm ci`, builds the one-file download and publishes it with the GitHub CLI as a prerelease named `download-<branch-slug>` (created once, then the file is replaced on every push). Direct link: `https://github.com/mrguymrguy647-del/Real-time-strategy-game/releases/download/download-<branch-slug>/grand-strategy.html`. Releases of deleted branches are not pruned yet.
 - **One-time setup (you, on GitHub):** the first deploy creates the `gh-pages` branch (done). Then open *Settings → Pages → Build and deployment → Source: Deploy from a branch → `gh-pages` / `/ (root)`.* Until then the preview URL answers 404.
 - **URLs:** `https://mrguymrguy647-del.github.io/Real-time-strategy-game/` (main) and `…/preview/<branch>/` (any branch).
 - **Rollback:** revert on `main`; the next deploy publishes the previous good build. Previews can be deleted by deleting the branch.

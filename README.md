@@ -6,12 +6,23 @@ An offline, turn-based, modern-era grand strategy game for phones (working title
 
 ## Try it on your phone
 
+### Fastest: download one file (no GitHub setting needed)
+
+Every push also publishes the whole game as a single file. Tap to download it, then open it with Chrome. It plays offline, but it cannot be installed as an app or update itself.
+
+- Download (this work branch): https://github.com/mrguymrguy647-del/Real-time-strategy-game/releases/download/download-ccr-5ed68e3d-6cg5fd/grand-strategy.html
+- Release page (all builds): https://github.com/mrguymrguy647-del/Real-time-strategy-game/releases
+
+If the file opens as plain text instead of the game, open your phone's *Files* or *Downloads* app, tap the file and choose Chrome. Rebuild it yourself with `npm run build:single`.
+
+### Installable app (web link)
+
 Every push builds a preview of its branch. Links (tap them):
 
 - This work branch: https://mrguymrguy647-del.github.io/Real-time-strategy-game/preview/ccr-5ed68e3d-6cg5fd/
 - All previews: https://mrguymrguy647-del.github.io/Real-time-strategy-game/preview/
 
-There is no APK or zip to download: the game is a web app, and installing it from the link is the download.
+Installing it from the link is how you get the real app. Android has no APK: Chrome's Install puts it on your Home Screen.
 
 **One-time setup (needed once, after the first successful deploy).** Until you do this, the links above show "404".
 1. Open https://github.com/mrguymrguy647-del/Real-time-strategy-game/settings/pages in your phone's browser, signed in as the repo owner (the GitHub app cannot change this).
@@ -39,6 +50,7 @@ npm ci               install dev tools (ajv, typescript, playwright-core)
 npm test             unit tests, data validation and a simulation soak
 npm run typecheck    JSDoc type check of src/
 npm run build        build the site into dist/
+npm run build:single build the one-file download into dist-single/
 npm run serve        build and serve dist/ at http://127.0.0.1:4173/
 npm run e2e          Playwright tests in a phone-sized Chromium
 npm run screenshot   phone screenshots of every screen into tmp/screenshots/
