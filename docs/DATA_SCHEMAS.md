@@ -12,6 +12,7 @@
 - **Ids are permanent** (G-26). Countries use the Natural Earth `ADM0_A3` code (ISO alpha-3 where one exists, e.g. `IRQ`). Regions are `<COUNTRY>-<slug>` (e.g. `IRQ-basra`). Everything else is `snake_case` (`oil`, `democracy`). Never rename; deprecate with `"aliasOf": "<new id>"`.
 - **Units** (G-25): money in **USD millions** (flows are per month); GDP in **USD billions per year** (`gdpBn`); population in **thousands**; resources in the unit named in `resources.json`; shares and rates are **fractions** (0–1; debt ratios can exceed 1); meters (approval, morale, stability, cohesion, trust, tension) are **0–100**; dates are `"YYYY-MM"`.
 - **Static versus dynamic.** Data files hold *definitions and starting values*. The running game keeps *changing* values in `state`, which is what gets saved. Saves store ids and dynamic values only, never copies of data.
+- **Text (G-30).** English only. All UI text — labels, buttons, messages, tooltips, errors, news and event text — lives in **one file, `data/i18n/en.json`**, and data files refer to it by key (for example `"reportKey": "events.desertion.report"`). The short display `name` and one-line `blurb` of a content item stay inline in that item's file, so adding a country, resource or government is still one entry in one file.
 - **Provenance.** Real-world numbers carry `source` and `asOf`. They are rounded, game-balanced approximations, not authoritative statistics (G-22).
 - **Generated fields** are marked *(generated)*. Tools write them; hand edits are overwritten.
 - **Validation** in CI: JSON Schema (`data/schema/*.schema.json`, checked with Ajv) plus the referential rules in §9. A broken data file fails CI, so a broken game is never deployed.
@@ -20,6 +21,7 @@
 
 ```text
 data/
+  i18n/en.json       all UI text (G-30)                         P0b
   balance.json       global constants and difficulty            P1
   resources.json     oil, food, steel, rare minerals, water     P1
   governments.json   the six government types                   P1 data, P2 logic
@@ -296,6 +298,21 @@ Six types in v1: `democracy`, `authoritarian`, `monarchy`, `junta`, `communist`,
 
 ## 8. Other files (short)
 
+**`i18n/en.json`** — every UI string (G-30). Keys are flat and dotted; `{name}` marks a placeholder; plurals use `.one` / `.other` keys read by `tn()`.
+
+```jsonc
+{
+  "schema": "i18n",
+  "version": 1,
+  "lang": "en",
+  "strings": {
+    "title.newGame": "New test game",
+    "saves.count.one": "{n} save",
+    "saves.count.other": "{n} saves"
+  }
+}
+```
+
 **`balance.json`** — every tunable number, grouped by system. Formulas receive their section as a params object (T-08).
 
 ```jsonc
@@ -392,9 +409,11 @@ Six types in v1: `democracy`, `authoritarian`, `monarchy`, `junta`, `communist`,
     { "label": "Unpaid salaries", "stat": "country.military.salaryArrearsMonths", "weight": 0.12 }
   ],
   "effects": [ { "stat": "front.units", "op": "mul", "value": 0.97 } ],
-  "report": "{count} soldiers deserted on the {front} front."
+  "reportKey": "events.desertion.report"
 }
 ```
+
+with the sentence itself in `i18n/en.json`: `"events.desertion.report": "{count} soldiers deserted on the {front} front."`
 
 **`technologies.json`** (Phase 4, draft) — every powerful technology names its counters.
 

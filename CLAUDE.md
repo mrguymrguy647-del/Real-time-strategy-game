@@ -13,9 +13,9 @@ Offline, turn-based, modern-era grand strategy game for phones (installable PWA)
 
 ## Current status — update at the end of every session
 
-- **Phase 0a: design documents written, awaiting the user's approval.** No game code exists yet.
-- **Next, on approval:** Phase 0b scaffold (ARCHITECTURE §16) → user installs it on their phone and approves → Phase 1 (five milestones, GAME_DESIGN Appendix C).
-- **Assumed defaults until the user answers** (docs/RISKS_AND_QUESTIONS.md): Q1 Phaser 4.2.1 (spec says 3) · Q2 no bundler · Q3 `gh-pages` branch with per-branch previews · Q4 16-country Middle East roster · Q5 Regional Power score goal · Q6 approval gate after 0b and after each phase.
+- **Phase 0a: design documents approved by the user (2026-10-05).** Decided: Phaser 4.2.1 · no bundler · `gh-pages` branch with per-branch previews · 16-country Middle East roster · Regional Power score goal · approval gate after 0b and after each phase · **G-30: English only, all UI text in `data/i18n/en.json`**.
+- **Phase 0b (scaffold) is in progress** — see ARCHITECTURE §16. When it is done the user installs it on their phone and approves; only then Phase 1 (five milestones, GAME_DESIGN Appendix C). At the start of Phase 1, send the user the 16-country classification table to veto (Q7).
+- **Open, not blocking:** the user's phone (iPhone or Android — unknown, support both), repo rename (default keep), game title (default "Grand Strategy").
 - **Git:** develop only on the branch the session names; never push elsewhere; no pull requests unless asked.
 
 ## The user
@@ -56,7 +56,7 @@ Develops entirely from a phone through Claude Code. Therefore:
 - Files `camelCase.js`; ids `snake_case`; countries by Natural Earth `ADM0_A3`; regions `ISO3-slug`.
 - Commit messages: `area: imperative summary` (areas: core, formulas, systems, ai, ui, data, tools, ci, docs), with the *why* in the body.
 - **No new dependencies without asking.** Runtime: none (Phaser is vendored). Dev only: `ajv`, `typescript`, `playwright-core`, `mapshaper`.
-- Display text lives in data or `src/ui/strings.js`, English only.
+- **All UI text lives in `data/i18n/en.json`** and is read with `t('key', params)` / `tn('key', n, params)` (`src/util/i18n.js`). Never hard-code visible text (G-30). English only. A content item's short `name`/`blurb` stays inline in its own data file.
 
 ## Testing
 
@@ -75,5 +75,6 @@ Develops entirely from a phone through Claude Code. Therefore:
 - **Network:** npm registry ✅, Natural Earth (GitHub raw and S3) ✅. **unpkg, jsDelivr and phaser.io are blocked.** Fetch packages with `npm pack <pkg>@<version>` and read the tarball. The Phaser 4 tarball contains API guides at `package/skills/*/SKILL.md` and `package/changelog/v4/4.0/MIGRATION-GUIDE.md`.
 - **Headless WebGL** works with `--no-sandbox --use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist`. Phone emulation: viewport 844×390 (landscape) or 390×844 (portrait), `deviceScaleFactor: 2`, `isMobile`, `hasTouch`. Read the PNG to see the screen.
 - Phaser 3.90's ESM build has no default export (`import * as`); 4.x has both. Use the adapter.
+- On this Node version `node --test <directory>` fails; use globs: `node --test "tests/**/*.test.js"`.
 - Put scratch work in the scratchpad directory, never in the repo.
 - The container is discarded at session end: commit and push anything worth keeping.

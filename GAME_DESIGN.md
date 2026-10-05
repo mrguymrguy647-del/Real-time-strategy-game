@@ -2,7 +2,7 @@
 
 **Modern-era offline grand strategy for phones** · working title *Grand Strategy (TBD)*
 
-> **Status:** Phase 0 draft, awaiting your approval.
+> **Status:** Phase 0a approved on 2026-10-05 (with G-30). Phase 0b (scaffold) in progress.
 > This file says **what the game is**. How it is built: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Data formats: [docs/DATA_SCHEMAS.md](docs/DATA_SCHEMAS.md). Open questions and risks: [docs/RISKS_AND_QUESTIONS.md](docs/RISKS_AND_QUESTIONS.md).
 >
 > Section numbers match your original spec (§1–§12). `[P1]`–`[P7]` mark the roadmap phase where a feature first appears. `G-nn` marks a decision I made where the spec was ambiguous (Appendix A) — tell me to change any of them.
@@ -47,7 +47,8 @@
 Details live in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 - Mobile-first web game, installable **PWA**, fully offline (a service worker caches all code and data).
-- JavaScript ES modules. **Phaser** draws the map and the battle; HTML/CSS draws menus and panels. (Phaser version: open question Q1.)
+- JavaScript ES modules. **Phaser 4.2.1** draws the map and the battle; HTML/CSS draws menus and panels.
+- **English only.** Every piece of UI text lives in one file, `data/i18n/en.json` (G-30).
 - **IndexedDB** saves: multiple slots, autosave every turn, all storage calls wrapped in try/catch, plus export/import as a backup.
 - Map: Natural Earth (public domain), simplified, with each country split into a manageable number of regions.
 - Hosting: GitHub Pages.
@@ -404,6 +405,8 @@ Where the spec was ambiguous I chose the simplest version that keeps its intent.
 **G-28 · The international organization** has the fictional neutral name "International Council"; no real-world body is imitated.
 
 **G-29 · The world outside the theater (Phase 1).** Three abstract off-map **patrons** (great powers) can give aid, sell arms and impose sanctions, plus one **world market** for prices. They follow simple scripted rules, not the full AI. They are replaced by real countries in Phase 5.
+
+**G-30 · English only; all UI text in one file.** *(Added by you at approval.)* The game is English only. Every sentence, label, button, message, tooltip, error, news line and event text shown to the player lives in a single file, `data/i18n/en.json`, and is read with `t('key', params)`; nothing visible is hard-coded in code. Keys are flat and dotted (`title.newGame`), placeholders are `{name}`, plurals use `.one` / `.other` keys. The short display *name* (and one-line blurb) of a content item — a country, resource, government, technology — stays inline in that item's own data file, so adding content is still one entry in one file. *Text is easy to edit later, in one place.*
 
 ---
 

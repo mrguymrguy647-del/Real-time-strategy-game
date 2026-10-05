@@ -1,56 +1,66 @@
 # Questions and Risks
 
-> Phase 0, awaiting your approval. Related: [../GAME_DESIGN.md](../GAME_DESIGN.md) · [ARCHITECTURE.md](ARCHITECTURE.md) · [DATA_SCHEMAS.md](DATA_SCHEMAS.md)
+> Related: [../GAME_DESIGN.md](../GAME_DESIGN.md) · [ARCHITECTURE.md](ARCHITECTURE.md) · [DATA_SCHEMAS.md](DATA_SCHEMAS.md)
 
-## How to answer
+## Status after your approval (2026-10-05)
 
-Reply **"approved"** to accept every ✅ recommendation below, or send changes by number, for example: *"approved, but Q1: Phaser 3, and Q4: drop Turkey and Egypt."*
+**Decided** (your "approved" accepted every ✔ default): Q1–Q6, which were the questions blocking Phase 0b and Phase 1, plus Q8–Q10 and Q15–Q16.
+**Decided by your addition:** **G-30** — English only, all UI text in `data/i18n/en.json` (this replaces the earlier answer to Q14).
+
+**Still open — none of these stops me from building:**
+- **Q17 · Your phone: iPhone or Android?** Your message still contained the template text "[iPhone / Android]". The scaffold supports both; this only tailors my install and test instructions.
+- **Q3 (rename) · Rename the repo?** Default: keep the current name.
+- **Q13 · Game title.** Default: keep the working title "Grand Strategy" (it is one line in `data/i18n/en.json`).
+
+**Comes up at the start of Phase 1:** Q7 — I send you the 16-country classification table to veto.
+**Parked for later phases:** Q11 (Phase 4), Q12 (Phase 2).
 
 ---
 
-## A. Decisions needed before Phase 0b (blocking)
+## A. Blocking decisions — all decided at approval
 
-**Q1 · Phaser 3 (your spec) or Phaser 4?**  ✅ Recommend **4.2.1**.
+**Q1 · Phaser 3 (your spec) or Phaser 4?**  ✔ **Decided: 4.2.1.**
 - Facts I checked: Phaser 4.0 shipped on 10 April 2026 and 4.2.1 is now npm's `latest`; 3.90.0 is the last 3.x release. Both booted with WebGL in my phone-sized test. 4.2.1 is 352 KB gzipped, 3.90.0 is 315 KB.
 - Why 4: it is the maintained line, and its npm package contains official API guides for AI agents. That matters because phaser.io is blocked in my sandbox. The map needs only Graphics, RenderTexture, the camera and touch input, which migrate with little change.
 - Costs of 4: newer (fewer public examples), its Canvas renderer is deprecated (still present, but WebGL is the supported path), and `RenderTexture` drawing needs an explicit `render()`.
 - Alternative: **3.90.0 exactly as specified**. Either way Phaser stays behind a one-folder adapter (T-02), so switching later is cheap.
 
-**Q2 · Build tooling: no bundler, or Vite?**  ✅ **No bundler.**
+**Q2 · Build tooling: no bundler, or Vite?**  ✔ **Decided: no bundler.**
 - Native ES modules plus a tiny Node build script. Nothing to configure or break from a phone, dev equals prod, and Node tests import the same files.
 - If load time ever suffers, esbuild can be added without touching the code (T-01).
 - Alternative: Vite (hot reload and bundling) at the price of a bigger toolchain that I cannot babysit visually.
 
-**Q3 · Hosting and previews.**  ✅ **`gh-pages` branch: `main` → site root, every other branch → `/preview/<branch>/`.**
+**Q3 · Hosting and previews.**  ✔ **Decided: `gh-pages` branch — `main` → site root, every other branch → `/preview/<branch>/`.**
 - Your repo is **public**, so GitHub Pages is free. It is **not enabled yet**.
 - Why previews: you test from your phone while I work on a branch; previews let you try each push without merging anything.
 - **One-time step for you** (after my first deploy creates the branch): *Settings → Pages → Source: Deploy from a branch → `gh-pages` / `(root)`.* I will remind you with exact taps.
 - Optional: the repo is named "Real-time-strategy-game" but the game is turn-based. Renaming is free *now* and breaks URLs later. If you rename, do it between sessions and tell me first.
 
-**Q4 · Phase 1 roster (G-23).**  ✅ **16 countries, about 100 regions.**
+**Q4 · Phase 1 roster (G-23).**  ✔ **Decided: 16 countries, about 100 regions.**
 Turkey, Syria, Lebanon, Israel, Palestinian territories, Jordan, Iraq, Iran, Saudi Arabia, Kuwait, Bahrain, Qatar, UAE, Oman, Yemen, Egypt. Neighbors outside the theater appear in grey as context. Three off-map "patron" great powers and one world market stand in for the rest of the world (G-29). Chokepoints: Hormuz, Suez, Bab-el-Mandeb.
 - Alternative: a smaller slice (for example the Gulf plus Iran and Iraq, about 9 countries) to reach a playable build sooner.
 
-**Q5 · What is the Phase 1 goal (G-24)?**  ✅ **A Regional Power score over 10 years.**
+**Q5 · What is the Phase 1 goal (G-24)?**  ✔ **Decided: a Regional Power score over 10 years.**
 You rank the 16 countries by a score (regional GDP share, controlled population, oil income, stability). You lose by surrender or elimination. It gives the "is it fun?" test a purpose without building the Phase 6 victory conditions early.
 
-**Q6 · Approval gates.**  ✅ **A gate after Phase 0b (you install on your phone), then one after every phase.** Inside Phase 1 you get five preview builds (M1.1–M1.5) and tell me when something feels wrong; no formal gate between them.
+**Q6 · Approval gates.**  ✔ **Decided: a gate after Phase 0b (you install on your phone), then one after every phase.** Inside Phase 1 you get five preview builds (M1.1–M1.5) and tell me when something feels wrong; no formal gate between them.
 - Each later phase starts with a one-page plan for you to approve.
 
 ---
 
-## B. Questions that can wait
+## B. Other questions
 
-**Q7 · Government classification (G-14).**  ✅ I propose the Phase 1 table (government type, AI tier, traits, start condition per country) and you veto it before it is committed. The method is neutral and rule-based, and everything is editable data.
-**Q8 · Fog of war as uncertainty bands (G-04).**  ✅ The map is not hidden; enemy data is exact, estimated, rough or unknown depending on intelligence.
-**Q9 · Difficulty changes numbers, never rules (G-21).**  ✅
-**Q10 · Leaders are archetypes, never real people (G-18).**  ✅
-**Q11 · Can nuclear weapons ever be used? (Phase 4)**  The spec calls them "a deterrence tool, not an everyday weapon." My suggestion: deterrence plus a catastrophic last-resort strike (maximum World Tension, a global coalition forms), or deterrence only. I will ask again at Phase 4.
-**Q12 · Anarchist federation ability (G-15).**  The spec lists no ability for it. Proposal: **Mutual Aid** (regions share supplies).
-**Q13 · Game title, repo license.**  Working title only for now; the repo has no license, so by default all rights are reserved. Decide whenever; before any public release.
-**Q14 · Language and analytics.**  ✅ English only; no analytics or telemetry of any kind (fully offline).
-**Q15 · Saves.**  ✅ 3 rotating autosaves plus 5 manual slots, with export/import.
-**Q16 · "Not yet" on the capital-battle dialog (G-05).**  ✅ My addition to the spec's two buttons, so nobody is forced into a hopeless assault.
+**Q7 · Government classification (G-14).**  Open until Phase 1 starts. I propose the table (government type, AI tier, traits, start condition per country) and you veto it before it is committed. The method is neutral and rule-based, and everything is editable data.
+**Q8 · Fog of war as uncertainty bands (G-04).**  ✔ Accepted. The map is not hidden; enemy data is exact, estimated, rough or unknown depending on intelligence.
+**Q9 · Difficulty changes numbers, never rules (G-21).**  ✔ Accepted.
+**Q10 · Leaders are archetypes, never real people (G-18).**  ✔ Accepted.
+**Q11 · Can nuclear weapons ever be used? (Phase 4)**  Parked. The spec calls them "a deterrence tool, not an everyday weapon." My suggestion: deterrence plus a catastrophic last-resort strike (maximum World Tension, a global coalition forms), or deterrence only. I will ask again at Phase 4.
+**Q12 · Anarchist federation ability (G-15).**  Parked until Phase 2. The spec lists no ability for it. Proposal: **Mutual Aid** (regions share supplies).
+**Q13 · Game title, repo license.**  Open, not blocking. Working title "Grand Strategy" (one line in `data/i18n/en.json`); the repo has no license, so by default all rights are reserved. Decide before any public release.
+**Q14 · Language and analytics.**  ✔ Decided: **English only** with every UI string in `data/i18n/en.json` (G-30); no analytics or telemetry of any kind (fully offline).
+**Q15 · Saves.**  ✔ Accepted: 3 rotating autosaves plus 5 manual slots, with export/import.
+**Q16 · "Not yet" on the capital-battle dialog (G-05).**  ✔ Accepted. My addition to the spec's two buttons, so nobody is forced into a hopeless assault.
+**Q17 · Your phone: iPhone or Android?**  Open, not blocking. Only tailors the install and test instructions I give you; the app supports both.
 
 ---
 

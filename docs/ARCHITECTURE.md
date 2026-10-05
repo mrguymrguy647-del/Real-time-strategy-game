@@ -56,7 +56,7 @@ In priority order, the architecture optimizes for:
 
 **T-01 · No bundler.** Native ES modules. The only build step is a small Node script that copies files to `dist/` and writes the offline-cache manifest. *Why:* nothing to configure or break from a phone, dev equals prod, and Node can import the same modules for tests. Our code is plain ESM, so adding esbuild later (if load time demands it) needs no code changes.
 
-**T-02 · Phaser is a thin view adapter.** Phaser is imported in exactly one file (`src/ui/phaser.js`) and used only in `src/ui/map/` and `src/ui/battle/`. *Why:* an upgrade or swap touches one folder. **Version is open question Q1:** the spec says Phaser 3; 4.2.1 is now the maintained stable line (see §3). The adapter normalizes the two ESM shapes (`mod.default ?? mod`), so either works.
+**T-02 · Phaser is a thin view adapter.** Phaser is imported in exactly one file (`src/ui/phaser.js`) and used only in `src/ui/map/` and `src/ui/battle/`. *Why:* an upgrade or swap touches one folder. **Version: 4.2.1 (decided, Q1).** The original spec said Phaser 3; 4.2.1 is the maintained stable line (see §3). The adapter normalizes the two ESM shapes (`mod.default ?? mod`), so going back to 3.90 stays cheap.
 
 **T-03 · Phaser is vendored.** `vendor/phaser/phaser.esm.min.js` plus its license and a `VERSION` file, refreshed by `tools/vendor-phaser.mjs` from the npm tarball. `index.html` has an import map (`"phaser": "./vendor/phaser/phaser.esm.min.js"`). *Why:* CDNs are blocked in my sandbox and offline play needs a local copy anyway.
 
@@ -115,7 +115,7 @@ docs/                      ARCHITECTURE.md, DATA_SCHEMAS.md, RISKS_AND_QUESTIONS
 src/
   game.js                  composition root: headless game object (data+state+systems+AI)
   main.js                  browser boot
-  util/                    ids, math helpers, formatting             (+ added)
+  util/                    i18n t(), compression, hashing, bench     (+ added)
   formulas/                pure math: combat, economy, endurance,    (+ added)
                            stability, market, ...
   core/                    state, clock, rng, commands, turn pipeline, stats/effects/conditions,
@@ -123,10 +123,11 @@ src/
   systems/                 war, capitalBattle, economy, endurance, resources, diplomacy,
                            technology, government, stateCondition, stability, events
   ai/                      scheduler, strategic (tier 1-2), simple (tier 3), personalities, explain
-  ui/                      app shell, dom helper, screens, panels, dialogs, strings, theme.css
+  ui/                      app shell, dom helper, screens, panels, dialogs, theme.css
     map/                   Phaser map adapter (bake, overlays, input, hit-testing)
     battle/                Phaser capital-battle view (Phase 2)
-data/                      JSON content (DATA_SCHEMAS.md), schema/, map/ (generated geometry)
+data/                      JSON content (DATA_SCHEMAS.md), i18n/en.json (all UI text, G-30),
+                           schema/, map/ (generated geometry)
 vendor/phaser/             pinned Phaser build + license + VERSION   (+ added)
 assets/                    icons, later sounds
 tests/                     unit/, data/, e2e/
@@ -295,7 +296,8 @@ Labels for the few visible major regions and countries are HTML elements positio
 - **Touch rules:** tap targets at least 44×44 CSS px; primary action (End Turn) reachable by one thumb; no hover-only information (tooltips become tap-to-reveal **why?** popovers); text at least 14 px; `viewport-fit=cover` with safe-area insets; no `100vh` (use `dvh`); `overscroll-behavior: none` to block pull-to-refresh.
 - **Wiring:** the shell subscribes to the game's events and re-renders the open panel; panels read state and dispatch commands, never mutate.
 - **Information level (G-04)** is applied in one place (a `visible(stat, level)` helper), so every panel shows exact values, bands or "?" consistently.
-- **Look:** system font stack (no web fonts, so offline is trivial), CSS variables for a dark default theme, `prefers-reduced-motion` respected. English only for now; strings live in data and one `strings.js`.
+- **Look:** system font stack (no web fonts, so offline is trivial), CSS variables for a dark default theme, `prefers-reduced-motion` respected.
+- **Text (G-30):** English only. Every visible string lives in `data/i18n/en.json` and is read with `t('key', params)` / `tn('key', n, params)` from `src/util/i18n.js`. A test checks that every key used in code exists in the file. The static HTML shell (page title, loading and no-script text) is filled from the same file at build time, so even that is never hard-coded.
 
 ## 11. Persistence
 
