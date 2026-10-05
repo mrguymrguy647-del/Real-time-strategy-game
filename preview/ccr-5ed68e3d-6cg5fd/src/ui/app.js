@@ -83,10 +83,14 @@ export function createApp({ root, data, saves, settings, pwa, storage, storageEr
     confirm: confirmDialog,
     dialog: openDialog,
 
-    /** @param {string} route */
-    navigate(route) {
-      if (currentRoute() === route) render();
-      else location.hash = `#/${route}`;
+    /** @param {string} next */
+    navigate(next) {
+      const name = Object.hasOwn(ROUTES, next) ? /** @type {keyof typeof ROUTES} */ (next) : 'title';
+      if (route !== name) {
+        route = name;
+        setHash(name);
+      }
+      render();
     },
     /** Back goes to the game if one is running, otherwise to the title. */
     back() {
@@ -129,19 +133,32 @@ export function createApp({ root, data, saves, settings, pwa, storage, storageEr
     },
   };
 
-  function currentRoute() {
+  /** The screen named by the URL hash (#/play, #/saves, ...); anything unknown is the title. */
+  function routeFromHash() {
     const name = location.hash.replace(/^#\/?/, '').split('?')[0] || 'title';
     return Object.hasOwn(ROUTES, name) ? /** @type {keyof typeof ROUTES} */ (name) : 'title';
   }
 
+  /** The hash mirrors the current screen so deep links and the back gesture work, but the app does not depend on it: some viewers refuse to change the URL. */
+  let route = routeFromHash();
+
+  /** @param {string} name @param {boolean} [replace] */
+  function setHash(name, replace = false) {
+    try {
+      if (replace) location.replace(`#/${name}`);
+      else location.hash = `#/${name}`;
+    } catch {
+      // The screen still changes; there is just no history entry for it.
+    }
+  }
+
   function render() {
-    const name = currentRoute();
-    if (name === 'play' && !session.game) {
-      location.replace('#/title');
-      return;
+    if (route === 'play' && !session.game) {
+      route = 'title'; // nothing to play yet, for example after a reload
+      setHash(route, true);
     }
     screen?.destroy?.();
-    screen = ROUTES[name](ctx);
+    screen = ROUTES[route](ctx);
     root.replaceChildren(screen.el);
     window.scrollTo(0, 0);
   }
@@ -154,6 +171,12 @@ export function createApp({ root, data, saves, settings, pwa, storage, storageEr
     }
   });
 
-  window.addEventListener('hashchange', render);
+  // The back gesture or a typed URL changes the hash; our own navigate() has already shown that screen.
+  window.addEventListener('hashchange', () => {
+    const next = routeFromHash();
+    if (next === route) return;
+    route = next;
+    render();
+  });
   return { start: render, ctx };
 }

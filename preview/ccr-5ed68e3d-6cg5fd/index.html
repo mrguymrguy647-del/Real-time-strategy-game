@@ -9,14 +9,17 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Grand Strategy</title>
+  <!-- web-only: the single-file download (tools/bundle-single.mjs, T-18) replaces everything up to the closing marker -->
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
-  <title>Grand Strategy</title>
   <link rel="stylesheet" href="src/ui/theme.css">
   <!-- Phaser is vendored; the import map lets code say `import('phaser')` (T-03). Relative URLs only. -->
   <script type="importmap">{ "imports": { "phaser": "./vendor/phaser/phaser.esm.min.js" } }</script>
   <script type="module" src="src/main.js"></script>
+  <!-- /web-only -->
+  <!-- single-head -->
 </head>
 <body>
   <div id="app"></div>
@@ -30,5 +33,6 @@
       <button class="btn btn--primary" type="button" data-retry>Try again</button>
     </section>
   </template>
+  <!-- single-body -->
 </body>
 </html>

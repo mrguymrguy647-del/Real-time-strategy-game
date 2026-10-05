@@ -58,7 +58,8 @@ export function createChecks(ctx) {
       group: 'app',
       label: () => t('diag.mode.label'),
       async run() {
-        return { status: 'info', value: `${ctx.platform.standalone ? t('diag.mode.installed') : t('diag.mode.browser')} · ${platformName()}` };
+        const mode = ctx.platform.singleFile ? t('diag.mode.file') : ctx.platform.standalone ? t('diag.mode.installed') : t('diag.mode.browser');
+        return { status: 'info', value: `${mode} · ${platformName()}` };
       },
     },
     {
@@ -84,6 +85,7 @@ export function createChecks(ctx) {
       group: 'offline',
       label: () => t('diag.sw.label'),
       async run() {
+        if (ctx.platform.singleFile) return { status: 'info', value: t('diag.file.na') };
         const pwa = ctx.pwa.getState();
         if (!pwa.supported) return { status: 'fail', value: t('diag.sw.unsupported') };
         if (pwa.error) return { status: 'fail', value: t('diag.sw.error', { error: pwa.error }) };
@@ -96,6 +98,7 @@ export function createChecks(ctx) {
       group: 'offline',
       label: () => t('diag.cache.label'),
       async run() {
+        if (ctx.platform.singleFile) return { status: 'info', value: t('diag.file.na') };
         if (!('caches' in window)) return { status: 'fail', value: t('diag.cache.unavailable') };
         if (!ctx.buildInfo) return { status: 'warn', value: t('diag.build.missing') };
         const name = `gs-${ctx.buildInfo.hash}`;
@@ -110,6 +113,7 @@ export function createChecks(ctx) {
       group: 'offline',
       label: () => t('diag.update.label'),
       async run() {
+        if (ctx.platform.singleFile) return { status: 'info', value: t('diag.file.na') };
         return ctx.pwa.getState().updateReady ? { status: 'warn', value: t('diag.update.ready') } : { status: 'ok', value: t('diag.update.none') };
       },
     },
@@ -206,9 +210,10 @@ export function createChecks(ctx) {
     {
       id: 'mapBench',
       group: 'graphics',
-      manual: true,
+      manual: !ctx.platform.singleFile, // the downloaded file has no Phaser: show that at once instead of offering a button
       label: () => t('diag.mapBench.label'),
       async run() {
+        if (ctx.platform.singleFile) return { status: 'info', value: t('diag.mapBench.notIncluded') };
         const stage = document.querySelector('[data-bench-stage]');
         if (!stage) return { status: 'fail', value: t('diag.mapBench.failed', { error: 'no stage' }) };
         try {

@@ -72,8 +72,9 @@ export function mountSettings(ctx) {
       'div',
       { class: 'card stack' },
       h('h2', null, t('settings.updates.title')),
-      h('button', { class: 'btn btn--block', type: 'button', onclick: checkUpdates }, t('settings.updates.check')),
-      updateStatus,
+      ...(ctx.platform.singleFile
+        ? [h('p', { class: 'muted' }, t('settings.updates.file'))]
+        : [h('button', { class: 'btn btn--block', type: 'button', onclick: checkUpdates }, t('settings.updates.check')), updateStatus]),
     ),
     h('div', { class: 'card stack' }, h('h2', null, t('settings.erase.title')), h('p', { class: 'muted' }, t('settings.erase.body')), h('button', { class: 'btn btn--danger btn--block', type: 'button', onclick: eraseSaves }, t('settings.erase.button'))),
   );
