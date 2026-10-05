@@ -12,11 +12,11 @@ Every push builds a preview of its branch:
 
 (for the current work branch: `…/preview/ccr-5ed68e3d-6cg5fd/`; the list of all previews is at `…/preview/`).
 
-**One-time setup (needed once, after the first successful deploy):** on GitHub open *Settings → Pages → Build and deployment*, set **Source** to *Deploy from a branch*, then **Branch** to `gh-pages` and folder `/ (root)`, and save. (On a phone, if Settings looks different, use your browser's *Desktop site* option.)
+**One-time setup (needed once, after the first successful deploy):** open `https://github.com/mrguymrguy647-del/Real-time-strategy-game/settings/pages` in your phone's browser (signed in as the repo owner; the GitHub app cannot change this). Set **Source** to *Deploy from a branch*, then **Branch** to `gh-pages` and folder `/ (root)`, and save. The first publish takes a minute or two; the page then says "Your site is live at …". If Settings looks cramped, use the browser's *Desktop site* option.
 
 **Install it**
+- **Android (Chrome):** open the preview link → tap *Install* on the title screen (or the ⋮ menu → *Install app*) → open it from the new Home Screen icon.
 - **iPhone / iPad (Safari):** open the preview link → tap the Share button → *Add to Home Screen*.
-- **Android (Chrome):** open the preview link → tap *Install* on the title screen (or the browser menu → *Install app*).
 
 **What to check** (open *Diagnostics* in the app and tap *Copy report* to send me the result)
 1. Opens from the Home Screen icon, full screen.

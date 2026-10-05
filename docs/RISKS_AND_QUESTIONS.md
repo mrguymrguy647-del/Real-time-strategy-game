@@ -6,9 +6,9 @@
 
 **Decided** (your "approved" accepted every ✔ default): Q1–Q6, which were the questions blocking Phase 0b and Phase 1, plus Q8–Q10 and Q15–Q16.
 **Decided by your addition:** **G-30** — English only, all UI text in `data/i18n/en.json` (this replaces the earlier answer to Q14).
+**Decided later in chat:** **Q17** — your phone is Android (Chrome). iOS Safari stays supported.
 
 **Still open — none of these stops me from building:**
-- **Q17 · Your phone: iPhone or Android?** Your message still contained the template text "[iPhone / Android]". The scaffold supports both; this only tailors my install and test instructions.
 - **Q3 (rename) · Rename the repo?** Default: keep the current name.
 - **Q13 · Game title.** Default: keep the working title "Grand Strategy" (it is one line in `data/i18n/en.json`).
 
@@ -62,7 +62,7 @@ You rank the 16 countries by a score (regional GDP share, controlled population,
 **Q14 · Language and analytics.**  ✔ Decided: **English only** with every UI string in `data/i18n/en.json` (G-30); no analytics or telemetry of any kind (fully offline).
 **Q15 · Saves.**  ✔ Accepted: 3 rotating autosaves plus 5 manual slots, with export/import.
 **Q16 · "Not yet" on the capital-battle dialog (G-05).**  ✔ Accepted. My addition to the spec's two buttons, so nobody is forced into a hopeless assault.
-**Q17 · Your phone: iPhone or Android?**  Open, not blocking. Only tailors the install and test instructions I give you; the app supports both.
+**Q17 · Your phone: iPhone or Android?**  ✔ Decided: Android (Chrome). The app still supports both; my install and test instructions lead with Chrome.
 
 ---
 
