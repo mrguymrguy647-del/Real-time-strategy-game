@@ -1,0 +1,17 @@
+{
+  "$id": "i18n",
+  "type": "object",
+  "required": ["schema", "version", "lang", "strings"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "i18n" },
+    "version": { "type": "integer", "minimum": 1 },
+    "lang": { "const": "en" },
+    "_note": { "type": "string" },
+    "strings": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[a-z][A-Za-z0-9]*(\\.[A-Za-z0-9_]+)+$" },
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    }
+  }
+}

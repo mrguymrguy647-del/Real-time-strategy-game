@@ -1,0 +1,243 @@
+{
+  "schema": "governments",
+  "version": 1,
+  "_note": "Draft v0 for GAME_DESIGN section 8. Strengths and prices are modifiers; behavior switches are rules flags the code reads (never the government id). Numbers are tuned in Phase 2.",
+  "items": [
+    {
+      "id": "democracy",
+      "name": "Democracy",
+      "icon": "🗳️",
+      "blurb": "Strong economy and trust; war needs public support.",
+      "powerCenters": { "army": 0.15, "business": 0.3, "people": 0.55 },
+      "failure": { "center": "people", "below": 30, "outcome": "election_loss" },
+      "rules": {
+        "hasCapital": true,
+        "canSignFormalAlliances": true,
+        "needsWarSupport": true,
+        "warWeariness": 1.5,
+        "conscription": "slow",
+        "maxForceMultiplier": null,
+        "electionEveryMonths": 48,
+        "successionRisk": false,
+        "hiddenDiscontent": false,
+        "occupationBurden": 1.0
+      },
+      "modifiers": [
+        { "stat": "country.economy.growth", "op": "mul", "value": 1.1 },
+        { "stat": "country.research.speed", "op": "mul", "value": 1.1 },
+        { "stat": "country.diplomacy.trustBase", "op": "add", "value": 10 }
+      ],
+      "ability": {
+        "id": "mobilize_public_opinion",
+        "name": "Mobilize Public Opinion",
+        "cooldownMonths": 24,
+        "durationMonths": 6,
+        "effects": [{ "stat": "country.warSupport", "op": "add", "value": 20 }]
+      },
+      "transition": {
+        "chaosMonths": 6,
+        "affinity": { "democracy": 1.0, "authoritarian": -0.3, "monarchy": 0.2, "junta": -0.4, "communist": -0.5, "anarchist": -0.2 }
+      }
+    },
+    {
+      "id": "authoritarian",
+      "name": "One-party / authoritarian",
+      "icon": "🏛️",
+      "blurb": "Fast decisions and war without approval, but hidden discontent can erupt.",
+      "powerCenters": { "army": 0.4, "business": 0.25, "people": 0.35 },
+      "failure": { "center": "people", "below": 15, "outcome": "revolution" },
+      "rules": {
+        "hasCapital": true,
+        "canSignFormalAlliances": true,
+        "needsWarSupport": false,
+        "warWeariness": 0.6,
+        "conscription": "normal",
+        "maxForceMultiplier": null,
+        "electionEveryMonths": null,
+        "successionRisk": false,
+        "hiddenDiscontent": true,
+        "occupationBurden": 1.0
+      },
+      "modifiers": [
+        { "stat": "country.policy.delay", "op": "mul", "value": 0.5 },
+        { "stat": "country.economy.growth", "op": "mul", "value": 1.03 },
+        { "stat": "country.corruption", "op": "add", "value": 15 },
+        { "stat": "country.research.brainDrain", "op": "add", "value": 10 }
+      ],
+      "ability": {
+        "id": "emergency_decree",
+        "name": "Emergency Decree",
+        "cooldownMonths": 12,
+        "durationMonths": 0,
+        "effects": [{ "do": "instantPolicy" }]
+      },
+      "transition": {
+        "chaosMonths": 6,
+        "affinity": { "democracy": -0.3, "authoritarian": 1.0, "monarchy": 0.3, "junta": 0.4, "communist": 0.3, "anarchist": -0.8 }
+      }
+    },
+    {
+      "id": "monarchy",
+      "name": "Monarchy",
+      "icon": "👑",
+      "blurb": "Stable and loyal, but a succession crisis can shake it.",
+      "powerCenters": { "army": 0.3, "business": 0.4, "people": 0.3 },
+      "failure": { "center": "business", "below": 25, "outcome": "coup" },
+      "rules": {
+        "hasCapital": true,
+        "canSignFormalAlliances": true,
+        "needsWarSupport": false,
+        "warWeariness": 0.9,
+        "conscription": "normal",
+        "maxForceMultiplier": null,
+        "electionEveryMonths": null,
+        "successionRisk": true,
+        "hiddenDiscontent": false,
+        "occupationBurden": 1.0
+      },
+      "modifiers": [
+        { "stat": "country.stability", "op": "add", "value": 10 },
+        { "stat": "country.approval.people", "op": "add", "value": 5 },
+        { "stat": "country.approval.army", "op": "add", "value": 10 }
+      ],
+      "ability": {
+        "id": "call_to_loyalty",
+        "name": "Call to Loyalty",
+        "cooldownMonths": 36,
+        "durationMonths": 6,
+        "effects": [
+          { "stat": "country.stability", "op": "add", "value": 15 },
+          { "stat": "country.approval.army", "op": "add", "value": 10 }
+        ]
+      },
+      "transition": {
+        "chaosMonths": 8,
+        "affinity": { "democracy": 0.2, "authoritarian": 0.3, "monarchy": 1.0, "junta": 0.1, "communist": -0.7, "anarchist": -0.8 }
+      }
+    },
+    {
+      "id": "junta",
+      "name": "Military junta",
+      "icon": "🎖️",
+      "blurb": "Cheap, fast conscription and a strong army, but a weak economy and frequent coups.",
+      "powerCenters": { "army": 0.6, "business": 0.2, "people": 0.2 },
+      "failure": { "center": "army", "below": 35, "outcome": "coup" },
+      "rules": {
+        "hasCapital": true,
+        "canSignFormalAlliances": true,
+        "needsWarSupport": false,
+        "warWeariness": 0.7,
+        "conscription": "fast",
+        "maxForceMultiplier": null,
+        "electionEveryMonths": null,
+        "successionRisk": false,
+        "hiddenDiscontent": false,
+        "occupationBurden": 1.0
+      },
+      "modifiers": [
+        { "stat": "country.military.upkeep", "op": "mul", "value": 0.85 },
+        { "stat": "country.military.forceMultiplier", "op": "mul", "value": 1.2 },
+        { "stat": "country.approval.army", "op": "add", "value": 10 },
+        { "stat": "country.economy.growth", "op": "mul", "value": 0.9 },
+        { "stat": "country.diplomacy.trustBase", "op": "add", "value": -10 }
+      ],
+      "ability": {
+        "id": "general_mobilization",
+        "name": "General Mobilization",
+        "cooldownMonths": 36,
+        "durationMonths": 12,
+        "effects": [
+          { "stat": "country.military.forceMultiplier", "op": "mul", "value": 1.3 },
+          { "stat": "country.economy.growth", "op": "mul", "value": 0.9 }
+        ]
+      },
+      "transition": {
+        "chaosMonths": 6,
+        "affinity": { "democracy": -0.4, "authoritarian": 0.4, "monarchy": 0.1, "junta": 1.0, "communist": 0.1, "anarchist": -0.9 }
+      }
+    },
+    {
+      "id": "communist",
+      "name": "Communist (command economy)",
+      "icon": "🏭",
+      "blurb": "The state owns everything: instant war economy and fast industry, then stagnation.",
+      "powerCenters": { "army": 0.3, "business": 0.05, "people": 0.65 },
+      "failure": { "center": "people", "below": 25, "outcome": "revolution" },
+      "rules": {
+        "hasCapital": true,
+        "canSignFormalAlliances": true,
+        "needsWarSupport": false,
+        "warWeariness": 0.8,
+        "conscription": "normal",
+        "maxForceMultiplier": null,
+        "electionEveryMonths": null,
+        "successionRisk": false,
+        "hiddenDiscontent": false,
+        "occupationBurden": 1.0
+      },
+      "modifiers": [
+        { "stat": "country.warEconomy.switchTime", "op": "mul", "value": 0 },
+        { "stat": "country.industry.output", "op": "mul", "value": 1.15 },
+        { "stat": "country.economy.growth", "op": "mul", "value": 0.95 },
+        { "stat": "country.economy.blackMarket", "op": "add", "value": 15 },
+        { "stat": "country.research.speed", "op": "mul", "value": 0.85 },
+        { "stat": "country.trade.marketAccess", "op": "mul", "value": 0.8 }
+      ],
+      "ability": {
+        "id": "five_year_plan",
+        "name": "Five-Year Plan",
+        "cooldownMonths": 60,
+        "durationMonths": 60,
+        "effects": [{ "do": "startPlan" }],
+        "plan": {
+          "months": 60,
+          "goal": { "stat": "country.industry.output", "atLeast": 1.3 },
+          "onSuccess": [
+            { "stat": "country.industry.output", "op": "mul", "value": 1.2 },
+            { "stat": "country.approval.people", "op": "add", "value": 10 }
+          ],
+          "onFailure": [
+            { "stat": "country.stability", "op": "add", "value": -15 },
+            { "stat": "country.approval.people", "op": "add", "value": -10 }
+          ]
+        }
+      },
+      "transition": {
+        "chaosMonths": 8,
+        "affinity": { "democracy": -0.5, "authoritarian": 0.3, "monarchy": -0.7, "junta": 0.1, "communist": 1.0, "anarchist": 0.2 }
+      },
+      "_note": "Stagnation 'over time' is approximated by static penalties for now; a gradual ramp comes with Phase 2."
+    },
+    {
+      "id": "anarchist",
+      "name": "Anarchist federation",
+      "icon": "🏘️",
+      "blurb": "No capital to capture. Every region resists on its own.",
+      "powerCenters": { "army": 0.1, "business": 0.1, "people": 0.8 },
+      "failure": { "center": "people", "below": 20, "outcome": "revolution" },
+      "rules": {
+        "hasCapital": false,
+        "canSignFormalAlliances": false,
+        "needsWarSupport": false,
+        "warWeariness": 0.8,
+        "conscription": "volunteer",
+        "maxForceMultiplier": 0.5,
+        "electionEveryMonths": null,
+        "successionRisk": false,
+        "hiddenDiscontent": false,
+        "occupationBurden": 3.0
+      },
+      "modifiers": [
+        { "stat": "country.research.speed", "op": "mul", "value": 0.6 },
+        { "stat": "country.industry.output", "op": "mul", "value": 0.7 },
+        { "stat": "region.resistance", "op": "add", "value": 25 }
+      ],
+      "ability": null,
+      "transition": {
+        "chaosMonths": 8,
+        "affinity": { "democracy": -0.2, "authoritarian": -0.8, "monarchy": -0.8, "junta": -0.9, "communist": -0.3, "anarchist": 1.0 }
+      },
+      "_note": "The spec lists no ability for this type; proposal in G-15: Mutual Aid (regions share supplies)."
+    }
+  ]
+}

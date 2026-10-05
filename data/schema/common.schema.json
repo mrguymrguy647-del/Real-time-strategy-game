@@ -1,0 +1,33 @@
+{
+  "$id": "common",
+  "definitions": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+    "statId": { "type": "string", "pattern": "^(country|region|front|world)(\\.[A-Za-z][A-Za-z0-9]*)+$" },
+    "text": { "type": "string", "minLength": 1 },
+    "meter": { "type": "number", "minimum": 0, "maximum": 100 },
+    "fraction": { "type": "number", "minimum": 0, "maximum": 1 },
+    "note": { "type": "string" },
+    "effect": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["stat", "op", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "stat": { "$ref": "#/definitions/statId" },
+            "op": { "enum": ["add", "mul"] },
+            "value": { "type": "number" },
+            "months": { "type": "integer", "minimum": 1 },
+            "scope": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["do"],
+          "properties": { "do": { "type": "string", "minLength": 1 } }
+        }
+      ]
+    },
+    "effects": { "type": "array", "items": { "$ref": "#/definitions/effect" } }
+  }
+}

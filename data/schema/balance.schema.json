@@ -1,0 +1,125 @@
+{
+  "$id": "balance",
+  "type": "object",
+  "required": ["schema", "version", "values"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "balance" },
+    "version": { "type": "integer", "minimum": 1 },
+    "_note": { "type": "string" },
+    "values": {
+      "type": "object",
+      "required": ["time", "combat", "endurance", "stability", "market", "difficulty"],
+      "additionalProperties": false,
+      "properties": {
+        "time": {
+          "type": "object",
+          "required": ["capitalRegroupMonths"],
+          "additionalProperties": false,
+          "properties": { "capitalRegroupMonths": { "type": "integer", "minimum": 1, "maximum": 24 } }
+        },
+        "combat": {
+          "type": "object",
+          "required": ["techPerLevel", "supplyFloor", "moraleMin", "moraleMax", "variance", "autoResolvePenalty", "fortificationPerLevel", "terrain", "stance"],
+          "additionalProperties": false,
+          "properties": {
+            "techPerLevel": { "type": "number", "minimum": 0, "maximum": 1 },
+            "supplyFloor": { "$ref": "common#/definitions/fraction" },
+            "moraleMin": { "type": "number", "minimum": 0, "maximum": 2 },
+            "moraleMax": { "type": "number", "minimum": 0, "maximum": 2 },
+            "variance": { "$ref": "common#/definitions/fraction" },
+            "autoResolvePenalty": { "$ref": "common#/definitions/fraction" },
+            "fortificationPerLevel": { "type": "number", "minimum": 0, "maximum": 1 },
+            "terrain": {
+              "type": "object",
+              "required": ["plains", "desert", "forest", "marsh", "mountain", "urban"],
+              "additionalProperties": false,
+              "properties": {
+                "plains": { "type": "number", "minimum": 0.5, "maximum": 3 },
+                "desert": { "type": "number", "minimum": 0.5, "maximum": 3 },
+                "forest": { "type": "number", "minimum": 0.5, "maximum": 3 },
+                "marsh": { "type": "number", "minimum": 0.5, "maximum": 3 },
+                "mountain": { "type": "number", "minimum": 0.5, "maximum": 3 },
+                "urban": { "type": "number", "minimum": 0.5, "maximum": 3 }
+              }
+            },
+            "stance": {
+              "type": "object",
+              "required": ["attack", "defend", "hold"],
+              "additionalProperties": false,
+              "properties": {
+                "attack": { "$ref": "#/definitions/stance" },
+                "defend": { "$ref": "#/definitions/stance" },
+                "hold": { "$ref": "#/definitions/stance" }
+              }
+            }
+          }
+        },
+        "endurance": {
+          "type": "object",
+          "required": ["warnMonths", "homeSoilBonus", "supportFloor"],
+          "additionalProperties": false,
+          "properties": {
+            "warnMonths": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number", "minimum": 0 } },
+            "homeSoilBonus": { "type": "number", "minimum": 0, "maximum": 2 },
+            "supportFloor": { "$ref": "common#/definitions/meter" }
+          }
+        },
+        "stability": {
+          "type": "object",
+          "required": ["cohesionMaxDrift", "stages"],
+          "additionalProperties": false,
+          "properties": {
+            "cohesionMaxDrift": { "type": "number", "minimum": 0, "maximum": 100 },
+            "stages": {
+              "type": "object",
+              "required": ["stable", "troubled", "crisis", "failed"],
+              "additionalProperties": false,
+              "properties": {
+                "stable": { "$ref": "common#/definitions/meter" },
+                "troubled": { "$ref": "common#/definitions/meter" },
+                "crisis": { "$ref": "common#/definitions/meter" },
+                "failed": { "$ref": "common#/definitions/meter" }
+              }
+            }
+          }
+        },
+        "market": {
+          "type": "object",
+          "required": ["inertia"],
+          "additionalProperties": false,
+          "properties": { "inertia": { "$ref": "common#/definitions/fraction" } }
+        },
+        "difficulty": {
+          "type": "object",
+          "required": ["easy", "normal", "hard"],
+          "additionalProperties": false,
+          "properties": {
+            "easy": { "$ref": "#/definitions/difficulty" },
+            "normal": { "$ref": "#/definitions/difficulty" },
+            "hard": { "$ref": "#/definitions/difficulty" }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "stance": {
+      "type": "object",
+      "required": ["attack", "defense"],
+      "additionalProperties": false,
+      "properties": {
+        "attack": { "type": "number", "minimum": 0, "maximum": 3 },
+        "defense": { "type": "number", "minimum": 0, "maximum": 3 }
+      }
+    },
+    "difficulty": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "aiIncome": { "type": "number", "minimum": 0, "maximum": 3 },
+        "intel": { "type": "number", "minimum": 0, "maximum": 3 }
+      }
+    }
+  }
+}

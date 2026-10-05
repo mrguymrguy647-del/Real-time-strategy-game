@@ -1,0 +1,109 @@
+{
+  "$id": "governments",
+  "type": "object",
+  "required": ["schema", "version", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "governments" },
+    "version": { "type": "integer", "minimum": 1 },
+    "_note": { "type": "string" },
+    "items": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/government" } }
+  },
+  "definitions": {
+    "center": { "enum": ["army", "business", "people"] },
+    "ability": {
+      "type": "object",
+      "required": ["id", "name", "cooldownMonths", "durationMonths", "effects"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "common#/definitions/id" },
+        "name": { "$ref": "common#/definitions/text" },
+        "cooldownMonths": { "type": "integer", "minimum": 0, "maximum": 240 },
+        "durationMonths": { "type": "integer", "minimum": 0, "maximum": 240 },
+        "effects": { "$ref": "common#/definitions/effects" },
+        "plan": {
+          "type": "object",
+          "required": ["months", "goal", "onSuccess", "onFailure"],
+          "additionalProperties": false,
+          "properties": {
+            "months": { "type": "integer", "minimum": 1, "maximum": 240 },
+            "goal": {
+              "type": "object",
+              "required": ["stat", "atLeast"],
+              "additionalProperties": false,
+              "properties": {
+                "stat": { "$ref": "common#/definitions/statId" },
+                "atLeast": { "type": "number" }
+              }
+            },
+            "onSuccess": { "$ref": "common#/definitions/effects" },
+            "onFailure": { "$ref": "common#/definitions/effects" }
+          }
+        }
+      }
+    },
+    "government": {
+      "type": "object",
+      "required": ["id", "name", "icon", "blurb", "powerCenters", "failure", "rules", "modifiers", "ability", "transition"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "common#/definitions/id" },
+        "name": { "$ref": "common#/definitions/text" },
+        "icon": { "$ref": "common#/definitions/text" },
+        "blurb": { "$ref": "common#/definitions/text" },
+        "powerCenters": {
+          "type": "object",
+          "required": ["army", "business", "people"],
+          "additionalProperties": false,
+          "properties": {
+            "army": { "$ref": "common#/definitions/fraction" },
+            "business": { "$ref": "common#/definitions/fraction" },
+            "people": { "$ref": "common#/definitions/fraction" }
+          }
+        },
+        "failure": {
+          "type": "object",
+          "required": ["center", "below", "outcome"],
+          "additionalProperties": false,
+          "properties": {
+            "center": { "$ref": "#/definitions/center" },
+            "below": { "$ref": "common#/definitions/meter" },
+            "outcome": { "enum": ["election_loss", "coup", "revolution"] }
+          }
+        },
+        "rules": {
+          "type": "object",
+          "required": ["hasCapital", "canSignFormalAlliances", "needsWarSupport", "warWeariness", "conscription", "maxForceMultiplier", "electionEveryMonths", "successionRisk", "hiddenDiscontent", "occupationBurden"],
+          "additionalProperties": false,
+          "properties": {
+            "hasCapital": { "type": "boolean" },
+            "canSignFormalAlliances": { "type": "boolean" },
+            "needsWarSupport": { "type": "boolean" },
+            "warWeariness": { "type": "number", "minimum": 0, "maximum": 5 },
+            "conscription": { "enum": ["volunteer", "slow", "normal", "fast"] },
+            "maxForceMultiplier": { "oneOf": [{ "type": "null" }, { "type": "number", "exclusiveMinimum": 0, "maximum": 5 }] },
+            "electionEveryMonths": { "oneOf": [{ "type": "null" }, { "type": "integer", "minimum": 6, "maximum": 240 }] },
+            "successionRisk": { "type": "boolean" },
+            "hiddenDiscontent": { "type": "boolean" },
+            "occupationBurden": { "type": "number", "minimum": 0, "maximum": 10 }
+          }
+        },
+        "modifiers": { "$ref": "common#/definitions/effects" },
+        "ability": { "oneOf": [{ "type": "null" }, { "$ref": "#/definitions/ability" }] },
+        "transition": {
+          "type": "object",
+          "required": ["chaosMonths", "affinity"],
+          "additionalProperties": false,
+          "properties": {
+            "chaosMonths": { "type": "integer", "minimum": 0, "maximum": 60 },
+            "affinity": {
+              "type": "object",
+              "additionalProperties": { "type": "number", "minimum": -1, "maximum": 1 }
+            }
+          }
+        },
+        "_note": { "type": "string" }
+      }
+    }
+  }
+}

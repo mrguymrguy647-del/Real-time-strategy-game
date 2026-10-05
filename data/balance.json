@@ -1,0 +1,34 @@
+{
+  "schema": "balance",
+  "version": 1,
+  "_note": "Draft v0 numbers from GAME_DESIGN Appendix B. Every tunable number lives here; formulas receive their section as parameters.",
+  "values": {
+    "time": { "capitalRegroupMonths": 4 },
+    "combat": {
+      "techPerLevel": 0.06,
+      "supplyFloor": 0.3,
+      "moraleMin": 0.6,
+      "moraleMax": 1.2,
+      "variance": 0.1,
+      "autoResolvePenalty": 0.1,
+      "fortificationPerLevel": 0.08,
+      "terrain": { "plains": 1.0, "desert": 1.05, "forest": 1.15, "marsh": 1.2, "mountain": 1.4, "urban": 1.5 },
+      "stance": {
+        "attack": { "attack": 1.15, "defense": 0.9 },
+        "defend": { "attack": 1.0, "defense": 1.25 },
+        "hold": { "attack": 1.0, "defense": 1.0 }
+      }
+    },
+    "endurance": { "warnMonths": [6, 3], "homeSoilBonus": 0.25, "supportFloor": 20 },
+    "stability": {
+      "cohesionMaxDrift": 3,
+      "stages": { "stable": 70, "troubled": 50, "crisis": 30, "failed": 10 }
+    },
+    "market": { "inertia": 0.7 },
+    "difficulty": {
+      "easy": { "aiIncome": 0.9, "intel": 1.2 },
+      "normal": {},
+      "hard": { "aiIncome": 1.15, "intel": 0.8 }
+    }
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "$id": "resources",
+  "type": "object",
+  "required": ["schema", "version", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "resources" },
+    "version": { "type": "integer", "minimum": 1 },
+    "_note": { "type": "string" },
+    "items": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/resource" } }
+  },
+  "definitions": {
+    "resource": {
+      "type": "object",
+      "required": ["id", "name", "icon", "unit", "enabled", "module", "tradeable", "basePrice", "price", "defaultStateShare", "reserveTargetMonths", "shortage"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "common#/definitions/id" },
+        "name": { "$ref": "common#/definitions/text" },
+        "icon": { "$ref": "common#/definitions/text" },
+        "unit": { "$ref": "common#/definitions/text" },
+        "enabled": { "type": "boolean" },
+        "module": { "enum": ["core", "water"] },
+        "tradeable": { "type": "boolean" },
+        "basePrice": { "type": "number", "minimum": 0 },
+        "price": {
+          "type": "object",
+          "required": ["elasticity", "tensionSensitivity", "inertia", "volatility"],
+          "additionalProperties": false,
+          "properties": {
+            "elasticity": { "type": "number", "minimum": 0, "maximum": 2 },
+            "tensionSensitivity": { "type": "number", "minimum": 0, "maximum": 0.05 },
+            "inertia": { "$ref": "common#/definitions/fraction" },
+            "volatility": { "type": "number", "minimum": 0, "maximum": 0.5 }
+          }
+        },
+        "defaultStateShare": { "$ref": "common#/definitions/fraction" },
+        "reserveTargetMonths": { "type": "number", "minimum": 0, "maximum": 60 },
+        "shortage": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["coverageBelow", "label", "effects"],
+            "additionalProperties": false,
+            "properties": {
+              "coverageBelow": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+              "label": { "$ref": "common#/definitions/text" },
+              "effects": { "$ref": "common#/definitions/effects" }
+            }
+          }
+        },
+        "_note": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "schema": "scenarios",
+  "version": 1,
+  "_note": "Phase 0b has only an empty test scenario. The Middle East 2026 scenario arrives with Phase 1.",
+  "items": [
+    {
+      "id": "scaffold_test",
+      "name": "Scaffold test",
+      "blurb": "An empty world for testing the calendar, saves and turns.",
+      "startDate": "2026-01",
+      "worldMode": "real",
+      "theaters": [],
+      "playable": [],
+      "offMap": { "patrons": [] },
+      "goal": null,
+      "overrides": {}
+    }
+  ]
+}

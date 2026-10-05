@@ -1,0 +1,27 @@
+{
+  "name": "grand-strategy",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Offline, turn-based, modern-era grand strategy game for phones (installable PWA).",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test \"tests/unit/**/*.test.js\" \"tests/data/**/*.test.js\" && node tools/simulate.mjs --soak",
+    "typecheck": "tsc -p tsconfig.json",
+    "validate": "node tools/validate-data.mjs",
+    "build": "node tools/build.mjs",
+    "serve": "node tools/serve.mjs",
+    "simulate": "node tools/simulate.mjs",
+    "e2e": "node --test --test-concurrency=1 \"tests/e2e/**/*.e2e.mjs\"",
+    "screenshot": "node tools/screenshot.mjs",
+    "icons": "node tools/make-icons.mjs",
+    "vendor:phaser": "node tools/vendor-phaser.mjs"
+  },
+  "devDependencies": {
+    "ajv": "^8.20.0",
+    "playwright-core": "^1.63.0",
+    "typescript": "^7.0.2"
+  }
+}
