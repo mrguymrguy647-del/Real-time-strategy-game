@@ -12,6 +12,7 @@
     "typecheck": "tsc -p tsconfig.json",
     "validate": "node tools/validate-data.mjs",
     "build": "node tools/build.mjs",
+    "build:single": "node tools/bundle-single.mjs",
     "serve": "node tools/build.mjs && node tools/serve.mjs",
     "simulate": "node tools/simulate.mjs",
     "e2e": "node --test --test-concurrency=1 \"tests/e2e/**/*.e2e.mjs\"",

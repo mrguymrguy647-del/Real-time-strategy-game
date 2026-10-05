@@ -1,6 +1,6 @@
 // Browser entry point: load the game data and UI text, open storage, register the service worker,
 // then start the app. If anything essential fails the player gets a clear retry screen instead of
-// a blank page.
+// a blank page. The single-file download (T-18) runs this same file with the data inside the page.
 
 import { loadData } from './core/data.js';
 import { createSettings } from './core/settings.js';
@@ -12,8 +12,15 @@ import { createPwa } from './ui/pwa.js';
 import { SETTING_DEFAULTS, applySettings } from './ui/settings.js';
 import { setMissingHandler, setStrings, t } from './util/i18n.js';
 
+/** Set only by the single-file download (T-18): its data files live inside the page. */
+const inline = globalThis.__GS_INLINE__;
+
 /** @param {string} path */
 async function readJson(path) {
+  if (inline) {
+    if (!(path in inline.files)) throw new Error(`The downloaded copy has no file ${path}`);
+    return inline.files[path];
+  }
   const response = await fetch(new URL(path, document.baseURI));
   if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
   return response.json();
@@ -42,7 +49,7 @@ async function boot() {
   const saves = createSaveManager({ storage, dataVersion: data.version });
   const buildInfo = await readJson('build-info.json').catch(() => null);
 
-  const pwa = createPwa();
+  const pwa = createPwa({ enabled: !inline });
   const app = createApp({ root: /** @type {HTMLElement} */ (document.getElementById('app')), data, saves, settings, pwa, storage, storageError, buildInfo });
   app.start();
   document.getElementById('splash')?.remove();

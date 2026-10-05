@@ -1,7 +1,8 @@
 // What kind of device and mode we are running in. Used for install hints and diagnostics.
 
 /**
- * @returns {{ family: 'ios' | 'android' | 'other', ios: boolean, android: boolean, standalone: boolean }}
+ * `singleFile` is true in the downloaded copy (T-18): no service worker, no install, no updates.
+ * @returns {{ family: 'ios' | 'android' | 'other', ios: boolean, android: boolean, standalone: boolean, singleFile: boolean }}
  */
 export function detectPlatform() {
   const ua = navigator.userAgent;
@@ -10,5 +11,5 @@ export function detectPlatform() {
   const android = /Android/i.test(ua);
   const standalone =
     window.matchMedia('(display-mode: standalone)').matches || /** @type {any} */ (navigator).standalone === true;
-  return { family: ios ? 'ios' : android ? 'android' : 'other', ios, android, standalone };
+  return { family: ios ? 'ios' : android ? 'android' : 'other', ios, android, standalone, singleFile: Boolean(globalThis.__GS_INLINE__) };
 }

@@ -2,6 +2,7 @@
 // plus notices about installing, offline readiness, updates and unavailable storage.
 
 import { t } from '../../util/i18n.js';
+import { assetUrl } from '../assets.js';
 import { h } from '../dom.js';
 import { formatDate } from '../format.js';
 
@@ -57,7 +58,9 @@ export function mountTitle(ctx) {
         ),
       );
     }
-    if (ctx.platform.standalone) {
+    if (ctx.platform.singleFile) {
+      items.push(notice('info', t('title.singleFile')));
+    } else if (ctx.platform.standalone) {
       items.push(notice('info', t('title.installed')));
     } else if (ctx.platform.ios) {
       items.push(h('div', { class: 'notice' }, h('strong', null, t('title.install.title')), h('p', { class: 'muted' }, t('title.install.ios'))));
@@ -71,7 +74,13 @@ export function mountTitle(ctx) {
         ),
       );
     }
-    const offline = !pwa.supported ? ['fail', t('title.offline.unsupported')] : pwa.controlled ? ['ok', t('title.offline.ready')] : ['warn', t('title.offline.pending')];
+    const offline = ctx.platform.singleFile
+      ? ['ok', t('title.offline.file')]
+      : !pwa.supported
+        ? ['fail', t('title.offline.unsupported')]
+        : pwa.controlled
+          ? ['ok', t('title.offline.ready')]
+          : ['warn', t('title.offline.pending')];
     items.push(h('p', { class: 'status-line', 'data-offline': offline[0] }, h('span', { class: `dot dot--${offline[0]}` }), offline[1]));
     notices.replaceChildren(...items);
   }
@@ -86,7 +95,7 @@ export function mountTitle(ctx) {
     h(
       'header',
       { class: 'title__hero' },
-      h('img', { class: 'title__logo', src: 'assets/icons/icon.svg', alt: '', width: 96, height: 96 }),
+      h('img', { class: 'title__logo', src: assetUrl('assets/icons/icon.svg'), alt: '', width: 96, height: 96 }),
       h('div', null, h('h1', null, t('app.title')), h('p', { class: 'muted' }, t('app.tagline'))),
     ),
     h('div', { class: 'title__body' }, menu, notices),

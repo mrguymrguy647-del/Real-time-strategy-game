@@ -6,52 +6,15 @@
 //   npm run build                 -> dist/
 //   node tools/build.mjs --out x  -> x/
 
-import crypto from 'node:crypto';
-import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fillIndexTokens, gitCommit, sha256, walk } from './lib/page.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const COPY_DIRS = ['src', 'data', 'vendor', 'assets'];
 const skip = (/** @type {string} */ rel) => rel.startsWith('data/schema/') || rel.endsWith('.d.ts') || rel.endsWith('.DS_Store');
-
-/** Tokens in index.html and the strings that fill them. */
-const INDEX_TOKENS = {
-  APP_TITLE: 'app.title',
-  TAGLINE: 'app.tagline',
-  LOADING: 'app.loading',
-  NOSCRIPT: 'app.noscript',
-  BOOT_FAILED_TITLE: 'app.bootFailed.title',
-  BOOT_FAILED_BODY: 'app.bootFailed.body',
-  BOOT_FAILED_RETRY: 'app.bootFailed.retry',
-};
-
-const sha256 = (/** @type {string | Buffer} */ data) => crypto.createHash('sha256').update(data).digest('hex');
-
-/** @param {string} text */
-const escapeHtml = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
-/** All files under a directory as posix paths relative to `base`. @param {string} dir @param {string} base @returns {string[]} */
-function walk(dir, base) {
-  if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) return walk(full, base);
-    return [path.relative(base, full).split(path.sep).join('/')];
-  });
-}
-
-/** @param {string} cwd */
-function gitCommit(cwd) {
-  if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA.slice(0, 7);
-  try {
-    return execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
-  } catch {
-    return 'dev';
-  }
-}
 
 /** @param {Record<string, string>} strings */
 function makeManifest(strings) {
@@ -100,13 +63,7 @@ export function build({ outDir = path.join(root, 'dist'), source = root, now = n
   }
 
   // The static page: every visible word comes from en.json.
-  const html = fs.readFileSync(path.join(source, 'index.html'), 'utf8').replace(/%([A-Z_]+)%/g, (token, name) => {
-    const key = /** @type {Record<string, string>} */ (INDEX_TOKENS)[name];
-    if (!key) throw new Error(`index.html uses the unknown token ${token}`);
-    if (!(key in strings)) throw new Error(`index.html needs "${key}" in data/i18n/en.json`);
-    return escapeHtml(strings[key]);
-  });
-  write('index.html', html);
+  write('index.html', fillIndexTokens(fs.readFileSync(path.join(source, 'index.html'), 'utf8'), strings));
 
   for (const dir of COPY_DIRS) {
     for (const rel of walk(path.join(source, dir), source)) {

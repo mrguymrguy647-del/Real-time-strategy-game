@@ -4,7 +4,8 @@
 
 /** @typedef {{ supported: boolean, registered: boolean, controlled: boolean, updateReady: boolean, canInstall: boolean, error: string | null }} PwaState */
 
-export function createPwa() {
+/** @param {{ enabled?: boolean }} [options] `enabled: false` for the single-file download (T-18), which has no service worker */
+export function createPwa({ enabled = true } = {}) {
   /** @type {Set<(state: PwaState) => void>} */
   const listeners = new Set();
   /** @type {any} the browser's beforeinstallprompt event */
@@ -15,9 +16,9 @@ export function createPwa() {
 
   /** @type {PwaState} */
   const state = {
-    supported: 'serviceWorker' in navigator,
+    supported: enabled && 'serviceWorker' in navigator,
     registered: false,
-    controlled: Boolean(navigator.serviceWorker?.controller),
+    controlled: enabled && Boolean(navigator.serviceWorker?.controller),
     updateReady: false,
     canInstall: false,
     error: null,
