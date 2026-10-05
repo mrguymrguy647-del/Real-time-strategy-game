@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1a2b">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Offline modern-era grand strategy">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <title>Grand Strategy</title>
+  <link rel="stylesheet" href="src/ui/theme.css">
+  <!-- Phaser is vendored; the import map lets code say `import('phaser')` (T-03). Relative URLs only. -->
+  <script type="importmap">{ "imports": { "phaser": "./vendor/phaser/phaser.esm.min.js" } }</script>
+  <script type="module" src="src/main.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="splash" class="splash" role="status">Loading…</div>
+  <noscript><p class="boot-note">This game needs JavaScript. Please turn it on and reload the page.</p></noscript>
+  <template id="boot-error">
+    <section class="screen boot-error">
+      <h1>The game could not start</h1>
+      <p>Some game files could not be loaded. Check your connection once, then try again.</p>
+      <pre class="boot-error__details" data-details></pre>
+      <button class="btn btn--primary" type="button" data-retry>Try again</button>
+    </section>
+  </template>
+</body>
+</html>
