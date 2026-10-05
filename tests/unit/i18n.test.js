@@ -77,4 +77,19 @@ describe('the real string table (G-30)', () => {
     const { strings } = await readJsonFromDisk('data/i18n/en.json');
     for (let m = 1; m <= 12; m++) assert.ok(strings[`month.${m}`], `month.${m}`);
   });
+
+  it('has the strings whose keys are built from data: text sizes, platforms, save errors', async () => {
+    const { strings } = await readJsonFromDisk('data/i18n/en.json');
+    const { TEXT_SCALES } = await import('../../src/ui/settings.js');
+    for (const { key } of TEXT_SCALES) assert.ok(strings[`settings.textSize.${key}`], `settings.textSize.${key}`);
+    for (const name of ['ios', 'android', 'generic']) assert.ok(strings[`diag.platform.${name}`], `diag.platform.${name}`);
+
+    // every error code the core can throw has a message the player can read
+    const codes = new Set();
+    for (const file of sourceFiles(path.join(ROOT, 'src/core'))) {
+      for (const m of fs.readFileSync(file, 'utf8').matchAll(/new SaveError\(\s*'([a-z_]+)'/g)) codes.add(m[1]);
+    }
+    assert.ok(codes.size >= 6);
+    for (const code of codes) assert.ok(strings[`saves.error.${code}`], `saves.error.${code}`);
+  });
 });

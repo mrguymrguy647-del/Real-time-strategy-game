@@ -1,0 +1,159 @@
+// The app shell: a hash router, the current game session, autosave, and the helpers every screen
+// uses through `ctx`. Screens are functions that return { el, destroy? }. Hash routes
+// (#/play, #/saves, ...) keep deep links and the system back gesture working on a static host.
+
+import { createGame } from '../game.js';
+import { t } from '../util/i18n.js';
+import { confirmDialog, openDialog } from './components/dialog.js';
+import { createToasts } from './components/toast.js';
+import { saveErrorText } from './errors.js';
+import { slotLabel } from './format.js';
+import { detectPlatform } from './platform.js';
+import { mountDiagnostics } from './screens/diagnostics.js';
+import { mountPlay } from './screens/play.js';
+import { mountSaves } from './screens/saves.js';
+import { mountSettings } from './screens/settings.js';
+import { mountTitle } from './screens/title.js';
+
+const ROUTES = {
+  title: mountTitle,
+  play: mountPlay,
+  saves: mountSaves,
+  settings: mountSettings,
+  diagnostics: mountDiagnostics,
+};
+
+/** @returns {number} a fresh seed for a new game (UI-level randomness, not simulation code) */
+function randomSeed() {
+  return crypto.getRandomValues(new Uint32Array(1))[0];
+}
+
+/**
+ * @param {{ root: HTMLElement, data: import('../core/data.js').GameData,
+ *   saves: ReturnType<typeof import('../core/save.js').createSaveManager>,
+ *   settings: ReturnType<typeof import('../core/settings.js').createSettings>,
+ *   pwa: ReturnType<typeof import('./pwa.js').createPwa>,
+ *   storage: import('../core/storage/types.js').Storage, storageError: string | null,
+ *   buildInfo: any }} options
+ */
+export function createApp({ root, data, saves, settings, pwa, storage, storageError, buildInfo }) {
+  const toasts = createToasts(document.body);
+  /** @type {{ game: import('../game.js').Game | null, lastManualSlot: string, persistAsked: boolean }} */
+  const session = { game: null, lastManualSlot: 'manual-1', persistAsked: false };
+  /** @type {{ el: HTMLElement, destroy?: () => void } | null} */
+  let screen = null;
+  /** @type {Array<() => void>} */
+  let gameSubscriptions = [];
+
+  async function autosave() {
+    const game = session.game;
+    if (!game) return;
+    try {
+      await saves.autosave(game.state);
+      if (!session.persistAsked) {
+        // Ask the browser not to evict our data; harmless if unsupported or declined.
+        session.persistAsked = true;
+        void navigator.storage?.persist?.().catch(() => {});
+      }
+    } catch {
+      toasts.show(t('play.autosaveFailed'), { duration: 7000 });
+    }
+  }
+
+  /** @param {import('../game.js').Game | null} game */
+  function attach(game) {
+    for (const off of gameSubscriptions) off();
+    gameSubscriptions = [];
+    session.game = game;
+    if (game) gameSubscriptions.push(game.bus.on('turn:end', autosave));
+  }
+
+  const ctx = {
+    data,
+    saves,
+    settings,
+    pwa,
+    storage,
+    storageKind: storage.kind,
+    storageError,
+    buildInfo,
+    platform: detectPlatform(),
+    session,
+    toast: toasts.show,
+    confirm: confirmDialog,
+    dialog: openDialog,
+
+    /** @param {string} route */
+    navigate(route) {
+      if (currentRoute() === route) render();
+      else location.hash = `#/${route}`;
+    },
+    /** Back goes to the game if one is running, otherwise to the title. */
+    back() {
+      ctx.navigate(session.game ? 'play' : 'title');
+    },
+    newGame() {
+      attach(createGame({ data, seed: randomSeed() }));
+      ctx.navigate('play');
+    },
+    /** @param {any} state a loaded or imported saved state */
+    openState(state) {
+      attach(createGame({ data, state }));
+      ctx.navigate('play');
+    },
+    quitToTitle() {
+      attach(null);
+      ctx.navigate('title');
+    },
+    async continueLatest() {
+      try {
+        const latest = await saves.loadLatest();
+        if (!latest) return;
+        if (latest.skipped.length > 0) toasts.show(t('title.skipped', { slots: latest.skipped.join(', ') }), { duration: 7000 });
+        if (latest.dataMismatch) toasts.show(t('saves.dataMismatch'), { duration: 7000 });
+        ctx.openState(latest.state);
+      } catch (err) {
+        toasts.show(saveErrorText(err), { duration: 7000 });
+      }
+    },
+    /** Save to the manual slot used last (manual-1 at first). */
+    async quickSave() {
+      const game = session.game;
+      if (!game) return;
+      try {
+        await saves.save(session.lastManualSlot, game.state);
+        toasts.show(t('play.saved', { slot: slotLabel(session.lastManualSlot) }));
+      } catch (err) {
+        toasts.show(saveErrorText(err), { duration: 7000 });
+      }
+    },
+  };
+
+  function currentRoute() {
+    const name = location.hash.replace(/^#\/?/, '').split('?')[0] || 'title';
+    return Object.hasOwn(ROUTES, name) ? /** @type {keyof typeof ROUTES} */ (name) : 'title';
+  }
+
+  function render() {
+    const name = currentRoute();
+    if (name === 'play' && !session.game) {
+      location.replace('#/title');
+      return;
+    }
+    screen?.destroy?.();
+    screen = ROUTES[name](ctx);
+    root.replaceChildren(screen.el);
+    window.scrollTo(0, 0);
+  }
+
+  let updateAnnounced = false;
+  pwa.subscribe((state) => {
+    if (state.updateReady && !updateAnnounced) {
+      updateAnnounced = true;
+      toasts.show(t('update.ready'), { actionLabel: t('update.reload'), onAction: () => pwa.applyUpdate(), duration: 0 });
+    }
+  });
+
+  window.addEventListener('hashchange', render);
+  return { start: render, ctx };
+}

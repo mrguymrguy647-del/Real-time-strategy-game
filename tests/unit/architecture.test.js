@@ -7,42 +7,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT } from '../helpers/data.js';
+import { codeOnly, importsOf, walk } from '../helpers/source.js';
 
 const SRC = path.join(ROOT, 'src');
 const LAYERS = ['util', 'formulas', 'core', 'systems', 'ai', 'ui'];
 const rank = Object.fromEntries(LAYERS.map((name, i) => [name, i]));
-
-/** @param {string} dir @returns {string[]} */
-function walk(dir) {
-  if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) return walk(full);
-    return entry.name.endsWith('.js') ? [full] : [];
-  });
-}
-
-/** Source with comments removed, so documentation that mentions "Math.random()" is not a violation. */
-function withoutComments(code) {
-  return code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`\\])\/\/.*$/gm, '$1');
-}
-
-/** Also blank out string contents, for scanning code rather than text. */
-function codeOnly(code) {
-  return withoutComments(code)
-    .replace(/`(?:\\.|[^`\\])*`/g, '""')
-    .replace(/(['"])(?:\\.|(?!\1)[^\\\n])*\1/g, '""');
-}
-
-/** @param {string} code @returns {string[]} */
-function importsOf(code) {
-  const clean = withoutComments(code);
-  const specs = [];
-  for (const m of clean.matchAll(/\b(?:import|export)\b[^'"`;]*?\bfrom\s*(['"])([^'"]+)\1/g)) specs.push(m[2]);
-  for (const m of clean.matchAll(/\bimport\s*(['"])([^'"]+)\1/g)) specs.push(m[2]);
-  for (const m of clean.matchAll(/\bimport\(\s*(['"])([^'"]+)\1\s*\)/g)) specs.push(m[2]);
-  return specs;
-}
 
 /** @param {string} file @returns {string} a layer name, or "root" for src/*.js */
 function layerOf(file) {

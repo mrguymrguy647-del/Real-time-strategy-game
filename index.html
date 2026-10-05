@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1a2b">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="%TAGLINE%">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <title>%APP_TITLE%</title>
+  <link rel="stylesheet" href="src/ui/theme.css">
+  <!-- Phaser is vendored; the import map lets code say `import('phaser')` (T-03). Relative URLs only. -->
+  <script type="importmap">{ "imports": { "phaser": "./vendor/phaser/phaser.esm.min.js" } }</script>
+  <script type="module" src="src/main.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="splash" class="splash" role="status">%LOADING%</div>
+  <noscript><p class="boot-note">%NOSCRIPT%</p></noscript>
+  <template id="boot-error">
+    <section class="screen boot-error">
+      <h1>%BOOT_FAILED_TITLE%</h1>
+      <p>%BOOT_FAILED_BODY%</p>
+      <pre class="boot-error__details" data-details></pre>
+      <button class="btn btn--primary" type="button" data-retry>%BOOT_FAILED_RETRY%</button>
+    </section>
+  </template>
+</body>
+</html>

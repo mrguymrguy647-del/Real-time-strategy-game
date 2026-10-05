@@ -63,12 +63,13 @@ export function createSaveManager({ storage, dataVersion, now = () => Date.now()
   }
 
   /**
-   * Write the full record and its small summary in one all-or-nothing step.
+   * Write the full record and its small summary (plus any extra writes) in one all-or-nothing step.
    * @param {string} slot
    * @param {any} record
+   * @param {Array<{ store: string, key: string, value: any }>} [extra]
    * @returns {Promise<SlotSummary>}
    */
-  async function writeRecord(slot, record) {
+  async function writeRecord(slot, record, extra = []) {
     /** @type {SlotSummary} */
     const summary = {
       slot,
@@ -81,9 +82,23 @@ export function createSaveManager({ storage, dataVersion, now = () => Date.now()
       storage.putMany([
         { store: 'saves', key: slot, value: record },
         { store: 'slots', key: slot, value: summary },
+        ...extra,
       ]),
     );
     return summary;
+  }
+
+  /** @param {any} state @returns {any} a copy of the state, refusing a broken one */
+  function snapshotOf(state) {
+    const problems = checkStateShape(state);
+    if (problems.length > 0) throw new SaveError('bad_file', `refusing to save a broken game: ${problems.join(', ')}`);
+    // Copy now: the write is asynchronous and the game keeps running meanwhile.
+    return structuredClone(state);
+  }
+
+  /** @param {string} slot @param {any} snapshot */
+  function buildRecord(slot, snapshot) {
+    return { slot, savedAt: now(), saveVersion: SAVE_VERSION, dataVersion, meta: summarize(snapshot), state: snapshot };
   }
 
   /**
@@ -92,17 +107,7 @@ export function createSaveManager({ storage, dataVersion, now = () => Date.now()
    */
   async function save(slot, state) {
     checkSlot(slot);
-    const problems = checkStateShape(state);
-    if (problems.length > 0) throw new SaveError('bad_file', `refusing to save a broken game: ${problems.join(', ')}`);
-    // Clone now: the write is asynchronous and the game keeps running meanwhile.
-    return writeRecord(slot, {
-      slot,
-      savedAt: now(),
-      saveVersion: SAVE_VERSION,
-      dataVersion,
-      meta: summarize(state),
-      state: structuredClone(state),
-    });
+    return writeRecord(slot, buildRecord(slot, snapshotOf(state)));
   }
 
   /** Newest first. Cheap: reads only the small summaries. @returns {Promise<SlotSummary[]>} */
@@ -150,14 +155,41 @@ export function createSaveManager({ storage, dataVersion, now = () => Date.now()
     throw new SaveError('read_failed', 'none of the saves could be read', lastError);
   }
 
-  /** Write to the next of the three rotating autosave slots. @param {any} state */
-  async function autosave(state) {
-    const pointer = await guarded('read_failed', () => storage.get('settings', 'autoPointer'));
-    const index = Number.isInteger(pointer) && pointer >= 0 && pointer < AUTO_SLOTS.length ? pointer : 0;
-    const summary = await save(AUTO_SLOTS[index], state);
-    // Move the pointer only after the write succeeded.
-    await guarded('write_failed', () => storage.put('settings', 'autoPointer', (index + 1) % AUTO_SLOTS.length));
+  /** The autosave slot to use next (0-2): read from storage once, then kept in memory. @type {number | null} */
+  let autoIndex = null;
+  /** Autosaves run one at a time, in order, so quick turns can never overlap their writes. */
+  let autosaveChain = Promise.resolve();
+
+  /** @param {any} snapshot */
+  async function writeAutosave(snapshot) {
+    let index = autoIndex;
+    if (index === null) {
+      const stored = await guarded('read_failed', () => storage.get('settings', 'autoPointer'));
+      index = Number.isInteger(stored) && stored >= 0 && stored < AUTO_SLOTS.length ? /** @type {number} */ (stored) : 0;
+    }
+    const slot = AUTO_SLOTS[index];
+    const next = (index + 1) % AUTO_SLOTS.length;
+    // The slot pointer moves in the same all-or-nothing write as the save, so a failure or an
+    // interrupted page can never leave the pointer and the saves disagreeing.
+    const summary = await writeRecord(slot, buildRecord(slot, snapshot), [{ store: 'settings', key: 'autoPointer', value: next }]);
+    autoIndex = next;
     return summary;
+  }
+
+  /** Write to the next of the three rotating autosave slots. @param {any} state */
+  function autosave(state) {
+    let snapshot;
+    try {
+      snapshot = snapshotOf(state);
+    } catch (err) {
+      return Promise.reject(err);
+    }
+    const run = autosaveChain.then(() => writeAutosave(snapshot));
+    autosaveChain = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    return run;
   }
 
   /** @param {string} slot */
@@ -176,6 +208,7 @@ export function createSaveManager({ storage, dataVersion, now = () => Date.now()
       await storage.clear('saves');
       await storage.clear('slots');
       await storage.delete('settings', 'autoPointer');
+      autoIndex = null;
     });
   }
 

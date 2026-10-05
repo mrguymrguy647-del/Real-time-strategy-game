@@ -70,6 +70,31 @@ describe('save manager', () => {
     assert.equal((await manager.loadLatest())?.meta.turn, 3);
   });
 
+  it('writes quick back-to-back autosaves in order, one slot each', async () => {
+    const { manager } = setup();
+    const slots = await Promise.all([1, 2, 3].map((turns) => manager.autosave(stateAfter(turns))));
+    assert.deepEqual(slots.map((s) => s.slot), ['auto-1', 'auto-2', 'auto-3']);
+    assert.equal((await manager.loadLatest())?.meta.turn, 3);
+  });
+
+  it('keeps the slot pointer across a new manager (a reload) and in the same write as the save', async () => {
+    const storage = createMemoryStorage();
+    await setup({ storage }).manager.autosave(stateAfter(1)); // auto-1, pointer -> 1
+    assert.equal(await storage.get('settings', 'autoPointer'), 1);
+    assert.equal((await setup({ storage }).manager.autosave(stateAfter(2))).slot, 'auto-2');
+  });
+
+  it('leaves nothing half-written when the pointer part of an autosave fails', async () => {
+    const { storage, manager } = setup();
+    storage.onOperation = (op, store) => {
+      if (op === 'put' && store === 'settings') throw new Error('settings write failed');
+    };
+    await assert.rejects(manager.autosave(stateAfter(1)), code('write_failed'));
+    storage.onOperation = () => {};
+    assert.deepEqual(await manager.list(), [], 'the save was not written without its pointer');
+    assert.equal((await manager.autosave(stateAfter(1))).slot, 'auto-1');
+  });
+
   it('does not move on to the next autosave slot when a write fails', async () => {
     const { storage, manager } = setup();
     await manager.autosave(stateAfter(0)); // auto-1
