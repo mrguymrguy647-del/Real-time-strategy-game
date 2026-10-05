@@ -25,6 +25,8 @@ Develops entirely from a phone through Claude Code. Therefore:
 - Everything must be testable in a mobile browser. Give a preview URL or a screenshot when something visible changes.
 - Keep chat replies short and scannable: bullets, no wide tables, plain words. Say plainly what works, what doesn't, and what is next.
 - Ask for decisions with a recommended default, so "approved" is a valid answer.
+- Give links as plain URLs on their own line, never inside backticks: code-formatted text is not tappable in the Claude app.
+- "Download link" means a tappable link that gets the game onto the phone. There is no APK or zip (Q18): on Android, opening the link in Chrome and tapping Install is the download.
 
 ## Working rules (from the user)
 
@@ -84,5 +86,6 @@ Before every commit: `npm run typecheck && npm test`; run `npm run e2e` whenever
 - `sleep` is blocked in the shell; to wait for CI, poll with the GitHub MCP tools (`actions_list` / `list_workflow_jobs` / `get_job_logs`).
 - Tests that depend on async saving must wait for the save (`waitForSaved` in `tools/lib/drive.mjs`), exactly as a real player's tap would be seconds later.
 - After a page reload the URL keeps its `#/route`, so e2e tests must not wait for the title screen unless they navigate there.
+- Claude Artifacts are **not** an alternative host for the PWA: their viewer frame blocks service workers, self-started downloads and Web Share, so offline play, install and save export cannot work there (checked 2026-10-05). GitHub Pages is the only route; enabling it is a repo setting the sandbox cannot change (the `gh` Pages API path is refused by the proxy and the GitHub MCP tools have no Pages tool).
 - Put scratch work in the scratchpad directory, never in the repo.
 - The container is discarded at session end: commit and push anything worth keeping.

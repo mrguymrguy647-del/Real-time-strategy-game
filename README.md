@@ -6,13 +6,19 @@ An offline, turn-based, modern-era grand strategy game for phones (working title
 
 ## Try it on your phone
 
-Every push builds a preview of its branch:
+Every push builds a preview of its branch. Links (tap them):
 
-`https://mrguymrguy647-del.github.io/Real-time-strategy-game/preview/<branch>/`
+- This work branch: https://mrguymrguy647-del.github.io/Real-time-strategy-game/preview/ccr-5ed68e3d-6cg5fd/
+- All previews: https://mrguymrguy647-del.github.io/Real-time-strategy-game/preview/
 
-(for the current work branch: `…/preview/ccr-5ed68e3d-6cg5fd/`; the list of all previews is at `…/preview/`).
+There is no APK or zip to download: the game is a web app, and installing it from the link is the download.
 
-**One-time setup (needed once, after the first successful deploy):** open `https://github.com/mrguymrguy647-del/Real-time-strategy-game/settings/pages` in your phone's browser (signed in as the repo owner; the GitHub app cannot change this). Set **Source** to *Deploy from a branch*, then **Branch** to `gh-pages` and folder `/ (root)`, and save. The first publish takes a minute or two; the page then says "Your site is live at …". If Settings looks cramped, use the browser's *Desktop site* option.
+**One-time setup (needed once, after the first successful deploy).** Until you do this, the links above show "404".
+1. Open https://github.com/mrguymrguy647-del/Real-time-strategy-game/settings/pages in your phone's browser, signed in as the repo owner (the GitHub app cannot change this).
+2. Under *Build and deployment*, keep **Source** on *Deploy from a branch*. Open the **Branch** dropdown (it says *None*), pick `gh-pages`, keep `/ (root)`, and tap **Save**.
+3. Wait a minute or two. The page then says "Your site is live at …".
+
+If Settings looks cramped, use the browser's *Desktop site* option.
 
 **Install it**
 - **Android (Chrome):** open the preview link → tap *Install* on the title screen (or the ⋮ menu → *Install app*) → open it from the new Home Screen icon.

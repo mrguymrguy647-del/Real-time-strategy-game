@@ -63,6 +63,7 @@ You rank the 16 countries by a score (regional GDP share, controlled population,
 **Q15 · Saves.**  ✔ Accepted: 3 rotating autosaves plus 5 manual slots, with export/import.
 **Q16 · "Not yet" on the capital-battle dialog (G-05).**  ✔ Accepted. My addition to the spec's two buttons, so nobody is forced into a hopeless assault.
 **Q17 · Your phone: iPhone or Android?**  ✔ Decided: Android (Chrome). The app still supports both; my install and test instructions lead with Chrome.
+**Q18 · A real download file (an Android APK)?**  Parked; you asked for a "download link" after the 0b hand-off. Default: **no, not now** — the plan (spec §2) is an installable web app, and on Android tapping Install in Chrome puts it on your Home Screen like any app. An APK would need new build tools (for example Capacitor plus an Android build in CI), your approval for the new dependencies, and extra work so save export and the back button behave. Revisit in Phase 7 (polish) if you want it.
 
 ---
 
