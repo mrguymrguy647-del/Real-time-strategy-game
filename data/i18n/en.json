@@ -216,6 +216,15 @@
     "diag.mapBench.noWebgl": "(WebGL was not used, so this is slower than it should be.)",
     "diag.mapBench.failed": "Could not run: {error}",
 
+    "previews.title": "Previews",
+    "previews.intro": "Test builds of each branch. Open one on your phone.",
+    "previews.none": "No previews yet.",
+    "previews.main": "Open the main version",
+    "previews.updated": "updated {time}",
+    "previews.placeholder.title": "Grand Strategy",
+    "previews.placeholder.body": "The main version is not published yet. Test builds are available as previews.",
+    "previews.placeholder.link": "Open the previews",
+
     "stat.country.economy.growth": "Economic growth",
     "stat.country.economy.blackMarket": "Black market",
     "stat.country.industry.output": "Industrial output",

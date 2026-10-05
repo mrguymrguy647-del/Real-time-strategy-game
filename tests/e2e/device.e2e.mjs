@@ -35,9 +35,11 @@ describe('diagnostics', () => {
 
     const status = (/** @type {string} */ id) => page.locator(`[data-check="${id}"]`).getAttribute('data-status');
     for (const id of ['build', 'sw', 'cache', 'storage', 'webgl']) assert.equal(await status(id), 'ok', `check "${id}"`);
-    for (const id of ['mode', 'display', 'safeArea', 'update', 'persist', 'usage', 'saves', 'fps', 'cpu', 'turns']) {
+    // Speed checks vary with the machine (a busy CI runner can be slow), so only require they ran.
+    for (const id of ['mode', 'display', 'safeArea', 'update', 'persist', 'usage', 'saves', 'cpu', 'turns']) {
       assert.notEqual(await status(id), 'fail', `check "${id}"`);
     }
+    assert.match((await page.locator('[data-check="fps"]').textContent()) ?? '', /\d+ frames per second/);
 
     await button(page, t('diag.copyReport')).click();
     const report = await page.evaluate(() => navigator.clipboard.readText());
@@ -57,7 +59,9 @@ describe('diagnostics', () => {
     await button(row, t('diag.mapBench.run')).click();
     await page.waitForFunction(() => document.querySelector('[data-check="mapBench"]')?.getAttribute('data-status') !== 'info', null, { timeout: 120_000 });
     const text = (await row.textContent()) ?? '';
-    assert.notEqual(await row.getAttribute('data-status'), 'fail', text);
+    // How fast it ran depends on the machine; what matters is that it ran, on WebGL.
+    assert.equal(text.includes(t('diag.mapBench.failed', { error: '' })), false, text);
+    assert.equal(text.includes(t('diag.mapBench.noWebgl')), false, text);
     const phaser = JSON.parse(fs.readFileSync(path.join(ROOT, 'vendor/phaser/VERSION.json'), 'utf8'));
     assert.ok(text.includes(`Phaser ${phaser.version}`), text);
     assert.ok(/redrawn every frame: \d+ fps/.test(text) && /drawn once as a texture: \d+ fps/.test(text), text);
