@@ -178,6 +178,40 @@ describe('the map screen', () => {
     await context.close();
   });
 
+  it('scrolls the row of region chips sideways with a finger, and the last chip can be tapped', async () => {
+    const { context, page, problems } = await freshPage(env.browser);
+    await openMap(page, env.site.url);
+    await page.touchscreen.tap(...(await insideRegion(page, 'IRN-fars_bushehr')));
+    await page.waitForSelector('.sheet:not([hidden])');
+    await page.waitForTimeout(500);
+    const row = page.locator('.chips');
+    const room = await row.evaluate((el) => el.scrollWidth - el.clientWidth);
+    assert.ok(room > 100, `a country with 11 regions has more chips than fit on a phone (${room}px of overflow)`);
+
+    const box = await row.boundingBox();
+    assert.ok(box);
+    const y = box.y + box.height / 2;
+    const fingers = await touch(page);
+    await fingers.drag([[box.x + box.width - 30, y]], [[box.x + 30, y]]);
+    await page.waitForTimeout(400);
+    const scrolled = await row.evaluate((el) => el.scrollLeft);
+    assert.ok(scrolled > 100, `the row followed the finger: scrolled ${scrolled}px`);
+    for (let i = 0; i < 12 && (await row.evaluate((el) => el.scrollWidth - el.clientWidth - el.scrollLeft)) > 2; i++) {
+      await fingers.drag([[box.x + box.width - 30, y]], [[box.x + 30, y]]); // keep swiping until the end of the row
+      await page.waitForTimeout(300);
+    }
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth) <= 1, true, 'the page itself did not move sideways');
+
+    const last = regions.filter((/** @type {any} */ r) => r.country === 'IRN').at(-1);
+    const chip = page.locator(`.chip[data-region="${last.id}"]`);
+    const chipBox = await chip.boundingBox();
+    assert.ok(chipBox && chipBox.x >= 0 && chipBox.x + chipBox.width <= 391, 'the last chip is now fully on screen');
+    await page.touchscreen.tap(chipBox.x + chipBox.width / 2, chipBox.y + chipBox.height / 2);
+    assert.deepEqual(await selection(page), { countryId: 'IRN', regionId: last.id });
+    assert.deepEqual(problems, []);
+    await context.close();
+  });
+
   it('pans with one finger: the map follows the finger', async () => {
     const { context, page, problems } = await freshPage(env.browser);
     await openMap(page, env.site.url);
