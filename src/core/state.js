@@ -89,9 +89,11 @@ export function createInitialState({ data, scenarioId, seed, playerId = null, di
 /**
  * Cheap structural check for a state that came from a save or an import.
  * @param {any} state
+ * @param {import('./data.js').GameData} [data] when given, the state must also fit this data: the countries, resources and
+ *   chokepoints the game plays with must all be in it (a save made with other data would otherwise fall over mid-turn)
  * @returns {string[]} problems, empty when the shape is usable
  */
-export function checkStateShape(state) {
+export function checkStateShape(state, data) {
   /** @type {string[]} */
   const problems = [];
   if (!state || typeof state !== 'object') return ['state is not an object'];
@@ -111,6 +113,25 @@ export function checkStateShape(state) {
     for (const [id, country] of Object.entries(state.countries)) problems.push(...checkCountryShape(id, country));
   }
   problems.push(...checkWorldShape(state.world));
+  if (data && problems.length === 0) problems.push(...checkAgainstData(state, data));
+  return problems;
+}
+
+/**
+ * Does the state have everything this version of the data needs?
+ * @param {any} state a state whose shape is sound
+ * @param {import('./data.js').GameData} data
+ * @returns {string[]}
+ */
+function checkAgainstData(state, data) {
+  /** @type {string[]} */
+  const problems = [];
+  for (const id of Object.keys(state.countries)) if (!Object.hasOwn(data.countries.byId, id)) problems.push(`country ${id} is not in the game's data`);
+  for (const resource of data.activeResources) {
+    if (!Object.hasOwn(state.world.market, resource.id)) problems.push(`the market for ${resource.id} is missing`);
+    for (const [id, country] of Object.entries(state.countries)) if (!Object.hasOwn(country.resources, resource.id)) problems.push(`country ${id} has no ${resource.id}`);
+  }
+  for (const chokepoint of data.chokepoints.items) if (!Object.hasOwn(state.world.chokepoints, chokepoint.id)) problems.push(`the chokepoint ${chokepoint.id} is missing`);
   return problems;
 }
 

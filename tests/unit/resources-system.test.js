@@ -68,6 +68,21 @@ describe('the world at the start', () => {
     assert.match(problems((s) => void delete s.world), /world is missing/);
   });
 
+  it('refuses a state that does not fit the data it would be played with (a save made with other data)', () => {
+    const fresh = () => structuredClone(newGame().state);
+    const refuses = (change, pattern) => {
+      const state = fresh();
+      change(state);
+      assert.throws(() => createGame({ data, state }), pattern);
+    };
+    refuses((s) => void delete s.world.market.steel, /the market for steel is missing/);
+    refuses((s) => void delete s.countries.TUR.resources.rare, /country TUR has no rare/);
+    refuses((s) => void delete s.world.chokepoints.suez, /the chokepoint suez is missing/);
+    refuses((s) => void (s.countries.ATL = structuredClone(s.countries.TUR)), /country ATL is not in the game's data/);
+    assert.doesNotThrow(() => createGame({ data, state: fresh() }));
+    assert.deepEqual(checkStateShape(fresh()), [], 'without data only the shape is checked');
+  });
+
   it('is in balance: what the world makes is what it uses, for every resource', () => {
     const game = newGame();
     for (const resource of data.activeResources) {
