@@ -80,6 +80,29 @@ describe('single-file build', () => {
     assert.ok(html.includes('<link rel="icon" href="data:image/svg+xml;base64,'));
   });
 
+  it('carries Phaser inside the page, byte for byte and with its license, as an inert element read only on demand', () => {
+    const holder = html.match(/<script type="application\/octet-stream" id="gs-phaser">([A-Za-z0-9+/=]+)<\/script>/);
+    assert.ok(holder, 'the element that holds Phaser');
+    const vendored = fs.readFileSync(path.join(ROOT, 'vendor/phaser/phaser.esm.min.js'));
+    assert.ok(Buffer.from(holder[1], 'base64').equals(vendored), 'the embedded bytes are the vendored build');
+    assert.ok(html.includes('The MIT License (MIT)') && html.includes('Richard Davey'), 'the license travels with it');
+    assert.ok(script.includes('__GS_LOAD_PHASER__ = function'), 'the page supplies the loader that src/ui/phaser.js looks for');
+    assert.equal(/\bgs-phaser\b/.test(script.slice(0, script.indexOf('__GS_LOAD_PHASER__'))), false, 'nothing touches the element before the map asks');
+  });
+
+  it('changes its hash when the embedded Phaser changes', () => {
+    const copy = path.join(tmp, 'new-phaser');
+    for (const entry of ['package.json', 'index.html', 'src', 'data', 'assets', 'vendor']) fs.cpSync(path.join(ROOT, entry), path.join(copy, entry), { recursive: true });
+    fs.appendFileSync(path.join(copy, 'vendor/phaser/phaser.esm.min.js'), '\n// patched\n');
+    assert.notEqual(bundleSingle({ source: copy, now: new Date(0) }).info.hash, first.info.hash);
+  });
+
+  it('fails loudly when Phaser has not been vendored', () => {
+    const copy = path.join(tmp, 'no-phaser');
+    for (const entry of ['package.json', 'index.html', 'src', 'data', 'assets']) fs.cpSync(path.join(ROOT, entry), path.join(copy, entry), { recursive: true });
+    assert.throws(() => bundleSingle({ source: copy }), /vendor\/phaser\/ is missing/);
+  });
+
   it('bundles every module of src/ and every require() can be resolved', () => {
     const onDisk = [];
     const walk = (/** @type {string} */ dir) => {
@@ -128,7 +151,7 @@ describe('single-file build', () => {
 
   it('changes its hash when any source file changes', () => {
     const copy = path.join(tmp, 'changed');
-    for (const entry of ['package.json', 'index.html', 'src', 'data', 'assets']) fs.cpSync(path.join(ROOT, entry), path.join(copy, entry), { recursive: true });
+    for (const entry of ['package.json', 'index.html', 'src', 'data', 'assets', 'vendor']) fs.cpSync(path.join(ROOT, entry), path.join(copy, entry), { recursive: true });
     fs.appendFileSync(path.join(copy, 'src/ui/theme.css'), '\n/* changed */\n');
     assert.notEqual(bundleSingle({ source: copy, now: new Date(0) }).info.hash, first.info.hash);
   });
@@ -136,7 +159,7 @@ describe('single-file build', () => {
   it('fails loudly when index.html no longer has the markers the bundler needs', () => {
     for (const marker of ['<!-- single-head -->', '<!-- single-body -->', '<!-- /web-only -->']) {
       const copy = path.join(tmp, `broken-${marker.replace(/\W+/g, '')}`);
-      for (const entry of ['package.json', 'index.html', 'src', 'data', 'assets']) fs.cpSync(path.join(ROOT, entry), path.join(copy, entry), { recursive: true });
+      for (const entry of ['package.json', 'index.html', 'src', 'data', 'assets', 'vendor']) fs.cpSync(path.join(ROOT, entry), path.join(copy, entry), { recursive: true });
       const page = path.join(copy, 'index.html');
       fs.writeFileSync(page, fs.readFileSync(page, 'utf8').replace(marker, ''));
       assert.throws(() => bundleSingle({ source: copy }), /index\.html must contain/, marker);

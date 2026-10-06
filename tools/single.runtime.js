@@ -1,10 +1,31 @@
 // Runs the bundled modules inside a plain page (tools/bundle-single.mjs, ARCHITECTURE T-18).
 // Every module is a function (exports, require, module); require() resolves "./x.js" paths against
 // the id of the module that asks. Nothing here touches the network, so the page works from a file.
+// Phaser travels inside the page as base64 text; it is turned into a module the first time the map
+// needs it (a Blob URL can be imported even from a file or a locked-down frame).
 (function () {
   'use strict';
   var defs = /*__MODULES__*/;
   var loaded = {};
+
+  globalThis.__GS_LOAD_PHASER__ = function () {
+    var holder = document.getElementById('gs-phaser');
+    if (!holder) return Promise.reject(new Error('This copy of the game does not carry the map engine.'));
+    var text = atob(holder.textContent.trim());
+    var bytes = new Uint8Array(text.length);
+    for (var i = 0; i < text.length; i++) bytes[i] = text.charCodeAt(i);
+    var url = URL.createObjectURL(new Blob([bytes], { type: 'text/javascript' }));
+    return import(url).then(
+      function (mod) {
+        URL.revokeObjectURL(url);
+        return mod;
+      },
+      function (err) {
+        URL.revokeObjectURL(url);
+        throw err;
+      },
+    );
+  };
 
   function resolve(from, spec) {
     var parts = from.split('/');

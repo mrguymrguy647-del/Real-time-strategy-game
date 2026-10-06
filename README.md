@@ -8,7 +8,7 @@ An offline, turn-based, modern-era grand strategy game for phones (working title
 
 ### Fastest: download one file (no GitHub setting needed)
 
-Every push also publishes the whole game as a single file. Tap to download it, then open it with Chrome. It plays offline, but it cannot be installed as an app or update itself.
+Every push also publishes the whole game as a single file (about 2 MB, the map included). Tap to download it, then open it with Chrome. It plays offline, but it cannot be installed as an app or update itself.
 
 - Download (this work branch): https://github.com/mrguymrguy647-del/Real-time-strategy-game/releases/download/download-ccr-5ed68e3d-6cg5fd/grand-strategy.html
 - Release page (all builds): https://github.com/mrguymrguy647-del/Real-time-strategy-game/releases
@@ -35,7 +35,7 @@ If Settings looks cramped, use the browser's *Desktop site* option.
 - **Android (Chrome):** open the preview link → tap *Install* on the title screen (or the ⋮ menu → *Install app*) → open it from the new Home Screen icon.
 - **iPhone / iPad (Safari):** open the preview link → tap the Share button → *Add to Home Screen*.
 
-**Try the map.** On the title screen tap **Explore the map**. Drag to move, pinch to zoom (or use the + and − buttons), tap a country: a panel shows its facts, and the chips at the bottom of the panel switch between its regions. ⌖ shows the whole map again. The map needs the web link above; the one-file download does not include it yet (it says so).
+**Try the map.** On the title screen tap **Explore the map**. Drag to move, pinch to zoom (or use the + and − buttons), tap a country: a panel shows its facts, and the chips at the bottom of the panel switch between its regions. ⌖ shows the whole map again.
 
 **What to check** (open *Diagnostics* in the app and tap *Copy report* to send me the result)
 1. Opens from the Home Screen icon, full screen.

@@ -60,7 +60,6 @@
     "map.title": "Middle East",
     "map.loading": "Loading the map…",
     "map.failed": "The map could not be shown: {error}",
-    "map.notInFile": "The map needs the web version, and the downloaded file does not include it yet. Open the web link instead.",
     "map.zoomIn": "Zoom in",
     "map.zoomOut": "Zoom out",
     "map.reset": "Show the whole map",
@@ -259,7 +258,6 @@
     "diag.mapBench.value": "Phaser {version} · redrawn every frame: {live} fps · drawn once as a texture: {baked} fps · {gpu}",
     "diag.mapBench.noWebgl": "(WebGL was not used, so this is slower than it should be.)",
     "diag.mapBench.failed": "Could not run: {error}",
-    "diag.mapBench.notIncluded": "Not included in the downloaded file. Run it from the web version.",
 
     "previews.title": "Previews",
     "previews.intro": "Test builds of each branch. Open one on your phone.",

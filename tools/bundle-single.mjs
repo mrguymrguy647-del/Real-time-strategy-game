@@ -9,7 +9,9 @@
 // How it works: the native TypeScript compiler (already a dev dependency) turns every module in
 // src/ into plain CommonJS; tools/single.runtime.js runs them. The JSON in data/ and the small SVG
 // icons are inlined, and the page sets globalThis.__GS_INLINE__ so the app reads them from memory
-// instead of fetching. Phaser is left out (the Diagnostics map speed test says so).
+// instead of fetching. Phaser (about 1.4 MB, vendored) rides along as base64 text in an inert
+// <script type="application/octet-stream" id="gs-phaser"> element; the runtime turns it into a module
+// the first time the map needs it, so a download that never opens the map pays nothing at start.
 
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -119,6 +121,10 @@ export function bundleSingle({ source = root, now = new Date() } = {}) {
   const css = fs.readFileSync(path.join(source, 'src/ui/theme.css'), 'utf8');
   const runtime = fs.readFileSync(path.join(root, 'tools/single.runtime.js'), 'utf8');
   const template = fs.readFileSync(path.join(source, 'index.html'), 'utf8');
+  const versionFile = path.join(source, 'vendor/phaser/VERSION.json');
+  if (!fs.existsSync(versionFile)) throw new Error('vendor/phaser/ is missing, so the map engine cannot be included (npm run vendor:phaser)');
+  const phaser = fs.readFileSync(path.join(source, 'vendor/phaser', JSON.parse(fs.readFileSync(versionFile, 'utf8')).file));
+  const phaserLicense = fs.readFileSync(path.join(source, 'vendor/phaser/LICENSE.md'), 'utf8').trim().replace(/--/g, '- -'); // "--" cannot sit inside an HTML comment
 
   // Like the web build, the hash covers content only, so an unchanged app keeps its identity.
   const hash = sha256(
@@ -127,6 +133,7 @@ export function bundleSingle({ source = root, now = new Date() } = {}) {
       ...Object.entries(files).map(([file, value]) => `${file}:${sha256(JSON.stringify(value))}`),
       `css:${sha256(css)}`,
       `runtime:${sha256(runtime)}`,
+      `phaser:${sha256(phaser)}`,
       `page:${sha256(template)}`,
     ].join('\n'),
   ).slice(0, 12);
@@ -141,7 +148,7 @@ export function bundleSingle({ source = root, now = new Date() } = {}) {
   let html = fillIndexTokens(template, strings);
   html = replaceOnce(html, WEB_ONLY, '', 'one web-only block');
   html = replaceOnce(html, HEAD_MARKER, `<link rel="icon" href="${icon}" type="image/svg+xml">\n  <style>\n${css}\n  </style>`, `the ${HEAD_MARKER} marker`);
-  html = replaceOnce(html, BODY_MARKER, `<script>\n${script}\n</script>`, `the ${BODY_MARKER} marker`);
+  html = replaceOnce(html, BODY_MARKER, `<!-- The map engine, Phaser, is included below as base64 text. Its license:\n\n${phaserLicense}\n-->\n<script type="application/octet-stream" id="gs-phaser">${phaser.toString('base64')}</script>\n<script>\n${script}\n</script>`, `the ${BODY_MARKER} marker`);
 
   return { html, info, bytes: Buffer.byteLength(html) };
 }

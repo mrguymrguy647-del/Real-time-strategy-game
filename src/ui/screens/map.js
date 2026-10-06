@@ -60,10 +60,6 @@ export function mountMap(ctx) {
   }
 
   async function start() {
-    if (ctx.platform.singleFile) {
-      status.textContent = t('map.notInFile');
-      return;
-    }
     try {
       const topology = await ctx.readJson('data/map/middle_east.topo.json');
       if (destroyed) return;
