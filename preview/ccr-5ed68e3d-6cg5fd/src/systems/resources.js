@@ -27,19 +27,31 @@ export function priceExplained(state, data, resourceId) {
 }
 
 /**
- * Warnings about a country's resources, for the report and the resources screen: a shortage that the
- * month ahead will bring (or keep), and a reserve that is thin (under half of what a prudent country
- * keeps, resources.json reserveTargetMonths). Read-only.
+ * @typedef {{ id: 'blockade', strait: string, params: { strait: string, share: number, blockade: number } }
+ *   | { id: 'shortage', resource: string, params: Record<string, string | number> }
+ *   | { id: 'lowReserve', resource: string, params: Record<string, string | number> }} ResourceAlert
+ */
+
+/**
+ * Warnings about a country's resources, for the report and the resources screen: a strait that stops
+ * some of its sea trade (first, since it explains the rest), a shortage that the month ahead will bring
+ * (or keep), and a reserve that is thin (under half of what a prudent country keeps, resources.json
+ * reserveTargetMonths). Read-only.
  * @param {any} state
  * @param {import('../core/data.js').GameData} data
  * @param {string} countryId
- * @returns {Array<{ id: 'shortage' | 'lowReserve', resource: string, params: Record<string, string | number> }>}
+ * @returns {ResourceAlert[]}
  */
 export function resourceAlerts(state, data, countryId) {
   const country = state.countries[countryId];
   const { byResource } = countryFlows(state, data, countryId);
-  /** @type {Array<{ id: 'shortage' | 'lowReserve', resource: string, params: Record<string, string | number> }>} */
+  /** @type {ResourceAlert[]} */
   const alerts = [];
+  for (const chokepoint of data.chokepoints.items) {
+    const exposure = data.countries.byId[countryId].chokepoints?.[chokepoint.id] ?? 0;
+    const blockade = state.world.chokepoints[chokepoint.id].blockade;
+    if (exposure > 0 && blockade > 0) alerts.push({ id: 'blockade', strait: chokepoint.id, params: { strait: chokepoint.name, share: exposure * blockade, blockade } });
+  }
   for (const resource of data.activeResources) {
     const flow = byResource[resource.id];
     if (flow.step > 0) {

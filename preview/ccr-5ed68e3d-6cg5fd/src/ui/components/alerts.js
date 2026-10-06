@@ -5,7 +5,7 @@ import { t, tn } from '../../util/i18n.js';
 import { economyAlerts } from '../../systems/economy.js';
 import { resourceAlerts } from '../../systems/resources.js';
 import { h } from '../dom.js';
-import { formatMonths, formatParams } from '../format.js';
+import { formatMonths, formatParams, formatPercent } from '../format.js';
 
 /**
  * @param {any} state
@@ -22,15 +22,25 @@ export function alertParagraphs(state, data, countryId) {
 }
 
 /**
- * Warnings about the resources: a shortage the month ahead brings, and a thin reserve.
+ * Warnings about the resources: a strait that stops some of the country's trade, a shortage the month
+ * ahead brings, and a thin reserve.
  * @param {any} state
  * @param {import('../../core/data.js').GameData} data
  * @param {string} countryId
+ * @param {{ only?: 'blockade' | 'supply' }} [options] `blockade`: only the closed straits (the report puts them with the money
+ *   warnings, since they explain a loss of income); `supply`: only shortages and thin reserves (the report's resource block)
  * @returns {HTMLElement[]}
  */
-export function resourceAlertParagraphs(state, data, countryId) {
-  return resourceAlerts(state, data, countryId).map((alert) => {
-    const params = alert.id === 'lowReserve' ? { ...alert.params, months: formatMonths(/** @type {number} */ (alert.params.months)) } : alert.params;
-    return h('p', { class: 'alert', 'data-alert': alert.id, 'data-resource': alert.resource }, t(`alert.${alert.id}`, params));
-  });
+export function resourceAlertParagraphs(state, data, countryId, { only } = {}) {
+  return resourceAlerts(state, data, countryId)
+    .filter((alert) => only === undefined || (alert.id === 'blockade') === (only === 'blockade'))
+    .map((alert) => {
+      if (alert.id === 'blockade') {
+        const { strait, share, blockade } = alert.params;
+        const params = { strait, percent: formatPercent(share, { decimals: 0 }), blockade: formatPercent(blockade, { decimals: 0 }) };
+        return h('p', { class: 'alert', 'data-alert': 'blockade', 'data-blockade': alert.strait }, t(blockade >= 1 ? 'alert.blockade.closed' : 'alert.blockade.partly', params));
+      }
+      const params = alert.id === 'lowReserve' ? { ...alert.params, months: formatMonths(/** @type {number} */ (alert.params.months)) } : alert.params;
+      return h('p', { class: 'alert', 'data-alert': alert.id, 'data-resource': alert.resource }, t(`alert.${alert.id}`, params));
+    });
 }

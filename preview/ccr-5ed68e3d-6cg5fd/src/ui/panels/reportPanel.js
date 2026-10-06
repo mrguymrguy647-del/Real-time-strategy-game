@@ -63,7 +63,7 @@ export function createReportPanel({ game, countryId, onClose, onOpenResources })
       'section',
       { class: 'report__resources' },
       h('h3', null, t('report.resources')),
-      ...resourceAlertParagraphs(state, data, countryId),
+      ...resourceAlertParagraphs(state, data, countryId, { only: 'supply' }),
       h(
         'ul',
         { class: 'report__res' },
@@ -97,7 +97,8 @@ export function createReportPanel({ game, countryId, onClose, onOpenResources })
     /** @type {Array<Node | null>} */
     const parts = [sheetHead({ title: last ? t('report.heading', { date: formatDate(last.period) }) : t('report.title'), subtitle: country.name, onClose })];
 
-    const alerts = alertParagraphs(state, data, countryId);
+    // the money warnings, and the straits that stop some of the country's trade (they explain a loss of income)
+    const alerts = [...alertParagraphs(state, data, countryId), ...resourceAlertParagraphs(state, data, countryId, { only: 'blockade' })];
 
     if (!last) {
       parts.push(h('p', { class: 'muted report__empty' }, t('report.empty')), ...alerts);
@@ -117,7 +118,8 @@ export function createReportPanel({ game, countryId, onClose, onOpenResources })
           'div',
           { class: 'report__lines' },
           line({ id: 'taxes', label: t('report.taxes'), value: formatMoneyMn(last.taxMn, { signed: true }), signed: 1, why: [whyList('taxes', why.taxes)] }),
-          last.resourceMn > 0 ? line({ id: 'resources', label: t('report.resourceIncome'), value: formatMoneyMn(last.resourceMn, { signed: true }), signed: 1, why: [whyList('resources', why.resources)] }) : null,
+          // shown whenever the country sells something abroad, also in a month a blockade took it all away (then it says so)
+          why.resources.parts.length > 0 ? line({ id: 'resources', label: t('report.resourceIncome'), value: formatMoneyMn(last.resourceMn, { signed: true }), signed: last.resourceMn, why: [whyList('resources', why.resources)] }) : null,
           line({ id: 'spending', label: t('report.spending'), value: formatMoneyMn(-last.spendingMn, { signed: true }), signed: -1, why: [whyList('spending', why.spending)] }),
           line({
             id: 'interest',

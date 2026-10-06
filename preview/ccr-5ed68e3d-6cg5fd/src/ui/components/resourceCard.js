@@ -3,6 +3,7 @@
 // into the reserve or sell out of it. It only reads the game; the buttons call `onTrade`.
 
 import { t, tn } from '../../util/i18n.js';
+import { isStatActive } from '../../core/stats.js';
 import { tidy } from '../../formulas/economy.js';
 import { planTrade } from '../../systems/resourceCommands.js';
 import { h } from '../dom.js';
@@ -37,25 +38,35 @@ export function resourceCard({ game, countryId, resource, flow, ladderOpen, onLa
   /** @param {string} label @param {string} value @param {string | null} [more] */
   const fact = (label, value, more = null) => h('div', { class: 'fact' }, h('dt', null, label), h('dd', null, value, more ? h('small', { class: 'muted fact__more' }, more) : null));
   const perMonth = (/** @type {number} */ n) => t('res.perMonth', { amount: formatUnits(n) });
-  const traded = flow.exports > 0.005 ? flow.exports : flow.imports;
+
+  // What is really sold or bought: a closed strait keeps some at home (a surplus) or out of reach (a deficit).
+  const selling = net > 0.005;
+  const trading = selling || net < -0.005;
+  const done = selling ? flow.exports : flow.imports;
+  const stopped = selling ? flow.blockedExports : flow.blockedImports;
+  const tradeNote = stopped > 0.005 ? t(selling ? 'res.stuck' : 'res.missing', { amount: formatUnits(stopped) }) : t('res.worth', { amountMn: formatMoneyMn(done * flow.price) });
 
   const facts = [
     fact(t('res.makes'), perMonth(flow.production)),
     fact(t('res.uses'), perMonth(flow.consumption)),
-    net > 0.005 || net < -0.005 || traded > 0.005
-      ? fact(t(net > 0 ? 'res.sells' : 'res.buys'), perMonth(Math.abs(net)), t('res.worth', { amountMn: formatMoneyMn(Math.abs(net) * flow.price) }))
-      : fact(t('res.trade'), t('res.position.balanced')),
+    trading ? fact(t(selling ? 'res.sells' : 'res.buys'), perMonth(done), tradeNote) : fact(t('res.trade'), t('res.position.balanced')),
     fact(t('res.reserve'), formatUnits(entry.stock), lastsText({ production: flow.production, consumption: flow.consumption, stock: entry.stock }, { short: true }) ?? t('res.noShortfall')),
   ];
 
   // the state's cut of what the country sells: the income the report counts
   const income = flow.income.value > 0 ? h('p', { class: 'muted res__income' }, t('res.stateShare', { percent: formatPercent(flow.stateShare, { decimals: 0 }), amountMn: formatMoneyMn(flow.income.value) })) : null;
-  const blocked = flow.blocked > 0.005 ? h('p', { class: 'res__blocked' }, t('res.blocked', { percent: formatPercent(flow.blocked, { decimals: 0 }) })) : null;
+  const blocked =
+    flow.blocked > 0.005
+      ? h('p', { class: 'res__blocked' }, t('res.blocked', { percent: formatPercent(flow.blocked, { decimals: 0 }) }), flow.wasted > 0.005 ? ` ${t('res.wasted', { amount: formatUnits(flow.wasted) })}` : '')
+      : null;
+
+  /** One effect of a shortage; one that nothing reads yet says so, so no effect is promised that nothing delivers. @param {any} effect */
+  const effectLine = (effect) => h('li', null, effectText(effect), isStatActive(effect.stat) ? null : h('small', { class: 'muted' }, ` ${t('res.effect.later')}`));
 
   // short now, or not
   const rung = entry.step > 0 ? resource.shortage[entry.step - 1] : null;
   const status = rung
-    ? h('div', { class: 'res__short', 'data-short': resource.id }, h('strong', null, t('res.short', { label: rung.label })), h('ul', null, rung.effects.map((/** @type {any} */ effect) => h('li', null, effectText(effect)))))
+    ? h('div', { class: 'res__short', 'data-short': resource.id }, h('strong', null, t('res.short', { label: rung.label })), h('ul', null, rung.effects.map(effectLine)))
     : h('p', { class: 'muted res__ok' }, t('res.ok'));
 
   const ladder = h(
@@ -71,7 +82,7 @@ export function resourceCard({ game, countryId, resource, flow, ladderOpen, onLa
           { class: entry.step === i + 1 ? 'is-now' : '' },
           h('strong', null, t('res.ladder.below', { percent: formatPercent(step.coverageBelow, { decimals: 0 }) })),
           ` ${step.label}: `,
-          step.effects.map(effectText).join('; '),
+          step.effects.map((/** @type {any} */ effect) => effectText(effect) + (isStatActive(effect.stat) ? '' : ` ${t('res.effect.later')}`)).join('; '),
         ),
       ),
     ),

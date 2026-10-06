@@ -370,6 +370,11 @@ h2 { font-size: 1.05rem; line-height: 1.25; color: var(--muted); font-weight: 60
 .strait__result { margin-top: 0.4rem; }
 .strait__result ul { margin: 0.2rem 0 0; padding-left: 1.1rem; font-size: 0.85rem; }
 .strait__result li.is-bad { color: var(--danger); }
+.lab { margin-top: 0.8rem; padding: 0.2rem 0.75rem 0.6rem; border: 1px dashed var(--line); border-radius: 0.8rem; font-size: 0.85rem; }
+.lab summary { display: flex; align-items: center; min-height: 2.75rem; color: var(--muted); cursor: pointer; }
+.sheet .lab p { margin: 0.1rem 0 0.5rem; font-size: 0.85rem; }
+.lab__buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.lab__toggle.is-on { border-color: var(--danger); color: var(--danger); }
 .report__resources { margin-top: 0.8rem; padding-top: 0.5rem; border-top: 1px solid var(--line); }
 .report__resources h3 { margin-bottom: 0.25rem; font-size: 0.95rem; }
 .report__res { margin: 0 0 0.5rem; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; }

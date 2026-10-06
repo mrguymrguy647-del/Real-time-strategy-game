@@ -26,6 +26,7 @@ export function createResourcesPanel({ game, countryId, onClose }) {
   const openLadders = new Set();
   /** @type {Set<string>} */
   const openStraits = new Set();
+  let labOpen = false;
 
   /** @param {'buy' | 'sell'} side @param {string} resource @param {number} units */
   function trade(side, resource, units) {
@@ -66,21 +67,56 @@ export function createResourcesPanel({ game, countryId, onClose }) {
       h('header', { class: 'strait__head' }, h('strong', null, chokepoint.name), h('span', { class: blockade > 0 ? 'neg' : 'muted' }, blockade > 0 ? t('res.strait.blocked', { percent: formatPercent(blockade, { decimals: 0 }) }) : t('res.strait.open'))),
       h('p', { class: 'muted' }, chokepoint.blurb, ' ', world.join(' ')),
       h('p', null, share > 0 ? t('res.strait.exposure', { percent: formatPercent(share, { decimals: 0 }) }) : t('res.strait.none')),
+      // "what if it closed?" makes no sense for a strait that is closed already
+      blockade >= 1
+        ? null
+        : h(
+            'button',
+            {
+              class: 'btn btn--small strait__toggle',
+              type: 'button',
+              'aria-expanded': String(open),
+              onclick: () => {
+                if (open) openStraits.delete(chokepoint.id);
+                else openStraits.add(chokepoint.id);
+                render();
+              },
+            },
+            t(open ? 'res.closure.hide' : 'res.closure.show'),
+          ),
+      open && blockade < 1 ? closureResult(chokepoint) : null,
+    );
+  }
+
+  /**
+   * The test lab (G-42): closes a strait for real in this game, so a player can end turns and watch the price,
+   * the reserves and the shortages react before wars can do it. Tucked away, and it says what it does.
+   */
+  function testLab() {
+    const { state, data } = game;
+    return h(
+      'details',
+      { class: 'lab', 'data-lab': '', open: labOpen || undefined, ontoggle: (/** @type {Event} */ event) => (labOpen = /** @type {HTMLDetailsElement} */ (event.currentTarget).open) },
+      h('summary', null, t('lab.title')),
+      h('p', { class: 'muted' }, t('lab.intro')),
       h(
-        'button',
-        {
-          class: 'btn btn--small strait__toggle',
-          type: 'button',
-          'aria-expanded': String(open),
-          onclick: () => {
-            if (open) openStraits.delete(chokepoint.id);
-            else openStraits.add(chokepoint.id);
-            render();
-          },
-        },
-        t(open ? 'res.closure.hide' : 'res.closure.show'),
+        'div',
+        { class: 'lab__buttons' },
+        data.chokepoints.items.map((/** @type {any} */ chokepoint) => {
+          const closed = state.world.chokepoints[chokepoint.id].blockade >= 1;
+          return h(
+            'button',
+            {
+              class: `btn btn--small lab__toggle${closed ? ' is-on' : ''}`,
+              type: 'button',
+              'data-lab-strait': chokepoint.id,
+              'aria-pressed': String(closed),
+              onclick: () => game.dispatch({ type: 'TEST_SET_BLOCKADE', chokepoint: chokepoint.id, blockade: closed ? 0 : 1 }),
+            },
+            t(closed ? 'lab.open' : 'lab.close', { name: chokepoint.shortName }),
+          );
+        }),
       ),
-      open ? closureResult(chokepoint) : null,
     );
   }
 
@@ -109,7 +145,7 @@ export function createResourcesPanel({ game, countryId, onClose }) {
           }),
         ),
       ),
-      h('section', { class: 'straits' }, h('h3', null, t('res.straits')), h('p', { class: 'muted' }, t('res.straits.intro')), data.chokepoints.items.map(straitCard)),
+      h('section', { class: 'straits' }, h('h3', null, t('res.straits')), h('p', { class: 'muted' }, t('res.straits.intro')), data.chokepoints.items.map(straitCard), testLab()),
     );
     el.scrollTop = scrolled;
   }

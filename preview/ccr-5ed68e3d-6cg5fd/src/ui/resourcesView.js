@@ -5,7 +5,10 @@
 import { countryFlows } from '../systems/resourceFlows.js';
 
 /**
- * @typedef {{ id: string, production: number, consumption: number, stock: number }} ResourceLine
+ * @typedef {{ id: string, production: number, consumption: number, stock: number, exports?: number, imports?: number,
+ *   blockedExports?: number, blockedImports?: number }} ResourceLine
+ *   The last four are what the month would do under the blockades in force (a running game only): what is
+ *   really sold or bought abroad, and what a closed strait keeps at home or out of reach.
  */
 
 /**
@@ -27,5 +30,8 @@ export function startResources(data, countryId) {
 export function liveResources(state, data, countryId) {
   if (!Object.hasOwn(state.countries, countryId)) return null;
   const { byResource } = countryFlows(state, data, countryId);
-  return data.activeResources.map((resource) => ({ id: resource.id, production: byResource[resource.id].production, consumption: byResource[resource.id].consumption, stock: byResource[resource.id].stock }));
+  return data.activeResources.map((resource) => {
+    const flow = byResource[resource.id];
+    return { id: resource.id, production: flow.production, consumption: flow.consumption, stock: flow.stock, exports: flow.exports, imports: flow.imports, blockedExports: flow.blockedExports, blockedImports: flow.blockedImports };
+  });
 }
