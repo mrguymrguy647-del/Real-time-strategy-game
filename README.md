@@ -2,7 +2,7 @@
 
 An offline, turn-based, modern-era grand strategy game for phones (working title *Grand Strategy*). Every country in the world is AI-controlled; you pick one. War, economy, resources, diplomacy, technology and government all feed each other, so every success creates a new problem.
 
-**Status:** Phase 1, milestone M1.1a — the interactive map of the 16-country Middle East theater is in (drag to pan, pinch to zoom, tap a country or a region for its info panel). The app shell from Phase 0b (offline, installable, saves, Diagnostics) is still there with its small test game; the economy and war systems come next.
+**Status:** Phase 1, milestone M1.1a — the interactive map of the 16-country Middle East theater, with the rest of the world in grey around it, is in (drag to pan, pinch to zoom, tap a country or a region for its info panel). The app shell from Phase 0b (offline, installable, saves, Diagnostics) is still there with its small test game; the economy and war systems come next.
 
 ## Try it on your phone
 
@@ -35,7 +35,7 @@ If Settings looks cramped, use the browser's *Desktop site* option.
 - **Android (Chrome):** open the preview link → tap *Install* on the title screen (or the ⋮ menu → *Install app*) → open it from the new Home Screen icon.
 - **iPhone / iPad (Safari):** open the preview link → tap the Share button → *Add to Home Screen*.
 
-**Try the map.** On the title screen tap **Explore the map**. Drag to move, pinch to zoom (or use the + and − buttons), tap a country: a panel shows its facts, and the chips at the bottom of the panel switch between its regions. ⌖ shows the whole map again.
+**Try the map.** On the title screen tap **Explore the map**. Drag to move, pinch to zoom (or use the + and − buttons), tap a country: a panel shows its facts, and the chips at the bottom of the panel switch between its regions. ⌖ returns to the Middle East and the globe button shows the whole world. The rest of the world is drawn in grey; tapping a grey country shows its name (it is not playable yet). If the map feels slow, open Settings → Map → *Middle East only*.
 
 **What to check** (open *Diagnostics* in the app and tap *Copy report* to send me the result)
 1. Opens from the Home Screen icon, full screen.
@@ -53,7 +53,7 @@ npm test             unit tests, data validation and a simulation soak
 npm run typecheck    JSDoc type check of src/
 npm run build        build the site into dist/
 npm run build:single build the one-file download into dist-single/
-npm run build:map    rebuild the map geometry (data/map/*.topo.json) and the generated fields of data/regions.json (downloads Natural Earth into .cache/ the first time)
+npm run build:map    rebuild the map geometry (data/map/*.topo.json: the theater and the grey world) and the generated fields of data/regions.json (downloads Natural Earth into .cache/ the first time; add -- --only world or -- --only theater for one file)
 npm run serve        build and serve dist/ at http://127.0.0.1:4173/
 npm run e2e          Playwright tests in a phone-sized Chromium
 npm run screenshot   phone screenshots of every screen into tmp/screenshots/

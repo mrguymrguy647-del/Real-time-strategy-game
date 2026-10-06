@@ -35,6 +35,7 @@ data/
   technologies.json  the tech tree                              P4
   diplomacy.json     initial treaties and pair meters           P3
   map/<theater>.topo.json   (generated) geometry, never hand-edited
+  map/world.topo.json       (generated) the rest of the world in grey, picture and name only
   schema/*.schema.json      JSON Schemas
 ```
 
@@ -440,6 +441,8 @@ with the sentence itself in `i18n/en.json`: `"events.desertion.report": "{count}
 **`diplomacy.json`** (Phase 3) — initial alliances, rivalries and pair-meter overrides; everything else is computed from geography, government affinity and trade.
 
 **`map/<theater>.topo.json`** *(generated)* — TopoJSON with three objects: `regions` (one geometry per region id, properties `region` and `country`), `countries` (one geometry per country, built from the same arcs) and `context` (grey, non-interactive neighbors, clipped to the map box). Coordinates are quantized Mercator kilometres. A `gs` block carries `box` (`[x0, y0, x1, y1]` in km) and `labels` (`{ regions: { id: [x, y] }, countries: { id: [x, y] } }`, a point inside each shape where its name is drawn). Never edited by hand; regenerate with `npm run build:map` (`tools/build-map.mjs`, grouping in `tools/map/<theater>.groups.json`).
+
+**`map/world.topo.json`** *(generated)* — the grey rest of the world (G-34): one object `countries` with a geometry per Natural Earth country that is not playable, properties `{ id, name }` (`id` is the `ADM0_A3` code, `name` Natural Earth's short name). The same Mercator kilometres as the theater file, clipped to latitudes −58° to 80°. `gs` carries `box`, `latitudes`, `naturalEarth` (the same commit as the theater file) and `labels.countries`. These countries are **not** in `countries.json` and never enter the simulation; the map screen is the only reader. Built by `tools/build-world.mjs`.
 
 ## 9. Validation rules (CI)
 

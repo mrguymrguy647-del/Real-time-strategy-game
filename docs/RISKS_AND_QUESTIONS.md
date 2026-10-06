@@ -10,7 +10,8 @@
 **Phase 0b gate passed (2026-10-06):** tested on your Android phone — opens full screen from the Home Screen icon, works in airplane mode, a save survives closing and reopening, both orientations usable. The Diagnostics report arrived as the template text only, so I still have no real-phone numbers (CPU speed, map speed test).
 
 **Phase 1 order (G-32):** you asked for the interactive map first (pan, pinch-zoom, tap a country for its info panel), published as a preview before the economy and war systems. **M1.1a is built** and published as a preview; the economy skeleton, country picker and report (M1.1b) wait for your feedback on the map.
-**Open with the first map preview:** Q7 — the 16-country government classification table, for you to veto (it is only data and easy to change).
+**Q7 decided:** you approved the government and AI-tier table as it was.
+**World map (G-34):** at your request the whole world is drawn in grey around the Middle East (not playable, not in the simulation). You tested the first map on Android Chrome: pan, pinch and tap feel good, deep zoom is acceptable. **Not yet seen on a real phone:** how the world map feels (R19); the Settings switch *Middle East only* is the way back.
 **Not yet seen on a real phone:** touch feel, the map's frame rate and how sharp it looks at deep zoom (the sandbox only has software rendering).
 **Parked for later phases:** Q11 (Phase 4), Q12 (Phase 2), Q18 (an APK, default no).
 
@@ -101,5 +102,7 @@ Each entry: what could go wrong → what I do about it.
 **R16 · Editing JSON blind from a phone.** A typo could break the data. → Strict schemas, CI as a gate, preview URLs; a broken data file never reaches `main`.
 
 **R17 · Session continuity.** Each cloud session starts cold, and the container is discarded when it ends. → Everything worth keeping is committed and pushed; `CLAUDE.md` holds status and decisions; each phase has a written plan.
+
+**R19 · The grey world could slow the map on a weak phone.** The world adds a second small picture (8 MB), a crisp redraw of the screen's surroundings after the camera rests (drawn at CSS-pixel density, about 3 MB), 236 more names to place and a bigger camera range. → The theater's pictures are unchanged and the world follows after the first frame; the overview is not drawn when the theater or the redraw covers the screen; pictures are plain textures, which saves more memory than the world uses (T-20); the redraw is a pure decision tested without a browser. Measured in the sandbox only (software rendering: first frame the same, panning inside the theater about 20-30% slower per frame). **Safety valve:** Settings → Map → *Middle East only*. If a phone struggles anyway, the next steps are a lower redraw density, no redraw (overview only), then dropping the sharp theater picture in favour of a redraw.
 
 **R18 · The one-file download can drift from the web app.** It is built from the same sources, and since M1.1a it carries Phaser too (base64 in the page, loaded through a Blob URL on first use), so the map works from it. A file opened from a phone's Downloads may still get no storage or a stricter viewer. → Tests open it from disk and inside a locked-down frame (memory saves with a notice; the map and its engine load there too); screen switching does not depend on the URL. **Not yet seen on a real phone:** an in-app viewer that blocks Blob URLs would show the map's "could not be shown" message; open the file in Chrome.
