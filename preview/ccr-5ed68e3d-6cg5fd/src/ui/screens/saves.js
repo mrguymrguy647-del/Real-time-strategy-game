@@ -105,7 +105,7 @@ export function mountSaves(ctx) {
     return h(
       'article',
       { class: 'card slot', 'data-slot': slot },
-      h('div', { class: 'row' }, h('strong', null, slotLabel(slot)), h('span', { class: 'muted' }, summary ? t('saves.summary', { date: formatDate(summary.meta), turn: summary.meta.turn }) : t('saves.empty'))),
+      h('div', { class: 'row' }, h('strong', null, slotLabel(slot)), h('span', { class: 'muted' }, summary ? t('saves.summary', { country: ctx.data.countries.byId[summary.meta.countryId]?.name ?? t('common.unknown'), date: formatDate(summary.meta), turn: summary.meta.turn }) : t('saves.empty'))),
       summary && h('div', { class: 'muted slot__time' }, t('saves.savedAt', { time: formatTimestamp(summary.savedAt) })),
       h(
         'div',

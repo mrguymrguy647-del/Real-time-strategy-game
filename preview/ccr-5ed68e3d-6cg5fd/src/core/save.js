@@ -2,7 +2,7 @@
 // records with migrations, and export/import as a file. Every storage call is guarded so the
 // UI gets a SaveError it can explain, never a raw exception.
 
-import { APP_ID, EXPORT_FORMAT, EXPORT_FORMAT_VERSION, SAVE_VERSION } from './version.js';
+import { APP_ID, EXPORT_FORMAT, EXPORT_FORMAT_VERSION, OLDEST_PLAYABLE_SAVE, SAVE_VERSION } from './version.js';
 import { SaveError } from './errors.js';
 import { MIGRATIONS, migrateRecord } from './migrations.js';
 import { checkStateShape } from './state.js';
@@ -134,17 +134,20 @@ export function createSaveManager({ storage, dataVersion, now = () => Date.now()
   }
 
   /**
-   * Load the newest save that is readable, skipping damaged ones. Null when there are no saves.
+   * Load the newest save that is readable, skipping damaged ones. Saves of the early test game are
+   * left out without a word (they cannot be continued, and are not damaged). Null when there are no saves.
    * @returns {Promise<(Awaited<ReturnType<typeof load>> & { slot: string, skipped: string[] }) | null>}
    */
   async function loadLatest() {
     const summaries = await list();
     if (summaries.length === 0) return null;
+    const playable = summaries.filter((summary) => summary.saveVersion >= OLDEST_PLAYABLE_SAVE);
+    if (playable.length === 0) throw new SaveError('too_old', 'every save is from the early test game, which cannot be continued');
     /** @type {string[]} */
     const skipped = [];
     /** @type {unknown} */
     let lastError = null;
-    for (const summary of summaries) {
+    for (const summary of playable) {
       try {
         return { ...(await load(summary.slot)), slot: summary.slot, skipped };
       } catch (err) {

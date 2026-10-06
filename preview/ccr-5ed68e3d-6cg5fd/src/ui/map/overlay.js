@@ -49,9 +49,10 @@ export function createOverlay({ parent, geometry, countryName, regionName }) {
     p.setAttribute('vector-effect', 'non-scaling-stroke');
     return p;
   };
+  const ownPath = makePath('map__sel map__sel--own'); // the player's own country, under the selection
   const countryPath = makePath('map__sel map__sel--country');
   const regionPath = makePath('map__sel map__sel--region');
-  world.append(countryPath, regionPath);
+  world.append(ownPath, countryPath, regionPath);
   svg.append(world);
 
   const labelLayer = document.createElement('div');
@@ -138,6 +139,12 @@ export function createOverlay({ parent, geometry, countryName, regionName }) {
       const region = regionId ? regions.get(regionId) : null;
       countryPath.setAttribute('d', country ? dataFor(`${world ? 'w' : 'c'}:${country.id}`, country.polygons) : '');
       regionPath.setAttribute('d', region ? dataFor(`r:${region.id}`, region.polygons) : '');
+    },
+
+    /** Mark the player's own country, or nothing. @param {string | null} countryId a playable country */
+    setOwn(countryId) {
+      const country = countryId ? countries.get(countryId) : null;
+      ownPath.setAttribute('d', country ? dataFor(`c:${country.id}`, country.polygons) : '');
     },
 
     destroy() {

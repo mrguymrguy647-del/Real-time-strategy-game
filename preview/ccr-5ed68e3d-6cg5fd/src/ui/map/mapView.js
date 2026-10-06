@@ -311,6 +311,11 @@ export async function createMapView({ container, topology, worldTopology = null,
     root,
     select,
     selectWorld,
+    /** Outline the player's own country in its own color, or nothing. @param {string | null} countryId */
+    setOwn(countryId) {
+      overlay.setOwn(countryId);
+      schedule();
+    },
     /** @param {string} id */
     focusCountry(id) {
       const country = countryById.get(id);
@@ -329,6 +334,15 @@ export async function createMapView({ container, topology, worldTopology = null,
     },
     /** Tell the map which parts a panel covers, so focusing frames the country in what is left. @param {import('./view.js').Insets} next */
     setInsets(next) {
+      if (next.left !== insets.left || next.right !== insets.right || next.top !== insets.top || next.bottom !== insets.bottom) {
+        // What the player was looking at stays in the middle of what is still uncovered: a panel that
+        // opens moves the map out from under itself instead of hiding the middle of it.
+        const centre = (/** @type {import('./view.js').Insets} */ i) => ({ x: (i.left + viewport.width - i.right) / 2, y: (i.top + viewport.height - i.bottom) / 2 });
+        const was = centre(insets);
+        const now = centre(next);
+        view = { ...view, cx: view.cx + (was.x - now.x) / view.zoom, cy: view.cy + (was.y - now.y) / view.zoom };
+        detail?.cancel();
+      }
       insets = next;
       schedule(); // the next frame re-applies the limits to the part that is still uncovered
     },

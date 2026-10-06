@@ -1,4 +1,4 @@
-// Checks that game state is plain JSON (T-04): finite numbers, no undefined, no functions,
+// Checks that game state is plain JSON (T-04): finite numbers (and no -0, which JSON turns into 0), no undefined, no functions,
 // no Map/Set/class instances, no shared or circular references. Used by tests, the simulator
 // and dev builds; the shipped game does not pay for it on every turn.
 
@@ -19,6 +19,7 @@ export function findProblems(root, { limit = 20 } = {}) {
     switch (typeof value) {
       case 'number':
         if (!Number.isFinite(value)) problems.push(`${path}: non-finite number (${value})`);
+        else if (Object.is(value, -0)) problems.push(`${path}: negative zero (a save file would turn it into 0)`);
         break;
       case 'string':
       case 'boolean':

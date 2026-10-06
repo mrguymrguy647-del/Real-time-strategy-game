@@ -11,6 +11,7 @@ import { slotLabel } from './format.js';
 import { detectPlatform } from './platform.js';
 import { mountDiagnostics } from './screens/diagnostics.js';
 import { mountMap } from './screens/map.js';
+import { mountPick, SCENARIO_ID } from './screens/pick.js';
 import { mountPlay } from './screens/play.js';
 import { mountSaves } from './screens/saves.js';
 import { mountSettings } from './screens/settings.js';
@@ -19,6 +20,7 @@ import { mountTitle } from './screens/title.js';
 const ROUTES = {
   title: mountTitle,
   map: mountMap,
+  pick: mountPick,
   play: mountPlay,
   saves: mountSaves,
   settings: mountSettings,
@@ -99,8 +101,10 @@ export function createApp({ root, data, saves, settings, pwa, storage, storageEr
     back() {
       ctx.navigate(session.game ? 'play' : 'title');
     },
-    newGame() {
-      attach(createGame({ data, seed: randomSeed() }));
+    /** Begin a new game as this country (chosen on the picker screen). @param {string} countryId */
+    startGame(countryId) {
+      attach(createGame({ data, seed: randomSeed(), scenarioId: SCENARIO_ID, playerId: countryId }));
+      void autosave(); // so Continue finds this game even if the app is closed before the first turn ends
       ctx.navigate('play');
     },
     /** @param {any} state a loaded or imported saved state */
@@ -156,7 +160,7 @@ export function createApp({ root, data, saves, settings, pwa, storage, storageEr
   }
 
   function render() {
-    if (route === 'play' && !session.game) {
+    if (route === 'play' && !session.game?.state.player.countryId) {
       route = 'title'; // nothing to play yet, for example after a reload
       setHash(route, true);
     }

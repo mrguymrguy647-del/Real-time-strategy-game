@@ -1,9 +1,10 @@
-// The title screen: Continue (when a save exists), New test game, Saves, Settings, Diagnostics,
+// The title screen: Continue (when a save exists), New game, Explore the map, Saves, Settings, Diagnostics,
 // plus notices about installing, offline readiness, updates and unavailable storage.
 
 import { t } from '../../util/i18n.js';
 import { assetUrl } from '../assets.js';
 import { h } from '../dom.js';
+import { OLDEST_PLAYABLE_SAVE } from '../../core/version.js';
 import { formatDate } from '../format.js';
 
 /** @param {any} ctx */
@@ -17,7 +18,7 @@ export function mountTitle(ctx) {
     h('button', { class: `btn btn--block ${kind}`.trim(), type: 'button', onclick }, label);
 
   menu.append(
-    button(t('title.newGame'), () => ctx.newGame(), ctx.session.game ? '' : 'btn--primary'),
+    button(t('title.newGame'), () => ctx.navigate('pick'), ctx.session.game ? '' : 'btn--primary'),
     button(t('title.map'), () => ctx.navigate('map')),
     button(t('title.saves'), () => ctx.navigate('saves')),
     button(t('title.settings'), () => ctx.navigate('settings')),
@@ -27,7 +28,8 @@ export function mountTitle(ctx) {
   // "Continue" appears once we know there is a save; it never blocks the rest of the screen.
   ctx.saves
     .list()
-    .then((/** @type {any[]} */ list) => {
+    .then((/** @type {any[]} */ all) => {
+      const list = all.filter((summary) => summary.saveVersion >= OLDEST_PLAYABLE_SAVE); // saves of the early test game cannot be continued
       if (destroyed || list.length === 0) return;
       const newest = list[0];
       menu.prepend(
@@ -35,7 +37,7 @@ export function mountTitle(ctx) {
           'button',
           { class: 'btn btn--primary btn--block btn--two-line', type: 'button', onclick: () => ctx.continueLatest() },
           h('span', null, t('title.continue')),
-          h('small', null, t('title.continueSub', { date: formatDate(newest.meta), turn: newest.meta.turn })),
+          h('small', null, t('title.continueSub', { country: ctx.data.countries.byId[newest.meta.countryId]?.name ?? t('common.unknown'), date: formatDate(newest.meta), turn: newest.meta.turn })),
         ),
       );
       menu.querySelector('.btn--primary:not(.btn--two-line)')?.classList.remove('btn--primary');
