@@ -100,7 +100,11 @@ describe('resources in the game', () => {
     assert.notEqual(before, after);
     await button(page, t('play.resources')).click();
     await page.waitForSelector('.resources:not([hidden]) .res');
-    assert.ok((await page.locator('.resources [data-resource="oil"] .res__change').textContent()).match(/[▲▼]/), 'the arrow shows which way the price went');
+    const arrow = await page.locator('.resources [data-resource="oil"] .res__change').textContent();
+    // every game has its own seed, so the move may be tiny; a move too small to write (under 0.05%) shows no arrow at all
+    if (Math.abs(after / before - 1) >= 0.0005) assert.match(arrow, /[▲▼]/, 'the arrow shows which way the price went');
+    else assert.equal(arrow, '');
+    if (arrow) assert.equal(arrow.includes('▲'), after > before, 'and it points the way the price moved');
     await context.close();
   });
 });
