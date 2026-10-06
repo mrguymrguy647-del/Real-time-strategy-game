@@ -1,11 +1,16 @@
 // The only file that talks to Phaser for the map (T-02): it shows baked canvases through a camera and
 // nothing else. All input, labels and selection live in HTML on top of it, so Phaser is just the
-// GPU-backed pan/zoom surface. World units are the pixels of the sharpest texture; y points down.
+// GPU-backed pan/zoom surface. World units are the pixels of the sharpest theater texture; y points
+// down. Layers stack by depth: the grey world's overview, then its crisp redraw, then the theater.
 
 import { loadPhaser } from '../phaser.js';
 
+/** Stacking order, bottom to top. */
+export const DEPTH = { overview: 0, detail: 1, theater: 2 };
+
 /**
- * @typedef {{ key: string, canvas: HTMLCanvasElement, worldWidth: number }} Layer a baked canvas that covers the whole world
+ * @typedef {{ key: string, canvas: HTMLCanvasElement, rect: import('./box.js').Box, depth?: number }} Layer
+ *   a baked canvas that covers `rect`, a rectangle in world units
  * @typedef {{
  *   parent: HTMLElement, layers: Layer[], width: number, height: number, dpr: number, background: string,
  * }} PhaserMapOptions  width and height are the map's size in CSS pixels
@@ -20,6 +25,9 @@ export async function createPhaserMap(options) {
   let scene = null;
   /** @type {Map<string, any>} */
   const images = new Map();
+  /** The crisp redraw of the grey world: replaced as a whole each time, so its texture is never resized. @type {{ key: string, image: any } | null} */
+  let detail = null;
+  let detailSerial = 0;
   /** @type {any} */
   let game = null;
   let dpr = options.dpr;
@@ -47,7 +55,9 @@ export async function createPhaserMap(options) {
         disableContextMenu: true,
         // The map handles its own pointers (gestures.js); Phaser's input would only get in the way.
         input: { mouse: false, touch: false, keyboard: false, gamepad: false },
-        render: { antialias: true, roundPixels: false, powerPreference: 'low-power' },
+        // Textures with power-of-two sides get mipmaps; the nearest level is used, so a picture shown at
+        // about its own size looks exactly as without them and only a far zoom-out is averaged smoothly.
+        render: { antialias: true, roundPixels: false, powerPreference: 'low-power', mipmapFilter: 'LINEAR_MIPMAP_NEAREST' },
         // The canvas is drawn at device resolution and shown at CSS size (zoom = 1 / dpr).
         scale: { mode: Phaser.Scale.NONE, width: Math.round(options.width * dpr), height: Math.round(options.height * dpr), zoom: 1 / dpr },
         scene: MapScene,
@@ -58,12 +68,33 @@ export async function createPhaserMap(options) {
   });
   await ready;
 
+  /**
+   * Hand a finished canvas to the GPU. Not addCanvas: that makes a CanvasTexture, which reads every pixel
+   * back into a second copy kept in memory (for drawing on it later) and stalls while it does. These
+   * canvases are never drawn on again, so a plain texture over the canvas is all that is needed.
+   * @param {string} key @param {HTMLCanvasElement} canvas
+   */
+  function addTexture(key, canvas) {
+    scene.textures.addImage(key, canvas);
+  }
+
+  /** @param {import('./box.js').Box} rect @param {string} key @param {number} depth */
+  function placeImage(rect, key, depth) {
+    return scene.add.image(rect.minX, rect.minY, key).setOrigin(0, 0).setDisplaySize(rect.maxX - rect.minX, rect.maxY - rect.minY).setDepth(depth);
+  }
+
   /** @param {Layer} layer */
   function addLayer(layer) {
     if (!scene || images.has(layer.key)) return;
-    scene.textures.addCanvas(layer.key, layer.canvas);
-    const image = scene.add.image(0, 0, layer.key).setOrigin(0, 0).setScale(layer.worldWidth / layer.canvas.width).setVisible(false);
-    images.set(layer.key, image);
+    addTexture(layer.key, layer.canvas);
+    images.set(layer.key, placeImage(layer.rect, layer.key, layer.depth ?? DEPTH.theater).setVisible(false));
+  }
+
+  function clearDetail() {
+    if (!detail || !scene) return;
+    detail.image.destroy();
+    scene.textures.remove(detail.key);
+    detail = null;
   }
 
   const camera = () => scene.cameras.main;
@@ -75,13 +106,28 @@ export async function createPhaserMap(options) {
     },
     version: String(Phaser.VERSION),
 
-    /** Add a baked level of detail after start-up (the sharp one is baked while the first frame shows). @param {Layer} layer */
+    /** Add a baked layer, also after start-up (the sharp one is baked while the first frame shows). @param {Layer} layer */
     addLayer,
 
-    /** Show exactly one baked layer. @param {string} key */
-    showLayer(key) {
-      for (const [k, image] of images) image.setVisible(k === key);
+    /** Show or hide one baked layer. @param {string} key @param {boolean} visible */
+    setLayerVisible(key, visible) {
+      images.get(key)?.setVisible(visible);
     },
+
+    /**
+     * Show a freshly drawn canvas that covers `rect` above the overview and below the theater, and drop
+     * the one it replaces. A new texture each time, because a texture cannot change size.
+     * @param {HTMLCanvasElement} canvas @param {import('./box.js').Box} rect
+     */
+    setDetail(canvas, rect) {
+      if (!scene || destroyed) return;
+      const key = `detail-${++detailSerial}`;
+      addTexture(key, canvas);
+      const image = placeImage(rect, key, DEPTH.detail);
+      clearDetail();
+      detail = { key, image };
+    },
+    clearDetail,
 
     /** @param {{ cx: number, cy: number, zoom: number }} view zoom is CSS pixels per world unit */
     setView(view) {

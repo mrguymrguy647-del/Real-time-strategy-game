@@ -203,6 +203,7 @@ h2 { font-size: 1.05rem; line-height: 1.25; color: var(--muted); font-weight: 60
 .map__sel--region { fill: rgb(255 255 255 / 0.2); stroke: #fff; stroke-width: 1.5px; }
 .map__labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .map__label { position: absolute; left: 0; top: 0; white-space: nowrap; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; color: #eef3f9; text-shadow: 0 0 3px #0a1626, 0 0 7px #0a1626, 0 0 7px #0a1626; will-change: transform; }
+.map__label--world { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.02em; color: #9db1c6; }
 .map__label--region { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.02em; color: #d3deea; opacity: 0.85; }
 .map-status { position: absolute; inset: 0; display: grid; place-items: center; padding: 2rem; text-align: center; color: var(--muted); z-index: 2; }
 .map-top { position: absolute; z-index: 5; top: calc(var(--safe-top) + 0.5rem); left: calc(var(--safe-left) + 0.5rem); display: flex; align-items: center; gap: 0.6rem; }
@@ -218,6 +219,7 @@ h2 { font-size: 1.05rem; line-height: 1.25; color: var(--muted); font-weight: 60
 .sheet { position: absolute; z-index: 6; left: 0; right: 0; bottom: 0; max-height: min(44vh, 22rem); max-height: min(44dvh, 22rem); overflow-y: auto; overscroll-behavior: contain; padding: 0.7rem 1rem calc(var(--safe-bottom) + 0.8rem); background: var(--surface); border-top: 1px solid var(--line); border-radius: 1.1rem 1.1rem 0 0; box-shadow: 0 -10px 28px rgb(0 0 0 / 0.5); touch-action: pan-y; }
 .sheet__head { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 0.5rem; }
 .sheet__swatch { flex: none; width: 0.8rem; height: 2.2rem; border-radius: 0.4rem; }
+.sheet__swatch--grey { background: #3a5270; }
 .sheet h2, .sheet h3 { margin: 0; }
 .sheet__heading { flex: 1; min-width: 0; }
 .sheet__heading .muted { margin: 0; font-size: 0.9rem; }

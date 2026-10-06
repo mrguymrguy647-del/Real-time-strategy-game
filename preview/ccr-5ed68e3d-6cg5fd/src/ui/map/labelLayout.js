@@ -20,11 +20,12 @@ export function boxesOverlap(a, b, gap = 4) {
 /**
  * @param {Array<LabelBox | null>} boxes in priority order, best first; null for a label that is not wanted at all
  * @param {Area} area where labels may be drawn
+ * @param {LabelBox[]} [reserved] places something else sits on (buttons, a title): no label may touch them
  * @returns {boolean[]} for each label, whether it is shown
  */
-export function chooseLabels(boxes, area) {
+export function chooseLabels(boxes, area, reserved = []) {
   /** @type {LabelBox[]} */
-  const kept = [];
+  const kept = [...reserved];
   return boxes.map((box) => {
     if (!box || !isInside(box, area) || kept.some((other) => boxesOverlap(box, other))) return false;
     kept.push(box);

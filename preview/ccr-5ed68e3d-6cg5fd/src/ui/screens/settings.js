@@ -1,4 +1,4 @@
-// Settings: text size, checking for a new version, and erasing saves.
+// Settings: text size, the map's reach, checking for a new version, and erasing saves.
 
 import { t } from '../../util/i18n.js';
 import { h } from '../dom.js';
@@ -32,6 +32,33 @@ export function mountSettings(ctx) {
     );
   }
   renderSizes();
+
+  const reach = h('div', { class: 'segmented', role: 'group', 'aria-label': t('settings.map.title') });
+  function renderReach() {
+    const world = ctx.settings.get('mapWorld') !== false;
+    reach.replaceChildren(
+      ...[
+        [true, t('settings.map.world')],
+        [false, t('settings.map.theater')],
+      ].map(([value, label]) =>
+        h(
+          'button',
+          {
+            class: `btn segmented__btn${value === world ? ' is-active' : ''}`,
+            type: 'button',
+            'aria-pressed': String(value === world),
+            onclick: async () => {
+              const saved = await ctx.settings.set('mapWorld', /** @type {boolean} */ (value));
+              if (!saved) ctx.toast(t('settings.notSaved'));
+              renderReach();
+            },
+          },
+          /** @type {string} */ (label),
+        ),
+      ),
+    );
+  }
+  renderReach();
 
   const updateStatus = h('p', { class: 'muted', role: 'status' });
   async function checkUpdates() {
@@ -68,6 +95,7 @@ export function mountSettings(ctx) {
     { class: 'screen' },
     h('header', { class: 'topbar' }, h('button', { class: 'btn btn--ghost btn--small', type: 'button', onclick: () => ctx.back() }, t('common.back')), h('h1', null, t('settings.title'))),
     h('div', { class: 'card stack' }, h('h2', null, t('settings.textSize.title')), sizes, h('p', { class: 'muted' }, t('settings.textSize.sample'))),
+    h('div', { class: 'card stack' }, h('h2', null, t('settings.map.title')), reach, h('p', { class: 'muted' }, t('settings.map.body'))),
     h(
       'div',
       { class: 'card stack' },
