@@ -241,6 +241,8 @@ h2 { font-size: 1.05rem; line-height: 1.25; color: var(--muted); font-weight: 60
 
 /* Country picker and game bar (M1.1b) */
 .map-top--stack { flex-direction: column; align-items: flex-start; gap: 0.4rem; right: calc(var(--safe-right) + 0.5rem); }
+.map-top--stack { pointer-events: none; } /* its empty part must not block panning the map; its buttons and the strip take touches */
+.map-top--stack .btn, .map-top--stack h1, .pick-strip { pointer-events: auto; }
 .map-top__row { display: flex; align-items: center; gap: 0.6rem; }
 .pick-strip { margin: 0; padding: 0 0 0.1rem; width: 100%; }
 .pick-strip .chip { background: rgb(18 38 61 / 0.94); }
@@ -304,5 +306,6 @@ h2 { font-size: 1.05rem; line-height: 1.25; color: var(--muted); font-weight: 60
   .sheet { left: auto; top: 0; bottom: 0; right: 0; width: min(24rem, 46vw); max-height: none; padding: calc(var(--safe-top) + 0.9rem) calc(var(--safe-right) + 1rem) calc(var(--map-bottom) + 1rem) 1rem; border-top: 0; border-left: 1px solid var(--line); border-radius: 1.1rem 0 0 1.1rem; box-shadow: -10px 0 28px rgb(0 0 0 / 0.5); }
   .map__hud { bottom: calc(var(--map-bottom) + 0.75rem); right: calc(var(--safe-right) + 0.75rem + var(--sheet-w, 0px)); }
   .play-hud, .map-top--stack { right: calc(var(--safe-right) + 0.5rem + var(--sheet-w, 0px)); }
+  .play-hud { padding-block: 0.25rem; }
   .sheet--tall { max-height: none; }
 }

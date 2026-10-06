@@ -94,6 +94,18 @@ describe('choosing a country', () => {
     await context.close();
   });
 
+  it('leaves the empty part of the top bar to the map, so it can still be dragged there', async () => {
+    const { context, page } = await freshPage(env.browser);
+    await openApp(page, env.site.url);
+    await openPicker(page);
+    const width = /** @type {{ width: number }} */ (page.viewportSize()).width;
+    const covered = await page.evaluate(([x, y]) => Boolean(document.elementFromPoint(x, y)?.closest('.map-top')), [width - 12, 36]);
+    assert.equal(covered, false, 'the corner beside the title belongs to the map');
+    const onTitle = await page.evaluate(() => Boolean(document.elementFromPoint(100, 40)?.closest('.map-top')));
+    assert.equal(onTitle, true, 'but the Back button is still a button');
+    await context.close();
+  });
+
   it('goes back to the title screen', async () => {
     const { context, page } = await freshPage(env.browser);
     await openApp(page, env.site.url);
