@@ -80,7 +80,7 @@ Comparison keys: `lt`, `lte`, `gt`, `gte`, `eq`. `chance` uses the seeded RNG. C
 
 One entry per country. Phase 1 has 16.
 
-**Status (M1.1a):** the file carries identity, `capital`, `government`, `aiTier`, `population`, `start.economy.gdpBn` and `sources`; the schema accepts the rest of `start.economy` already. The `traits`, `start.budget`, `start.military`, `start.resources`, `start.internal`, `start.tech`, `chokepoints` and `leader` blocks arrive with M1.1b and later, and each is validated as a whole when it appears.
+**Status (M1.1b):** the file carries identity, `capital`, `government`, `aiTier`, `population`, `sources`, and the **economy skeleton**: `start.economy` (`gdpBn`, `growth`, `taxRate`, `debtPctGdp`, `treasuryMn` are required; `inflation` is accepted but not used yet) and `start.budget` (the four shares, required). The `traits`, `start.military`, `start.resources`, `start.internal`, `start.tech`, `chokepoints` and `leader` blocks arrive with later milestones, and each is validated as a whole when it appears. Until M1.2, `taxRate` stands for **all** state income, including what the state earns from resources, which is why the Gulf states show high ones (G-35). The validator checks that a starting budget roughly balances (between −8% and +10% of GDP, with interest at the base rate), so a slipped decimal point cannot start a country bankrupt.
 
 **Fields**
 - `id` — Natural Earth `ADM0_A3`. `name`, `adjective` (used in news: "Kuwaiti forces…").
@@ -91,7 +91,7 @@ One entry per country. Phase 1 has 16.
 - `traits` — ids in `traits.json`.
 - `population` — thousands.
 - `color` — optional `#rrggbb`; otherwise assigned by the map-coloring pass.
-- `start.economy` — `gdpBn`, `growth` (annual), `taxRate` (tax revenue as a share of GDP), `debtPctGdp`, `inflation` (annual), `treasuryMn`.
+- `start.economy` — `gdpBn`, `growth` (annual real growth: the country's own trend, which already includes its starting policies), `taxRate` (state income as a share of GDP), `debtPctGdp` (of GDP), `treasuryMn` (cash and liquid reserves the state can use), `inflation` (annual; not used until M1.4).
 - `start.budget` — spending by category as a **share of GDP**: `military`, `research`, `welfare`, `infrastructure`.
 - `start.military` — `forces` (abstract strength points by class: `land`, `armor`, `air`; G-02), `techLevel` (0–10), `morale`, `training`, `comms` (0–100 each).
 - `start.resources` — four maps, each keyed by resource id: `production` and `consumption` (units per month), `stockpile` (units), and `stateShare` (share of that resource's income that goes to the state; missing entries default from `resources.json`).
@@ -382,7 +382,9 @@ Six types in v1: `democracy`, `authoritarian`, `monarchy`, `junta`, `communist`,
 }
 ```
 
-**`scenarios.json`** — start conditions (design §11). Phase 1 has one; `playable: null` means every country in the listed theaters. Off-map patrons are the abstract great powers of G-29.
+**`balance.json` → `economy`** (G-35; every number the economy skeleton uses): `taxRange` (how far a tax rate may move from the start, 0.10), `taxMin`, `taxMax`, `taxStep`; `budgetStep` and `budgetRange` per category (the step of a lever and how far above its start it may go; a share may always go to nothing); `interest` (`base`, `riskStart`, `riskSlope`, `max`: the yearly rate is the base plus `riskSlope` for every 100% of GDP of debt above `riskStart`, at most `max`); `growth` (`taxDrag`, `infrastructure`, `research`, `debtDrag`: points of yearly growth per point of GDP, or per 100% of GDP of debt, away from the start; `min`, `max`: the bounds of growth); `warnings` (`debtRatio` for the debt alert and news, `runwayMonths` for the treasury alert).
+
+**`scenarios.json`** — start conditions (design §11). Phase 1 has one (`me_2026`, plus `scaffold_test`, an empty world that unit tests use and the game never offers); `playable: null` means every country in the listed theaters. Off-map patrons are the abstract great powers of G-29.
 
 ```jsonc
 {

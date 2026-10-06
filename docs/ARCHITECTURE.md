@@ -94,6 +94,8 @@ In priority order, the architecture optimizes for:
 
 **T-20 · Map pictures are plain textures, not CanvasTextures.** Phaser's `addCanvas` makes a CanvasTexture that reads every pixel back into a second in-memory copy (for drawing on it later) and stalls while it does; the map never draws on a finished picture, so `src/ui/map/phaserMap.js` uses `textures.addImage(key, canvas)`. Pictures shown small have power-of-two sides and the renderer uses `LINEAR_MIPMAP_NEAREST`, so a far zoom-out is averaged smoothly while a picture shown at about its own size looks exactly as without mipmaps. *Why:* it removed one full copy of every texture (about 37 MB for the sharp theater picture alone) and the readback stall at start-up.
 
+**T-21 · A forecast is the turn itself, run without applying it.** The Budget's "next month" numbers and the alerts call `previewEconomy`, which runs `economyMonth` (the same pure function the monthly turn runs) on the current state and changes nothing; the turn then applies that result. There is no second formula to drift, and a test checks that the forecast equals what the next turn does. *Why:* pillar 2 (causes are visible) only works if the explanation and the outcome come from one computation; the same pattern serves the capture estimate (M1.2) and the war-win probability (M1.3).
+
 ## 3. Verified in this sandbox (2026-10-05)
 
 So the plan rests on measurements rather than guesses:
@@ -181,6 +183,8 @@ File-size rule: soft limit 300 lines, hard limit 500 per source file (JSON data 
 
 Countries and regions are objects keyed by id (JSON-friendly, O(1) lookup). Diplomacy pairs are stored sparsely: only pairs that differ from their computed default exist (Phase 3).
 
+**As built in M1.1b** (save version 2): `meta`, `rng`, `clock`, `player { countryId }`, `world`, `countries`, `regions` (empty until M1.3), `decisions`, `news`, `chronicle`, `log`. Each country is `{ government, economy: { gdpBn, taxRate, treasuryMn, debtMn, last }, budget: { military, research, welfare, infrastructure } }`. `economy.last` is what the last month did (period, income, spending, interest, rate, growth, balance, borrowed, repaid) and, for the **player's country only**, `why`: the explained values (value, op and parts) behind the report's "Why?" lists. Money is USD millions, GDP billions, shares and rates fractions (G-25). A `-0` is refused by the invariant check, because a save file would turn it into `0` and change the state.
+
 ### 6.3 Commands
 
 ```text
@@ -192,6 +196,8 @@ Examples: `SET_BUDGET`, `SET_TAX`, `SET_STANCE`, `DECLARE_WAR`, `OFFER_PEACE`, `
 - Player commands apply **immediately** (instant feedback, previews stay truthful). Stances and budgets are *standing orders* read by the next turn.
 - AI commands go through the same `dispatch` during the AI step.
 - Every applied command is appended to a capped `log`, which helps debugging and delegation.
+
+**As built in M1.1b** (`core/commands.js`, `systems/economyCommands.js`): `createCommands(definitions)` gives `dispatch(ctx, command)`; a definition is `{ validate(ctx, command) → null | reason code, apply(ctx, command) }`. A refused command changes nothing and returns `{ ok: false, error: { code, message } }`; an applied one is logged (capped at 100, with the turn) and announced on the bus as `command`, which is how open panels redraw. `game.dispatch` is the one door; `COMMANDS` in `game.js` lists what is registered. Today: `SET_TAX { countryId, rate }` and `SET_BUDGET { countryId, category, share }`, each limited to the range around the country's starting value (`formulas/economy.js` `taxBounds`, `budgetBounds`) and rounded to four decimals (`tidy`).
 
 ### 6.4 Turn pipeline
 
@@ -233,12 +239,14 @@ order system         cadence  what it does
 - Every entity has `modifiers: [{ source, stat, op, value, expires? }]`. A value is `(base + Σ add) × Π mul`. Sources (a government, a technology, a trait, a shortage step, an event) add and remove their modifiers when they start and stop applying.
 - **Conditions** are JSON predicates evaluated against state (`all`/`any`/`not`, comparisons, flags, `chance`).
 - Per-turn caching keeps lookups cheap. Formal grammar: DATA_SCHEMAS §3.
+- **As built:** `core/modifiers.js` `modifiersFor(data, country, statId)` returns `{ add, mul }` from the country's government today (traits, techs and events add their sources there later), so a system never names a government. `formulas/explain.js` `modifierPart` turns the pair into one term of an explained sum.
 
 ### 6.8 Formulas, explanations and what-if previews
 
 - `formulas/*` export pure functions such as `combatStrength(inputs, params) → { value, parts }`, where `parts` are the factors or terms. `value` and `parts` come from the same computation, so there is no duplicate logic that can drift.
 - The UI's **why?** popovers display `parts`. Tests assert that `parts` reproduce `value`.
 - **Previews** (capture estimate, win probability, cost of an extension lever) are pure functions in `systems/` that run the same formulas on a read-only view of the state. They never mutate state and never consume the real RNG (they use `rng.clone()`).
+- **As built** (`formulas/explain.js`, `formulas/economy.js`): an explained value is `{ value, op: 'sum' | 'product', parts: [{ id, value }] }`. `sumOf` and `productOf` make one, so the parts reproduce the value by construction; `limitSum` keeps a sum inside bounds and adds a `limit` part for the difference. The UI writes the parts with labels `why.<number>.<id>` (`ui/components/why.js`). `economyMonth` is one whole month for one country; `systems/economy.js` `previewEconomy` runs it without changing anything (the Budget's forecast and the alerts use it) and the turn runs the very same function and applies it, so a forecast is never different from what happens (a test checks it).
 
 ### 6.9 Crash-safe turns
 
@@ -324,6 +332,7 @@ Labels for the few visible major regions and countries are HTML elements positio
 - **Touch rules:** tap targets at least 44×44 CSS px; primary action (End Turn) reachable by one thumb; no hover-only information (tooltips become tap-to-reveal **why?** popovers); text at least 14 px; `viewport-fit=cover` with safe-area insets; no `100vh` (use `dvh`); `overscroll-behavior: none` to block pull-to-refresh.
 - **Wiring:** the shell subscribes to the game's events and re-renders the open panel; panels read state and dispatch commands, never mutate.
 - **Information level (G-04)** is applied in one place (a `visible(stat, level)` helper), so every panel shows exact values, bands or "?" consistently.
+- **As built in M1.1b:** routes `title`, `map` (explore), `pick` (new game), `play`, `saves`, `settings`, `diagnostics`. Explore, pick and play are all `components/mapStage.js` (the map, zoom buttons, hint, and the bookkeeping of what floats over the map) plus their own bars and panels: `panels/countryPanel.js` (with `economyOf` and `actionsFor` slots), `reportPanel.js`, `budgetPanel.js`, sharing `components/sheetHead.js`, `alerts.js` and `why.js`. The screen is a column: the map area (panels slide over it and never over the bar) and the action bar. Only one panel is open at a time. A panel that opens or closes moves the camera so the middle of the part it leaves free keeps the same map point (`mapView.setInsets`). The player's country is outlined by `overlay.setOwn`. Text with money in it uses params named `...Mn` (USD millions), written out by `format.js` `formatParams`, so state and news never hold formatted text.
 - **Look:** system font stack (no web fonts, so offline is trivial), CSS variables for a dark default theme, `prefers-reduced-motion` respected.
 - **Text (G-30):** English only. Every visible string lives in `data/i18n/en.json` and is read with `t('key', params)` / `tn('key', n, params)` from `src/util/i18n.js`. A test checks that every key used in code exists in the file. The static HTML shell (page title, loading and no-script text) is filled from the same file at build time, so even that is never hard-coded.
 
@@ -335,6 +344,7 @@ Labels for the few visible major regions and countries are HTML elements positio
 - **Failure handling:** every storage call is guarded and reports a `SaveError` with a code the UI can explain. A Safari "connection is closing" error reopens the database and retries once. If storage is unavailable (private mode, blocked, quota), the game keeps running from memory with a visible notice and offers **Export**.
 - **Export/import:** one `.gsave` file (gzip via `CompressionStream` when available, plain JSON otherwise) holding a format header plus the record. Export goes through the system share sheet when possible (the only way out of an installed iOS app), else a download; import accepts either form, checks the header, migrates and loads into a slot.
 - **Persistence request:** ask `navigator.storage.persist()` after the first save; Diagnostics shows persisted/quota. iOS Safari can evict storage of sites that are not installed to the Home Screen after about a week of non-use, so install is encouraged and exports are one tap away.
+- **Save version 2 (M1.1b):** the Phase 0b test game (version 1) had no countries, so its migration refuses with `too_old` (a message the player can read); `OLDEST_PLAYABLE_SAVE` lets Continue leave such saves out without calling them damaged. The game is autosaved when it starts and after every turn.
 - **Versioning:** `saveVersion` plus a chain of migrations (`migrations[n]: save → save`), with a fixture save per version in tests; `dataVersion` mismatches trigger a repair pass (drop unknown ids, report) or a clear "update the app" message.
 - Settings use IndexedDB as well; `localStorage` is used only for tiny UI conveniences, always in try/catch.
 
@@ -402,7 +412,7 @@ Rule of thumb (an assumption to calibrate with your Diagnostics benchmark): **No
 ## 17. Phase 1 technical plan (sketch)
 
 - **M1.1a (first, G-32) — built:** the interactive map. `tools/build-map.mjs` for the 16-country theater (§9.1), `data/countries.json` and `data/regions.json` (identity, geography, government; economy blocks follow in M1.1b), `src/ui/map/*` (§9.2–§9.7), the map screen (reached from the title screen's *Explore the map*) with the whole world in grey around the Middle East (G-34), and a country info panel. Published as a preview before anything else. Not yet there, by design: ownership tints, the player's country, the country picker (M1.1b).
-- **M1.1b:** the `core/*` pipeline for real play; `systems/economy.js` + `formulas/economy.js`; country picker; report panel; autosave.
+- **M1.1b — built (G-35, G-36):** `core/state.js` for real play (the `me_2026` scenario), `core/commands.js`, `core/modifiers.js`, `core/scenario.js`, `formulas/economy.js` + `explain.js`, `systems/economy.js` + `economyCommands.js`, the country picker, the game screen, the Budget and the monthly report with its "Why?" lists, autosave at the start and after every turn, save version 2.
 - **M1.2:** `systems/resources.js`, `formulas/market.js`, chokepoints, shortage ladder via effects, capture-estimate preview.
 - **M1.3:** `systems/war.js`, `formulas/combat.js`, fronts, commands, off-map patrons, diplomacy stub.
 - **M1.4:** `systems/endurance.js`, `formulas/endurance.js`, extension levers, basic `stability` and collapse stages.
