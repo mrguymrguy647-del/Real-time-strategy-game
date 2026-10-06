@@ -43,7 +43,7 @@ data/
 
 ### 3.1 Stats
 
-A **stat** is a named number the game can read and modify, written `scope.group.name`. Scopes: `country`, `region`, `front`, `world`. The list of valid stats lives in code (`src/core/stats.js`: name, min, max, default, label). Data that names an unknown stat fails validation. *Adding a stat is a code change; using one is data.*
+A **stat** is a named number the game can read and modify, written `scope.group.name`. Scopes: `country`, `region`, `front`, `world`. The list of valid stats lives in code (`src/core/stats.js`: name, min, max, default, label, and `active` once a system reads the stat; the screens mark a shortage's effect on a stat that is not active yet as *not active yet*). Data that names an unknown stat fails validation. *Adding a stat is a code change; using one is data.*
 
 Examples: `country.approval.people`, `country.military.morale`, `country.economy.growth`, `country.mechanized.mobility`, `country.air.sorties`, `region.unrest`, `region.resistance`, `front.units`, `world.tension`.
 
