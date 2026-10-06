@@ -259,6 +259,19 @@ h2 { font-size: 1.05rem; line-height: 1.25; color: var(--muted); font-weight: 60
 .play-hud__treasury { color: var(--gold); font-weight: 600; font-size: 0.95rem; }
 .play-hud__change { font-weight: 600; font-size: 0.9rem; }
 
+/* Small phones: tighter strips, and the zoom buttons in two columns so they fit above an open panel */
+@media (max-width: 380px) {
+  .play-hud { padding-inline: 0.65rem; }
+  .play-hud__row > * { white-space: nowrap; }
+  .play-hud__treasury, .play-hud__change, .play-hud__date { font-size: 0.85rem; }
+  .actionbar--game { gap: 0.35rem; }
+  .actionbar--game .btn { font-size: 0.9rem; }
+}
+@media (max-height: 640px) and (orientation: portrait) {
+  .map__hud { display: grid; grid-template-columns: repeat(2, auto); gap: 0.4rem; }
+  .map__btn { width: 2.75rem; height: 2.75rem; }
+}
+
 /* Report and budget */
 .alert { margin: 0.35rem 0; padding: 0.5rem 0.75rem; border: 1px solid var(--gold); border-radius: 0.7rem; background: rgb(255 183 3 / 0.08); font-size: 0.9rem; }
 .report__headline { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.1rem 0.75rem; padding-bottom: 0.3rem; }

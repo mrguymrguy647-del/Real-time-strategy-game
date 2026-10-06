@@ -58,7 +58,10 @@ export function mountPlay(ctx) {
   /** @param {'report' | 'budget' | null} name */
   function openSheet(name) {
     active = name;
-    if (name) stage.view?.select(null); // the map's own selection would otherwise be hidden but still there
+    if (name) {
+      stage.hideHint(); // whoever opens the budget or the report is past the first-turn hint
+      stage.view?.select(null); // the map's own selection would otherwise be hidden but still there
+    }
     if (name === 'report') report.show();
     else report.hide();
     if (name === 'budget') budget.show();
