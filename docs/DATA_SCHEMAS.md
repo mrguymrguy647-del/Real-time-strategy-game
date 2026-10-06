@@ -30,7 +30,7 @@ data/
   chokepoints.json   Hormuz, Suez, Bab-el-Mandeb              P1
   countries.json     one entry per country                      P1: 16, P5: ~195
   regions.json       one entry per region                       P1: ~100, P5: ~1,200
-  scenarios.json     start date, roster, goal                   P0b ✔ one scaffold scenario, P1: the real one
+  scenarios.json     start date, roster, goal                   P0b ✔ one scaffold scenario, M1.1b ✔ me_2026
   events.json        chaos events and world events              P2+
   technologies.json  the tech tree                              P4
   diplomacy.json     initial treaties and pair meters           P3
@@ -311,7 +311,7 @@ Six types in v1: `democracy`, `authoritarian`, `monarchy`, `junta`, `communist`,
   "version": 1,
   "lang": "en",
   "strings": {
-    "title.newGame": "New test game",
+    "title.newGame": "New game",
     "saves.count.one": "{n} save",
     "saves.count.other": "{n} saves"
   }
