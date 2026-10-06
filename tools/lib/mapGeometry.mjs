@@ -181,6 +181,27 @@ export function deriveRegionFacts(topology) {
 }
 
 /**
+ * A label point (the pole of inaccessibility of the largest polygon) for every geometry of one object.
+ * Map units (km), rounded to 0.1.
+ * @param {import('../../src/ui/map/topology.js').Topology} topology
+ * @param {string} objectName
+ * @param {string} idField the property holding a geometry's id
+ * @param {Float64Array[]} [decoded] pass the result of decodeArcs() to share it between calls
+ * @returns {Record<string, [number, number]>}
+ */
+export function labelPoints(topology, objectName, idField, decoded = decodeArcs(topology)) {
+  /** @type {Record<string, [number, number]>} */
+  const labels = {};
+  for (const feature of featuresOf(topology, objectName, decoded)) {
+    if (feature.polygons.length === 0) continue;
+    const largest = feature.polygons.reduce((a, b) => (Math.abs(ringArea(b[0])) > Math.abs(ringArea(a[0])) ? b : a));
+    const [x, y] = poleOfInaccessibility(largest, 1);
+    labels[feature.properties[idField]] = [Math.round(x * 10) / 10, Math.round(y * 10) / 10];
+  }
+  return labels;
+}
+
+/**
  * Where to put each country's and region's label: the pole of inaccessibility of its largest polygon.
  * Computed here, once, so a phone never has to. Map units (km), rounded to 0.1.
  * @param {import('../../src/ui/map/topology.js').Topology} topology
@@ -188,16 +209,5 @@ export function deriveRegionFacts(topology) {
  */
 export function deriveLabels(topology) {
   const decoded = decodeArcs(topology);
-  /** @param {string} objectName @param {string} idField */
-  const pick = (objectName, idField) => {
-    /** @type {Record<string, [number, number]>} */
-    const labels = {};
-    for (const feature of featuresOf(topology, objectName, decoded)) {
-      const largest = feature.polygons.reduce((a, b) => (Math.abs(ringArea(b[0])) > Math.abs(ringArea(a[0])) ? b : a));
-      const [x, y] = poleOfInaccessibility(largest, 1);
-      labels[feature.properties[idField]] = [Math.round(x * 10) / 10, Math.round(y * 10) / 10];
-    }
-    return labels;
-  };
-  return { countries: pick('countries', 'country'), regions: pick('regions', 'region') };
+  return { countries: labelPoints(topology, 'countries', 'country', decoded), regions: labelPoints(topology, 'regions', 'region', decoded) };
 }

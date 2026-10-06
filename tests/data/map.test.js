@@ -14,6 +14,8 @@ const topology = JSON.parse(fs.readFileSync(topologyFile, 'utf8'));
 const regionsDoc = await readJsonFromDisk('data/regions.json');
 const countriesDoc = await readJsonFromDisk('data/countries.json');
 const groups = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/map/middle_east.groups.json'), 'utf8'));
+const worldFile = path.join(ROOT, 'data/map/world.topo.json');
+const worldTopology = JSON.parse(fs.readFileSync(worldFile, 'utf8'));
 const decoded = decodeArcs(topology);
 const regions = featuresOf(topology, 'regions', decoded);
 const countryShapes = featuresOf(topology, 'countries', decoded);
@@ -100,5 +102,51 @@ describe('the Middle East map geometry', () => {
       const at = topology.gs.labels.regions[region.id];
       assert.ok(at && inBox(at), `${region.id} has no label point inside the map box`);
     }
+  });
+});
+
+describe('the grey world file (data/map/world.topo.json)', () => {
+  const decodedWorld = decodeArcs(worldTopology);
+  const grey = featuresOf(worldTopology, 'countries', decodedWorld);
+
+  it('has a name and an id for every country, none of them playable and none twice', () => {
+    const ids = grey.map((f) => f.properties.id);
+    assert.equal(new Set(ids).size, ids.length);
+    for (const f of grey) assert.ok(typeof f.properties.name === 'string' && f.properties.name.length > 0, `${f.properties.id} has no name`);
+    const playable = new Set(groups.countries);
+    for (const id of ids) assert.equal(playable.has(id), false, `${id} is playable, so it must not be in the grey world`);
+    for (const id of groups.countries) assert.equal(countriesDoc.items.some((/** @type {any} */ c) => c.id === id), true, `${id} is in countries.json`);
+  });
+
+  it('keeps the grey world out of the game data: no grey country is in countries.json or regions.json', () => {
+    const inData = new Set([...countriesDoc.items.map((/** @type {any} */ c) => c.id), ...regionsDoc.items.map((/** @type {any} */ r) => r.country)]);
+    for (const f of grey) assert.equal(inData.has(f.properties.id), false, `${f.properties.id} leaked into the game data`);
+  });
+
+  it('has a label point inside the map box for every country that has a shape', () => {
+    const [x0, y0, x1, y1] = worldTopology.gs.box;
+    for (const f of grey) {
+      const at = worldTopology.gs.labels.countries[f.properties.id];
+      if (f.polygons.length === 0) continue;
+      assert.ok(at && at[0] >= x0 && at[0] <= x1 && at[1] >= y0 && at[1] <= y1, `${f.properties.id} has no label point in the box`);
+    }
+  });
+
+  it('stays within the size budget and shares the theater\'s map units', () => {
+    assert.ok(fs.statSync(worldFile).size <= 150 * 1024, 'the world file should stay under 150 KB');
+    assert.equal(worldTopology.gs.units, topology.gs.units);
+    assert.equal(worldTopology.gs.projection, topology.gs.projection);
+    assert.equal(worldTopology.gs.naturalEarth, topology.gs.naturalEarth, 'both files come from the same Natural Earth commit');
+    const [x0, y0, x1, y1] = worldTopology.gs.box;
+    assert.ok(Math.abs(x1 - x0 - 2 * Math.PI * 6378.137) < 1, 'the whole width of the earth');
+    for (const arc of decodedWorld) for (let i = 0; i < arc.length; i += 2) {
+      assert.ok(Number.isFinite(arc[i]) && Number.isFinite(arc[i + 1]) && arc[i] >= x0 - 1 && arc[i] <= x1 + 1 && arc[i + 1] >= y0 - 1 && arc[i + 1] <= y1 + 1, 'a coordinate outside the box or not a number');
+    }
+  });
+
+  it('contains the theater\'s box, so the two files overlap where the grey neighbours are', () => {
+    const [wx0, wy0, wx1, wy1] = worldTopology.gs.box;
+    const [tx0, ty0, tx1, ty1] = topology.gs.box;
+    assert.ok(wx0 < tx0 && wy0 < ty0 && wx1 > tx1 && wy1 > ty1);
   });
 });

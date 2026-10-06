@@ -8,11 +8,12 @@
 // from geometry (neighbours, centre point, size) are written into data/regions.json; every field
 // that is edited by hand is left exactly as it is.
 
-import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import mapshaper from 'mapshaper';
+import { buildWorld } from './build-world.mjs';
+import { loadNaturalEarth } from './lib/naturalEarth.mjs';
 import { assignRegions, deriveLabels, deriveRegionFacts, mercator, projectCoordinates, touchesBox } from './lib/mapGeometry.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -21,27 +22,6 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const SIMPLIFY = { regions: '40%', context: '8%' };
 /** The TopoJSON coordinate grid: 12,000 steps over about 4,500 km is 0.4 km per step. */
 export const QUANTIZATION = 12_000;
-const FILES = { admin1: 'ne_10m_admin_1_states_provinces.geojson', admin0: 'ne_10m_admin_0_countries.geojson' };
-
-/** @param {string} commit @param {string} cacheDir @returns {{ admin1: any, admin0: any }} */
-function loadNaturalEarth(commit, cacheDir) {
-  const dir = path.join(cacheDir, commit);
-  fs.mkdirSync(dir, { recursive: true });
-  /** @type {Record<string, any>} */
-  const loaded = {};
-  for (const [key, name] of Object.entries(FILES)) {
-    const file = path.join(dir, name);
-    if (!fs.existsSync(file)) {
-      const url = `https://raw.githubusercontent.com/nvkelso/natural-earth-vector/${commit}/geojson/${name}`;
-      console.log(`Downloading ${name} (Natural Earth ${commit.slice(0, 7)}) ...`);
-      execFileSync('curl', ['-fsSL', '--retry', '3', '-o', `${file}.part`, url], { stdio: 'inherit' });
-      fs.renameSync(`${file}.part`, file);
-    }
-    loaded[key] = JSON.parse(fs.readFileSync(file, 'utf8'));
-  }
-  return /** @type {{ admin1: any, admin0: any }} */ (loaded);
-}
-
 /**
  * Dissolve, clean, simplify and quantize into one TopoJSON with three objects: "regions" (the playable
  * land, one geometry per region), "countries" (the same land, one geometry per country, sharing the
@@ -127,8 +107,22 @@ function updateRegionsFile(file, theater, ids, facts) {
   return { added, removed };
 }
 
-export async function main() {
+/** The rest of the world, in grey (tools/build-world.mjs), written next to the theater file. @param {any} groups @param {any} admin0 */
+async function writeWorld(groups, admin0) {
+  const { document, countries, vertices } = await buildWorld({ admin0, playable: groups.countries, commit: groups.naturalEarthCommit, theater: groups.theater });
+  const out = path.join(root, 'data/map/world.topo.json');
+  fs.mkdirSync(path.dirname(out), { recursive: true });
+  fs.writeFileSync(out, JSON.stringify(document));
+  console.log(`Wrote ${path.relative(root, out)}: ${(fs.statSync(out).size / 1024).toFixed(0)} KB, ${countries} grey countries, ${vertices} vertices.`);
+}
+
+/** @param {{ only?: 'theater' | 'world' }} [options] build just one of the two files */
+export async function main({ only } = {}) {
   const groups = JSON.parse(fs.readFileSync(path.join(root, 'tools/map/middle_east.groups.json'), 'utf8'));
+  if (only === 'world') {
+    await writeWorld(groups, loadNaturalEarth(groups.naturalEarthCommit, path.join(root, '.cache/natural-earth'), ['admin0']).admin0);
+    return;
+  }
   const ne = loadNaturalEarth(groups.naturalEarthCommit, path.join(root, '.cache/natural-earth'));
 
   const { features, problems } = assignRegions(groups, ne.admin1.features);
@@ -162,6 +156,11 @@ export async function main() {
   const vertices = topology.arcs.reduce((n, arc) => n + arc.length, 0);
   console.log(`Wrote ${path.relative(root, out)}: ${kb} KB, ${ids.length} regions, ${topology.arcs.length} arcs, ${vertices} vertices.`);
   console.log(`Updated data/regions.json: ${added.length} new region(s) need a name, terrain and infrastructure.`);
+  if (only !== 'theater') await writeWorld(groups, ne.admin0);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const only = process.argv.includes('--only') ? process.argv[process.argv.indexOf('--only') + 1] : undefined;
+  if (only !== undefined && only !== 'theater' && only !== 'world') throw new Error('--only takes "theater" or "world"');
+  await main({ only });
+}

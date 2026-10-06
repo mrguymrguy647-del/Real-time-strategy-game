@@ -4,8 +4,9 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildTopology } from '../../tools/build-map.mjs';
+import { WORLD, buildWorldTopology, worldBox } from '../../tools/build-world.mjs';
 import { areaAndCentroid, assignRegions, deriveRegionFacts, inverseMercator, mercator, neighboursFromArcs, projectCoordinates, realAreaKm2, ringArea, sizeClass, touchesBox } from '../../tools/lib/mapGeometry.mjs';
-import { decodeArcs, featuresOf } from '../../src/ui/map/topology.js';
+import { arcsUsedBy, decodeArcs, featuresOf } from '../../src/ui/map/topology.js';
 
 const close = (/** @type {number} */ a, /** @type {number} */ b, eps = 1e-6) => assert.ok(Math.abs(a - b) <= eps, `${a} is not within ${eps} of ${b}`);
 
@@ -135,5 +136,49 @@ describe('the pipeline on a synthetic map', async () => {
     close(facts['BBB-far'].areaKm2, 10_000, 5); // a 100 km x 100 km square on the equator
     assert.equal(facts['BBB-far'].size, 2);
     assert.equal(decodeArcs(topology).length, topology.arcs.length);
+  });
+});
+
+describe('the grey world', async () => {
+  const square = (/** @type {number} */ x0, /** @type {number} */ y0, /** @type {number} */ x1, /** @type {number} */ y1) => ({ type: 'Polygon', coordinates: [[[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]]] });
+  const feature = (/** @type {string} */ id, /** @type {any} */ geometry) => ({ type: 'Feature', properties: { id, name: `Land ${id}` }, geometry });
+  // Two ordinary countries, one that straddles the northern limit, and one at the South Pole (Mercator is infinite there).
+  const topology = await buildWorldTopology({
+    features: [feature('AAA', square(10, 10, 20, 20)), feature('BBB', square(20, 10, 30, 20)), feature('NNN', square(0, 70, 10, 85)), feature('SSS', square(-180, -90, 180, -70))],
+    simplify: '100%',
+  });
+  const decoded = decodeArcs(topology);
+  const countries = featuresOf(topology, 'countries', decoded);
+
+  it('drops what lies wholly beyond the latitudes shown, without projecting the pole', () => {
+    assert.deepEqual(countries.map((f) => f.properties.id).sort(), ['AAA', 'BBB', 'NNN']);
+  });
+
+  it('keeps the properties and clips what straddles the limit', () => {
+    assert.equal(countries.find((f) => f.properties.id === 'AAA')?.properties.name, 'Land AAA');
+    const [, y0, , y1] = worldBox();
+    for (const f of countries) for (const polygon of f.polygons) for (const ring of polygon) {
+      for (let i = 0; i < ring.length; i += 2) {
+        assert.ok(Number.isFinite(ring[i]) && Number.isFinite(ring[i + 1]), 'finite coordinates');
+        assert.ok(ring[i + 1] >= y0 - 1 && ring[i + 1] <= y1 + 1, `latitude inside the box: ${ring[i + 1]}`);
+      }
+    }
+    const north = countries.find((f) => f.properties.id === 'NNN');
+    const top = Math.max(...north.polygons[0][0].filter((_, i) => i % 2 === 1));
+    close(top, mercator(0, WORLD.latitudes[1])[1], 0.5);
+  });
+
+  it('shares a border once between neighbours', () => {
+    const owners = new Map();
+    for (const geometry of topology.objects.countries.geometries ?? []) for (const arc of arcsUsedBy(geometry)) owners.set(arc, (owners.get(arc) ?? 0) + 1);
+    assert.ok([...owners.values()].some((n) => n === 2), 'AAA and BBB touch along one arc');
+  });
+
+  it('has a box that is the whole width of the earth and the chosen latitudes', () => {
+    const [x0, y0, x1, y1] = worldBox();
+    close(x1 - x0, 2 * Math.PI * 6378.137, 0.01);
+    assert.ok(y0 < 0 && y1 > 0);
+    close(inverseMercator(0, y0)[1], WORLD.latitudes[0], 1e-6);
+    close(inverseMercator(0, y1)[1], WORLD.latitudes[1], 1e-6);
   });
 });
