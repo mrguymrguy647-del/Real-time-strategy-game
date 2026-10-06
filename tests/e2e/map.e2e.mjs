@@ -149,6 +149,22 @@ describe('the map screen', () => {
     }
   });
 
+  it('jumps straight to the tapped country when the phone asks for reduced motion', async () => {
+    const { context, page, problems } = await freshPage(env.browser, 'portrait', { reducedMotion: 'reduce' });
+    await openMap(page, env.site.url);
+    const before = await view(page);
+    await page.touchscreen.tap(...(await insideRegion(page, 'IRN-fars_bushehr')));
+    await page.waitForSelector('.sheet:not([hidden])');
+    await page.waitForTimeout(120); // a glide takes about 320 ms; a jump is done in a frame or two
+    const soon = await view(page);
+    await page.waitForTimeout(700);
+    const settled = await view(page);
+    assert.notEqual(settled.zoom, before.zoom, 'the camera did move to frame the country');
+    assert.ok(Math.abs(soon.zoom - settled.zoom) < 1e-6 && Math.abs(soon.cx - settled.cx) < 0.5 && Math.abs(soon.cy - settled.cy) < 0.5, `already there: ${JSON.stringify(soon)} vs ${JSON.stringify(settled)}`);
+    assert.deepEqual(problems, []);
+    await context.close();
+  });
+
   it('switches regions from the chips, and a tap on the sea or the close button clears the selection', async () => {
     const { context, page, problems } = await freshPage(env.browser);
     await openMap(page, env.site.url);
