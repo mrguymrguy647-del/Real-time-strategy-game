@@ -195,10 +195,23 @@ describe('resources in words', () => {
     assert.equal(lastsText({ production: 27, consumption: 10.5, stock: 63 }), null, 'a seller has no shortfall to cover');
   });
 
+  it('says what a closed strait does to the trade, so a line never promises trade that cannot happen', () => {
+    const sells = { production: 7.5, consumption: 1.4 };
+    assert.equal(positionText({ ...sells, exports: 6.1, blockedExports: 0 }), 'Sells 6.1 a month');
+    assert.equal(positionText({ ...sells, exports: 0, blockedExports: 6.1 }), 'Cannot sell: 6.1 a month stays at home');
+    assert.equal(positionText({ ...sells, exports: 2.1, blockedExports: 4 }), 'Sells 2.1 a month; 4 stays at home');
+    const buys = { production: 0.15, consumption: 2.9 };
+    assert.equal(positionText({ ...buys, imports: 2.75, blockedImports: 0 }), 'Buys 2.75 a month');
+    assert.equal(positionText({ ...buys, imports: 0, blockedImports: 2.75 }), 'Cannot buy: 2.75 a month short');
+    assert.equal(positionText({ ...buys, imports: 1, blockedImports: 1.75 }), 'Buys 1 a month; 1.75 short');
+    assert.equal(positionText({ production: 4, consumption: 4, exports: 0, imports: 0 }), 'Makes what it uses');
+  });
+
   it('fills the news about prices and shortages', () => {
     assert.equal(newsText({ template: 'news.market.up', params: { resource: 'Oil', percent: 7, priceUsd: 83.4, unit: 'barrel' } }), 'Oil rose 7% to $83.4 per barrel.');
     assert.equal(newsText({ template: 'news.market.down', params: { resource: 'Steel and iron', percent: 6, priceUsd: 690, unit: 'tonne' } }), 'Steel and iron fell 6% to $690 per tonne.');
-    assert.equal(newsText({ template: 'news.resources.shortage', params: { resource: 'Food', label: 'Famine' } }), 'Food is running short: Famine.');
+    assert.equal(newsText({ template: 'news.resources.shortage', params: { resource: 'Food', label: 'Famine' } }), 'Food shortage: Famine.');
+    assert.equal(newsText({ template: 'news.resources.shortage', params: { resource: 'Rare minerals', label: 'Advanced projects halt' } }), 'Rare minerals shortage: Advanced projects halt.');
     assert.equal(newsText({ template: 'news.resources.recovered', params: { resource: 'Food' } }), 'Food supplies are back to normal.');
   });
 });

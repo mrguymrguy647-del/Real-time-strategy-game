@@ -4,13 +4,16 @@
 // rejects any effect, condition or driver that names a stat missing from this list.
 
 /**
- * @typedef {{ id: string, kind: 'meter' | 'rate' | 'multiplier' | 'count', min: number, max: number, default: number }} StatDef
+ * @typedef {{ id: string, kind: 'meter' | 'rate' | 'multiplier' | 'count', min: number, max: number, default: number, active?: boolean }} StatDef
+ *   `active`: some system reads this stat today. A stat that is only named in data (a shortage's effect on
+ *   approval, say) is registered but not active until the system that gives it meaning exists; the screens
+ *   say so, so no effect is promised that nothing delivers.
  */
 
 /** @type {StatDef[]} */
 export const STATS = [
   // Economy and industry
-  { id: 'country.economy.growth', kind: 'rate', min: -0.5, max: 0.5, default: 0.02 },
+  { id: 'country.economy.growth', kind: 'rate', min: -0.5, max: 0.5, default: 0.02, active: true },
   { id: 'country.economy.blackMarket', kind: 'meter', min: 0, max: 100, default: 0 },
   { id: 'country.industry.output', kind: 'multiplier', min: 0, max: 5, default: 1 },
   { id: 'country.research.speed', kind: 'multiplier', min: 0, max: 5, default: 1 },
@@ -56,4 +59,9 @@ export function isStat(id) {
 /** @param {string} id */
 export function getStatDef(id) {
   return byId.get(id);
+}
+
+/** Does any system read this stat today? @param {string | undefined} id */
+export function isStatActive(id) {
+  return id !== undefined && byId.get(id)?.active === true;
 }

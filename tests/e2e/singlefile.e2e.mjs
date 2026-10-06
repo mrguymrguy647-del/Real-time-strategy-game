@@ -92,6 +92,28 @@ describe('the downloaded file', () => {
     await context.close();
   });
 
+  it('trades and closes a strait too: the resources, the market and the test lab work from the file', async () => {
+    const { context, page, problems } = await freshPage(browser);
+    await page.goto(pathToFileURL(file).href);
+    await page.waitForSelector('.title');
+    await newGame(page, 0, 'KWT');
+    await button(page, t('play.resources')).click();
+    await page.waitForSelector('.resources:not([hidden]) .res');
+    assert.equal(await page.locator('.resources .res').count(), 4);
+    const treasury = () => page.evaluate(() => /** @type {any} */ (globalThis).__app.ctx.session.game.state.countries.KWT.economy.treasuryMn);
+    const before = await treasury();
+    await page.locator('.resources [data-resource="steel"] [data-trade="buy"]').click();
+    assert.ok((await treasury()) < before, 'a purchase costs money');
+
+    await page.locator('.resources [data-lab] summary').click();
+    await page.locator('.resources [data-lab-strait="hormuz"]').click();
+    await page.getByRole('button', { name: t('play.endTurn'), exact: true }).click();
+    await page.waitForSelector('.report:not([hidden])');
+    assert.ok(((await page.locator('.report .alert[data-alert="blockade"]').textContent()) ?? '').includes('Strait of Hormuz is closed'));
+    assert.deepEqual(problems, []);
+    await context.close();
+  });
+
   it('shows honest Diagnostics: the offline checks are not applicable, the rest is real', async () => {
     const { context, page, problems } = await freshPage(browser);
     await page.goto(pathToFileURL(file).href);

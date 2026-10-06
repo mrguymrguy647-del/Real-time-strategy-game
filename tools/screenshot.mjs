@@ -18,7 +18,7 @@ const option = (name, fallback) => {
   return i >= 0 ? args[i + 1] : fallback;
 };
 const views = option('--views', 'portrait,landscape').split(',');
-const only = option('--only', 'title,pick,play,report,resources,region,budget,saves,settings,diagnostics,map').split(',');
+const only = option('--only', 'title,pick,play,report,resources,closure,region,budget,saves,settings,diagnostics,map').split(',');
 const outDir = path.resolve(root, option('--out', 'tmp/screenshots'));
 fs.mkdirSync(outDir, { recursive: true });
 
@@ -115,6 +115,37 @@ try {
       await goTo(page, 'diagnostics');
       await waitForDiagnostics(page);
       await shot('diagnostics');
+    }
+    if (only.includes('closure')) {
+      // A closed strait, the way the test lab makes one: Kuwait with Hormuz closed for eight months. The report names
+      // the strait and the lost oil money, the Resources panel shows what stays at home and what has run short.
+      await goTo(page, 'title');
+      await newGame(page, 0, 'KWT');
+      await page.getByRole('button', { name: t('play.resources'), exact: true }).click();
+      await page.waitForSelector('.resources:not([hidden]) .res');
+      await page.locator('.resources [data-lab] summary').click();
+      await page.locator('.resources [data-lab-strait="hormuz"]').click();
+      await page.evaluate(() => void (document.querySelector('.resources').scrollTop = 1e6));
+      await page.waitForTimeout(250);
+      await shot('closure-lab');
+      await page.getByRole('button', { name: t('play.resources'), exact: true }).click(); // close the panel
+      for (let i = 0; i < 8; i++) {
+        await page.getByRole('button', { name: t('play.endTurn'), exact: true }).click();
+        await page.waitForSelector('.report:not([hidden])');
+      }
+      await page.waitForTimeout(600);
+      await shot('closure-report');
+      await page.evaluate(() => void (document.querySelector('.report').scrollTop = 1e6));
+      await page.waitForTimeout(200);
+      await shot('closure-report-resources');
+      await page.getByRole('button', { name: t('report.openResources'), exact: true }).click();
+      await page.waitForSelector('.resources:not([hidden]) .res');
+      await page.waitForTimeout(300);
+      await shot('closure-resources');
+      await page.evaluate(() => void (document.querySelector('.resources .res.is-short')?.scrollIntoView({ block: 'start' })));
+      await page.waitForTimeout(300);
+      await shot('closure-resources-short');
+      await page.getByRole('button', { name: t('play.resources'), exact: true }).click(); // close it
     }
     if (only.includes('map')) {
       // The whole map, then a tap on Iran (a region near the middle of its country) with the info panel open.

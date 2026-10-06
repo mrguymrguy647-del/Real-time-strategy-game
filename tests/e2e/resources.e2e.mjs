@@ -166,12 +166,75 @@ describe('the straits', () => {
     assert.ok((await page.locator('[data-resource="food"] [data-trade="buy"]').textContent()).includes(t('res.trade.error.no_market_access')));
     assert.ok((await page.locator('[data-strait="hormuz"]').textContent()).includes(t('res.strait.blocked', { percent: '100%' })));
 
+    // what the screens say about the oil Kuwait can no longer sell: nothing is sold, it stays at home, and the strait is named
+    const oil = await page.locator('.resources [data-resource="oil"]').textContent();
+    assert.ok(oil.includes(t('res.perMonth', { amount: '0' })) && oil.includes(t('res.stuck', { amount: '6.1' })), 'it sells nothing, and says the oil stays at home');
+    assert.ok(!oil.includes(t('res.worth', { amountMn: '$7.3 billion' })), 'and does not put a price on what is not sold');
+    assert.ok(oil.includes(t('res.wasted', { amount: '6.1' })), 'the store is full by now, so the oil is lost');
+    assert.equal(await page.locator('.resources .alert[data-alert="blockade"]').count(), 1);
+    assert.equal(await page.locator('[data-strait="hormuz"] .strait__toggle').count(), 0, 'no "what if it closed?" for a strait that is closed');
+    assert.ok((await page.locator('[data-resource="food"] [data-short]').textContent()).includes(t('res.effect.later')), 'the effects nothing reads yet say so');
+
     // the strait opens again, and the shortage ends with the next month
     await withState(page, 'state.world.chokepoints.hormuz.blockade = 0;');
     await endTurn(page);
     await page.waitForSelector('.report:not([hidden])');
     assert.equal(await stateAt(page, 'countries.KWT.resources.food.step'), 0);
     assert.equal(await page.locator('.play-hud__chips .is-short').count(), 0);
+    await context.close();
+    assert.deepEqual(problems, []);
+  });
+});
+
+describe('the test lab', () => {
+  it('closes a strait for the player: the panel, the map and the warnings follow at once, the report says where the oil money went, and opening it ends it', async () => {
+    const { context, page, problems } = await freshPage(env.browser);
+    await openApp(page, env.site.url);
+    await newGame(page, 0, 'KWT');
+    await page.waitForFunction(() => /** @type {any} */ (globalThis).__map?.info().ready, null, { timeout: 30_000 });
+    await button(page, t('play.resources')).click();
+    await page.waitForSelector('.resources:not([hidden]) .res');
+
+    const lab = page.locator('.resources [data-lab]');
+    await lab.locator('summary').click();
+    assert.equal(await lab.evaluate((el) => /** @type {HTMLDetailsElement} */ (el).open), true);
+    const toggle = lab.locator('[data-lab-strait="hormuz"]');
+    assert.equal(await toggle.textContent(), t('lab.close', { name: 'Hormuz' }));
+    assert.equal(await page.locator('.map__marker.is-blocked').count(), 0);
+    await toggle.click();
+
+    // at once
+    assert.equal(await stateAt(page, 'world.chokepoints.hormuz.blockade'), 1);
+    assert.equal(await stateAt(page, 'world.flags.testLab'), true);
+    assert.equal(await lab.evaluate((el) => /** @type {HTMLDetailsElement} */ (el).open), true, 'the lab stays open while the panel redraws');
+    assert.equal(await toggle.textContent(), t('lab.open', { name: 'Hormuz' }));
+    assert.equal(await toggle.getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.locator('.resources .alert[data-alert="blockade"]').count(), 1);
+    assert.equal(await page.locator('.map__marker.is-blocked').count(), 1, 'the strait is marked on the map');
+
+    // a month later, the report names the strait and the lost income
+    await endTurn(page);
+    await page.waitForSelector('.report:not([hidden])');
+    const report = page.locator('.report');
+    assert.ok((await report.locator('.alert[data-alert="blockade"]').textContent()).includes('Strait of Hormuz is closed'));
+    const line = report.locator('[data-line="resources"]');
+    assert.equal(await line.count(), 1, 'the line stays, though nothing was sold');
+    assert.match(await line.locator('.report__value').textContent(), /\$0/);
+    await line.locator('.report__toggle').click();
+    assert.ok((await line.textContent()).includes(t('why.resources.blocked')), 'and says why it is empty');
+    assert.ok((await report.locator('[data-resource="oil"]').textContent()).includes(t('res.position.cannotSell', { stuck: '6.1' })));
+    assert.equal(await stateAt(page, 'countries.KWT.economy.last.resourceMn'), 0);
+
+    // opening it again ends it
+    await button(page, t('report.openResources')).click();
+    await page.waitForSelector('.resources:not([hidden]) [data-lab]');
+    await page.locator('.resources [data-lab-strait="hormuz"]').click();
+    assert.equal(await stateAt(page, 'world.chokepoints.hormuz.blockade'), 0);
+    assert.equal(await page.locator('.resources .alert[data-alert="blockade"]').count(), 0);
+    assert.equal(await page.locator('.map__marker.is-blocked').count(), 0);
+    await endTurn(page);
+    await page.waitForSelector('.report:not([hidden])');
+    assert.ok((await stateAt(page, 'countries.KWT.economy.last.resourceMn')) > 0, 'the oil sells again');
     await context.close();
     assert.deepEqual(problems, []);
   });

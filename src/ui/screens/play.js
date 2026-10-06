@@ -45,7 +45,9 @@ export function mountPlay(ctx) {
   function renderChips() {
     const { state } = game;
     const flows = countryFlows(state, ctx.data, playerId).byResource;
-    const alerts = new Map(resourceAlerts(state, ctx.data, playerId).map((alert) => [alert.resource, alert.id]));
+    /** @type {Map<string, string>} */
+    const alerts = new Map();
+    for (const alert of resourceAlerts(state, ctx.data, playerId)) if (alert.id !== 'blockade') alerts.set(alert.resource, alert.id);
     chipsEl.replaceChildren(
       ...ctx.data.activeResources.map((/** @type {any} */ resource) => {
         const flow = flows[resource.id];
@@ -228,6 +230,7 @@ export function mountPlay(ctx) {
     }),
     game.bus.on('command', () => {
       renderHud(); // a repayment or a trade changes the treasury at once
+      renderMarkers(); // and a strait the test lab closes shows at once
       if (active === 'budget') budget.render();
       if (active === 'resources') resources.render();
       info.refresh();

@@ -37,6 +37,7 @@ export function resourceMonth(resource, { production, consumption, stock, blocke
     stateShare,
     ...month,
     income: exportIncome({ exports: month.exports, price, stateShare }),
+    lostIncome: exportIncome({ exports: month.blockedExports, price, stateShare }), // what the state would earn on what a blockade keeps at home
     step: shortageStep(resource.shortage, month.coverage),
   };
 }
@@ -76,16 +77,23 @@ export function countryFlows(state, data, countryId, { blockades = blockadesOf(s
 
 /**
  * What the state earns from the resources it sells abroad this month, with a part for each resource
- * that earns anything.
+ * it would earn on. When a blockade keeps some of it at home, the parts say so: what the resource would
+ * have earned, and one more part (`blocked`, negative) for what the closed straits took away, so a
+ * month with no oil money still shows where the oil money went.
  * @param {ReturnType<typeof countryFlows>} flows
  * @returns {import('../formulas/explain.js').Explained} USD millions
  */
 export function resourceIncomeOf(flows) {
-  return sumOf(
-    Object.entries(flows.byResource)
-      .filter(([, flow]) => flow.income.value > 0)
-      .map(([id, flow]) => ({ id, value: flow.income.value })),
-  );
+  /** @type {Array<{ id: string, value: number }>} */
+  const parts = [];
+  let lost = 0;
+  for (const [id, flow] of Object.entries(flows.byResource)) {
+    const potential = flow.income.value + flow.lostIncome.value;
+    if (potential > 0) parts.push({ id, value: potential });
+    lost += flow.lostIncome.value;
+  }
+  if (lost > 0) parts.push({ id: 'blocked', value: -lost });
+  return sumOf(parts);
 }
 
 /**

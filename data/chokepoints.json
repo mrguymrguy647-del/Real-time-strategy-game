@@ -7,7 +7,7 @@
       "id": "hormuz",
       "name": "Strait of Hormuz",
       "shortName": "Hormuz",
-      "blurb": "The only sea exit of the Gulf: about a fifth of the world's oil passes here.",
+      "blurb": "The only sea exit of the Gulf.",
       "position": [56.5, 26.6],
       "controlRegions": ["IRN-hormozgan", "OMN-musandam"],
       "worldTradeShare": { "oil": 0.2 }

@@ -67,4 +67,19 @@ export const resourceCommands = {
       plan.entry.stock = tidy(Math.max(0, plan.entry.stock - plan.units));
     },
   },
+
+  // For testing only (G-42): until wars can close a strait, this is how a game gets one closed, so the
+  // price, the reserves and the shortages can be watched. The AI never issues it; the war system of
+  // M1.3 will set blockades itself, from who holds the regions beside each strait.
+  TEST_SET_BLOCKADE: {
+    validate({ state }, command) {
+      if (typeof command.chokepoint !== 'string' || !Object.hasOwn(state.world.chokepoints, command.chokepoint)) return 'unknown_chokepoint';
+      if (!isNumber(command.blockade) || command.blockade < 0 || command.blockade > 1) return 'bad_value';
+      return null;
+    },
+    apply({ state }, command) {
+      state.world.chokepoints[command.chokepoint].blockade = tidy(command.blockade);
+      state.world.flags = { ...state.world.flags, testLab: true }; // this game has been played with the test lab
+    },
+  },
 };

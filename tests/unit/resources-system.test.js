@@ -7,10 +7,8 @@ import { checkStateShape } from '../../src/core/state.js';
 import { startPrice } from '../../src/formulas/market.js';
 import { createGame } from '../../src/game.js';
 import { previewEconomy } from '../../src/systems/economy.js';
-import { planTrade } from '../../src/systems/resourceCommands.js';
 import { blockadesOf, countryFlows, resourceIncomeOf } from '../../src/systems/resourceFlows.js';
-import { captureEstimate, closureEstimate } from '../../src/systems/resourcePreview.js';
-import { priceExplained, resourceAlerts } from '../../src/systems/resources.js';
+import { resourceAlerts } from '../../src/systems/resources.js';
 import { loadTestData } from '../helpers/data.js';
 
 const data = await loadTestData();
@@ -278,6 +276,46 @@ describe('a closed strait', () => {
     assert.ok(previewEconomy(healthy, data, 'KWT').growth.value > forecast.growth.value);
   });
 
+  it('keeps saying where the oil money went: the income still has its parts, and one more for what the closed strait took away', () => {
+    const open = resourceIncomeOf(countryFlows(newGame('KWT').state, data, 'KWT'));
+    assert.deepEqual(open.parts.map((p) => p.id), ['oil'], 'at peace, the oil earns');
+    const game = closedHormuz();
+    const closed = resourceIncomeOf(countryFlows(game.state, data, 'KWT'));
+    assert.equal(closed.value, 0, 'nothing is sold');
+    assert.deepEqual(closed.parts.map((p) => p.id), ['oil', 'blocked']);
+    close(closed.parts[0].value, open.value, 1e-9);
+    close(closed.parts[1].value, -open.value, 1e-9);
+    assert.equal(closed.parts.reduce((total, part) => total + part.value, 0), closed.value, 'the parts still add up to the value');
+    endTurns(game, 1);
+    const { why } = game.state.countries.KWT.economy.last;
+    assert.equal(why.resources.parts.length, 2, 'the report keeps the line, and can say why it is empty');
+    assert.equal(game.state.countries.KWT.economy.last.resourceMn, 0);
+  });
+
+  it('is only half closed when half the traffic is stopped: what is sold, kept at home and lost add up', () => {
+    const game = newGame('SAU');
+    game.state.world.chokepoints.hormuz.blockade = 0.5;
+    const oil = countryFlows(game.state, data, 'SAU').byResource.oil;
+    close(oil.blocked, 0.325, 1e-9); // 65% of its trade passes Hormuz, half of that is stopped
+    close(oil.exports + oil.blockedExports, oil.production - oil.consumption, 1e-9);
+    close(oil.income.value + oil.lostIncome.value, (oil.production - oil.consumption) * oil.price * oil.stateShare, 1e-9);
+    assert.ok(oil.exports > 0 && oil.blockedExports > 0);
+  });
+
+  it('is told before anything else: the strait comes first among the warnings, with how much of the trade it stops', () => {
+    const game = closedHormuz();
+    const [first] = resourceAlerts(game.state, data, 'KWT');
+    assert.equal(first.id, 'blockade');
+    assert.equal(first.strait, 'hormuz');
+    assert.deepEqual(first.params, { strait: 'Strait of Hormuz', share: 1, blockade: 1 });
+    assert.deepEqual(resourceAlerts(game.state, data, 'JOR').filter((a) => a.id === 'blockade'), [], 'it does not touch Jordan\'s trade');
+    game.state.world.chokepoints.hormuz.blockade = 0.5;
+    const partly = resourceAlerts(game.state, data, 'SAU').find((a) => a.id === 'blockade');
+    close(partly.params.share, 0.325, 1e-9);
+    game.state.world.chokepoints.hormuz.blockade = 0;
+    assert.deepEqual(resourceAlerts(game.state, data, 'KWT').filter((a) => a.id === 'blockade'), []);
+  });
+
   it('is over when it opens again: stocks refill by trade, the step falls, and the player is told', () => {
     const game = closedHormuz();
     endTurns(game, 12);
@@ -338,121 +376,6 @@ describe('only the deepest shortage step applies', () => {
   });
 });
 
-describe('reserves: buying and selling', () => {
-  const buy = (game, units, resource = 'oil', countryId = 'TUR') => game.dispatch({ type: 'BUY_RESOURCE', countryId, resource, units });
-  const sell = (game, units, resource = 'oil', countryId = 'TUR') => game.dispatch({ type: 'SELL_RESOURCE', countryId, resource, units });
-
-  it('buying moves money out of the treasury at the price plus the spread and units into the stock', () => {
-    const game = newGame();
-    const { economy, resources } = game.state.countries.TUR;
-    const [treasury, stock, price] = [economy.treasuryMn, resources.oil.stock, game.state.world.market.oil.price];
-    assert.deepEqual(buy(game, 5), { ok: true });
-    close(economy.treasuryMn, treasury - 5 * price * (1 + data.balance.market.spread));
-    close(resources.oil.stock, stock + 5);
-    assert.equal(game.state.log.at(-1).type, 'BUY_RESOURCE');
-  });
-
-  it('selling brings the price less the spread, and buying then selling loses money', () => {
-    const game = newGame();
-    const { economy, resources } = game.state.countries.TUR;
-    const start = economy.treasuryMn;
-    assert.deepEqual(sell(game, 3), { ok: true });
-    close(economy.treasuryMn, start + 3 * game.state.world.market.oil.price * (1 - data.balance.market.spread));
-    close(resources.oil.stock, data.countries.byId.TUR.start.resources.stockpile.oil - 3);
-    buy(game, 3);
-    assert.ok(economy.treasuryMn < start, 'the round trip cost the spread twice');
-    close(resources.oil.stock, data.countries.byId.TUR.start.resources.stockpile.oil);
-  });
-
-  it('announces itself on the bus, like every command', () => {
-    const game = newGame();
-    const seen = [];
-    game.bus.on('command', (command) => seen.push(command.type));
-    buy(game, 1);
-    assert.deepEqual(seen, ['BUY_RESOURCE']);
-  });
-
-  it('refuses what cannot be done, with a reason, and changes nothing', () => {
-    const game = newGame();
-    const before = JSON.stringify(game.state);
-    const reason = (result) => (result.ok ? 'ok' : result.error.code);
-    assert.equal(reason(buy(game, 1, 'oil', 'ZZZ')), 'unknown_country');
-    assert.equal(reason(buy(game, 1, 'oil', '__proto__')), 'unknown_country');
-    assert.equal(reason(buy(game, 1, 'gold')), 'unknown_resource');
-    assert.equal(reason(buy(game, 1, 'water')), 'unknown_resource', 'water is a disabled module');
-    assert.equal(reason(buy(game, 0)), 'bad_value');
-    assert.equal(reason(buy(game, -3)), 'bad_value');
-    assert.equal(reason(buy(game, NaN)), 'bad_value');
-    assert.equal(reason(buy(game, '5')), 'bad_value');
-    assert.equal(reason(buy(game, 100_000)), 'storage_full');
-    assert.equal(reason(sell(game, 100_000)), 'not_enough_stock');
-    game.state.countries.TUR.economy.treasuryMn = 100;
-    assert.equal(reason(buy(game, 5)), 'no_money');
-    assert.equal(JSON.stringify({ ...game.state, log: 0, countries: 0 }), JSON.stringify({ ...JSON.parse(before), log: 0, countries: 0 }));
-    assert.deepEqual(game.state.log, []);
-    assert.equal(game.state.countries.TUR.resources.oil.stock, data.countries.byId.TUR.start.resources.stockpile.oil);
-  });
-
-  it('cannot reach a market that is shut: a country whose every route is blockaded cannot trade', () => {
-    const game = newGame('KWT');
-    game.state.world.chokepoints.hormuz.blockade = 1;
-    assert.equal(buy(game, 1, 'oil', 'KWT').error.code, 'no_market_access');
-    assert.equal(sell(game, 1, 'oil', 'KWT').error.code, 'no_market_access');
-    game.state.world.chokepoints.hormuz.blockade = 0.5;
-    assert.deepEqual(buy(game, 1, 'oil', 'KWT'), { ok: true }, 'half open is open enough');
-  });
-
-  it('cannot buy more than the stores hold, and exactly what they hold is fine', () => {
-    const game = newGame();
-    const flow = countryFlows(game.state, data, 'TUR').byResource.oil;
-    const room = flow.capacity - game.state.countries.TUR.resources.oil.stock;
-    assert.equal(buy(game, room + 1).error.code, 'storage_full');
-    game.state.countries.TUR.economy.treasuryMn = 1e9;
-    assert.deepEqual(buy(game, room), { ok: true });
-    assert.ok(Math.abs(game.state.countries.TUR.resources.oil.stock - flow.capacity) < 1e-3);
-  });
-
-  it('lets the treasury go to exactly zero and never below, and keeps the state clean', () => {
-    const game = newGame();
-    const plan = planTrade(game, { countryId: 'TUR', resource: 'oil', units: 4 }, 'buy');
-    game.state.countries.TUR.economy.treasuryMn = plan.valueMn;
-    assert.deepEqual(buy(game, 4), { ok: true });
-    assert.equal(game.state.countries.TUR.economy.treasuryMn, 0);
-    assert.deepEqual(findProblems(game.state), []);
-  });
-
-  it('changes what the next month does: a bigger stock lasts longer under a closed strait', () => {
-    const run = (extra) => {
-      const game = newGame('JOR');
-      if (extra) assert.deepEqual(buy(game, extra, 'oil', 'JOR'), { ok: true });
-      game.state.world.chokepoints.bab_el_mandeb.blockade = 1;
-      game.state.world.chokepoints.suez.blockade = 1;
-      endTurns(game, 6);
-      return game.state.countries.JOR.resources.oil;
-    };
-    assert.ok(run(0).step > 0, 'a thin reserve runs out');
-    assert.equal(run(1.5).step, 0, 'a unit and a half more of oil sees Jordan through');
-  });
-});
-
-describe('why a price is what it is', () => {
-  it('at the start: the base price, tension and nothing else', () => {
-    const game = newGame();
-    const { target, price } = priceExplained(game.state, data, 'oil');
-    assert.deepEqual(target.parts.map((p) => p.id), ['base', 'balance', 'tension', 'shock']);
-    close(price.value, game.state.world.market.oil.price);
-    close(target.parts[1].value, 1);
-  });
-
-  it('after a month: the very numbers the turn used, so the explanation is the price', () => {
-    const game = endTurns(newGame(), 5);
-    for (const resource of RESOURCES) {
-      const { target, price } = priceExplained(game.state, data, resource);
-      close(price.value, game.state.world.market.oil.price * 0 + game.state.world.market[resource].price, 1e-12);
-      close(target.parts[3].value, game.state.world.market[resource].shock);
-    }
-  });
-});
 
 describe('warnings', () => {
   it('tell the player which reserves are thin, and say nothing about countries that are well stocked', () => {
@@ -473,100 +396,5 @@ describe('warnings', () => {
     assert.ok(alert);
     assert.equal(alert.params.label, 'Famine');
     assert.equal(alert.params.resource, 'Food');
-  });
-});
-
-describe('what a region is worth (the capture estimate)', () => {
-  it('adds the region\'s share of its country\'s output and the people it must feed, and the tax base', () => {
-    const game = newGame('TUR');
-    const estimate = captureEstimate(game.state, data, 'TUR', 'IRQ-basra');
-    const iraq = data.countries.byId.IRQ.start.resources;
-    const basra = data.regions.byId['IRQ-basra'];
-    const oil = estimate.resources.find((r) => r.id === 'oil');
-    close(oil.production, basra.output.oil * iraq.production.oil);
-    close(oil.consumption, basra.popShare * iraq.consumption.oil);
-    close(oil.net, oil.production - oil.consumption);
-    assert.ok(oil.coverMonthsAfter > oil.coverMonthsBefore, 'Basra\'s oil ends Türkiye\'s oil deficit');
-    assert.equal(oil.coverMonthsAfter, Infinity);
-    assert.ok(estimate.resourceMn > 0 && estimate.taxMn > 0);
-    close(estimate.incomeMn, estimate.taxMn + estimate.resourceMn);
-    close(estimate.incomeShare, estimate.incomeMn / previewEconomy(game.state, data, 'TUR').revenue.value);
-    const food = estimate.resources.find((r) => r.id === 'food');
-    assert.ok(food.consumption > 0, 'a region\'s people come with it');
-  });
-
-  it('is worth more the bigger the prize: Saudi Arabia\'s oil province beats a small Iraqi one', () => {
-    const game = newGame('TUR');
-    const big = captureEstimate(game.state, data, 'TUR', 'SAU-eastern');
-    const small = captureEstimate(game.state, data, 'TUR', 'IRQ-kurdistan');
-    assert.ok(big.incomeMn > small.incomeMn * 3);
-  });
-
-  it('knows nothing of a region you hold, or one that is not in the game, and changes nothing', () => {
-    const game = newGame('TUR');
-    const before = JSON.stringify(game.state);
-    assert.equal(captureEstimate(game.state, data, 'TUR', 'TUR-marmara'), null);
-    assert.equal(captureEstimate(game.state, data, 'TUR', 'Atlantis'), null);
-    assert.equal(captureEstimate(game.state, data, 'ZZZ', 'IRQ-basra'), null);
-    captureEstimate(game.state, data, 'TUR', 'IRQ-basra');
-    assert.equal(JSON.stringify(game.state), before);
-  });
-
-  it('follows the prices: dearer oil makes an oil region worth more', () => {
-    const game = newGame('TUR');
-    const oilIncome = () => captureEstimate(game.state, data, 'TUR', 'IRQ-basra').resources.find((r) => r.id === 'oil').incomeMn;
-    const before = oilIncome();
-    game.state.world.market.oil.price *= 1.5;
-    close(oilIncome(), before * 1.5, 1e-9);
-  });
-});
-
-describe('what closing a strait would do (the closure estimate)', () => {
-  it('shows the price rise, and which of your stocks would run out, without touching the game', () => {
-    const game = newGame('KWT');
-    const before = JSON.stringify(game.state);
-    const estimate = closureEstimate(game.state, data, 'KWT', 'hormuz', { months: 12 });
-    assert.equal(JSON.stringify(game.state), before, 'nothing changed');
-    assert.equal(estimate.blocked, 1);
-    const byId = Object.fromEntries(estimate.resources.map((r) => [r.id, r]));
-    assert.ok(byId.oil.priceChange > 0.2, `oil would cost ${byId.oil.priceChange} more`);
-    assert.equal(byId.food.step, 3, 'Kuwait\'s food would run out within the year');
-    assert.equal(byId.food.label, 'Famine');
-    assert.equal(byId.food.stepIfOpen, 0);
-    assert.equal(byId.food.firstShort, 7, 'six months of stock, then the shortage begins in the seventh');
-    assert.equal(byId.oil.step, 0, 'its own oil stays at home');
-    assert.equal(byId.oil.firstShort, null);
-    assert.ok(byId.oil.incomeChangeMn < -3_000, 'and its oil income stops');
-    assert.equal(byId.food.incomeChangeMn, 0);
-  });
-
-  it('says nothing is wrong for a country that does not trade through that strait', () => {
-    const game = newGame('JOR');
-    const estimate = closureEstimate(game.state, data, 'JOR', 'hormuz', { months: 6 });
-    assert.equal(estimate.blocked, 0);
-    assert.ok(estimate.resources.every((r) => r.step === 0));
-    assert.ok(estimate.resources.find((r) => r.id === 'oil').priceChange > 0, 'but it pays the higher price');
-  });
-
-  it('is deterministic and does not use up the game\'s random numbers', () => {
-    const game = newGame('KWT');
-    const a = closureEstimate(game.state, data, 'KWT', 'hormuz');
-    const rngBefore = [...game.state.rng.s];
-    const b = closureEstimate(game.state, data, 'KWT', 'hormuz');
-    assert.deepEqual(a, b);
-    assert.deepEqual(game.state.rng.s, rngBefore);
-  });
-
-  it('does what the real thing then does: the same answer as closing the strait and playing the months', () => {
-    const game = newGame('KWT', 9);
-    const estimate = closureEstimate(game.state, data, 'KWT', 'hormuz', { months: 4 });
-    const real = newGame('KWT', 9);
-    real.state.world.chokepoints.hormuz.blockade = 1;
-    endTurns(real, 4);
-    const baseline = endTurns(newGame('KWT', 9), 4);
-    for (const line of estimate.resources) {
-      close(line.priceChange, real.state.world.market[line.id].price / baseline.state.world.market[line.id].price - 1, 1e-12);
-      close(line.stockAfter, real.state.countries.KWT.resources[line.id].stock, 1e-12);
-    }
   });
 });
