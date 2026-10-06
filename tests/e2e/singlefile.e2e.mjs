@@ -77,7 +77,7 @@ describe('the downloaded file', () => {
     await page.goto(pathToFileURL(file).href);
     await page.waitForSelector('.title');
     await newGame(page, 3);
-    assert.ok(((await page.locator('.play').textContent()) ?? '').includes('April 2026'), 'three months have passed');
+    assert.ok(((await page.locator('.play-hud').textContent()) ?? '').includes('April 2026'), 'three months have passed');
 
     await goTo(page, 'saves');
     await page.waitForSelector('.screen');
@@ -121,7 +121,7 @@ describe('the downloaded file', () => {
     assert.ok(((await frame.locator('.title').textContent()) ?? '').includes(t('title.storageMemory')), 'warns that saving is unavailable');
 
     await newGame(/** @type {any} */ (frame), 2);
-    assert.ok(((await frame.locator('.play').textContent()) ?? '').includes('March 2026'));
+    assert.ok(((await frame.locator('.play-hud').textContent()) ?? '').includes('March 2026'));
     assert.deepEqual(pageErrors, []);
     await context.close();
   });

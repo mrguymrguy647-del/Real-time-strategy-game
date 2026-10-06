@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT, readJsonFromDisk } from '../helpers/data.js';
+import { economyMonth, BUDGET_CATEGORIES } from '../../src/formulas/economy.js';
 import { hasKey, setMissingHandler, setStrings, t, tn } from '../../src/util/i18n.js';
 
 afterEach(() => {
@@ -91,5 +92,46 @@ describe('the real string table (G-30)', () => {
     }
     assert.ok(codes.size >= 6);
     for (const code of codes) assert.ok(strings[`saves.error.${code}`], `saves.error.${code}`);
+  });
+
+  it('has a sentence for every news template the systems write', async () => {
+    const { strings } = await readJsonFromDisk('data/i18n/en.json');
+    const missing = [];
+    for (const file of sourceFiles(path.join(ROOT, 'src/systems'))) {
+      for (const match of fs.readFileSync(file, 'utf8').matchAll(/template:\s*'([^']+)'/g)) if (!(match[1] in strings)) missing.push(`${path.relative(ROOT, file)}: ${match[1]}`);
+    }
+    assert.deepEqual(missing, []);
+  });
+
+  it('has the strings for the economy screens: alerts, budget levers, roles, and every part of every explained number', async () => {
+    const { strings } = await readJsonFromDisk('data/i18n/en.json');
+    const data = await (await import('../helpers/data.js')).loadTestData();
+    const need = (key) => assert.ok(strings[key], key);
+
+    for (const id of ['borrowing', 'debt']) need(`alert.${id}`);
+    need('alert.runway.one');
+    need('alert.runway.other');
+    for (const lever of ['tax', ...BUDGET_CATEGORIES]) {
+      need(`budget.${lever}`);
+      need(`budget.${lever}.hint`);
+    }
+    for (const tier of [1, 2, 3]) need(`map.role.${tier}`);
+
+    // Run the economy where every kind of part shows up: a difficulty bonus, the growth and rate limits, a government.
+    const params = { interest: data.balance.economy.interest, growth: data.balance.economy.growth };
+    const budget = { military: 0.02, research: 0.005, welfare: 0.15, infrastructure: 0.04 };
+    const reference = { taxRate: 0.25, budget, debtRatio: 0.4 };
+    const seen = new Set();
+    for (const [economy, extra] of [
+      [{ gdpBn: 100, taxRate: 0.25, treasuryMn: 1000, debtMn: 10_000 }, { incomeMultiplier: 1.1, modifiers: { add: 0, mul: 1.1 } }],
+      [{ gdpBn: 100, taxRate: 0.6, treasuryMn: 1000, debtMn: 5_000_000 }, { trend: -0.2 }],
+      [{ gdpBn: 100, taxRate: 0.1, treasuryMn: 1000, debtMn: 0 }, { trend: 0.4, budget: { ...budget, infrastructure: 0.3 } }],
+    ]) {
+      const result = economyMonth({ economy, budget, trend: 0.03, reference, ...extra }, params);
+      for (const context of ['revenue', 'spending', 'interestRate', 'interest', 'growth']) for (const part of result[context].parts) seen.add(`why.${context}.${part.id}`);
+    }
+    assert.equal(seen.size, 19, `saw ${seen.size} kinds of part (3 revenue, 4 spending, 3 rate, 2 interest, 7 growth)`);
+    for (const key of seen) need(key);
+    for (const key of ['why.total', 'why.caption.interest', 'why.caption.interestRate']) need(key);
   });
 });

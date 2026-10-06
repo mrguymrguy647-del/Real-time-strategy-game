@@ -46,12 +46,23 @@ export async function waitForSaved(page, turn) {
   );
 }
 
-/** Start a new test game and end `turns` turns (then wait for the last autosave). @param {import('playwright-core').Page} page @param {number} [turns] */
-export async function newGame(page, turns = 0) {
+/**
+ * Start a new game as a country (picked from the strip on the picker screen) and end `turns` turns,
+ * then wait for the last autosave.
+ * @param {import('playwright-core').Page} page @param {number} [turns] @param {string} [countryId]
+ */
+export async function newGame(page, turns = 0, countryId = 'TUR') {
   await page.getByRole('button', { name: t('title.newGame'), exact: true }).click();
-  await page.waitForSelector('.play');
-  for (let i = 0; i < turns; i++) await page.getByRole('button', { name: t('play.endTurn'), exact: true }).click();
+  await page.locator(`.pick-strip [data-country="${countryId}"]`).click({ timeout: 30_000 });
+  await page.locator('.sheet__play').click();
+  await page.waitForSelector('.play-hud');
+  for (let i = 0; i < turns; i++) await endTurn(page);
   if (turns > 0) await waitForSaved(page, turns);
+}
+
+/** Tap End turn. @param {import('playwright-core').Page} page */
+export async function endTurn(page) {
+  await page.getByRole('button', { name: t('play.endTurn'), exact: true }).click();
 }
 
 /** Wait until every automatic Diagnostics check has finished. @param {import('playwright-core').Page} page */

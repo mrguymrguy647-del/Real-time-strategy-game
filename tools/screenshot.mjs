@@ -1,5 +1,5 @@
 // Phone-sized screenshots of every screen, so UI changes can be looked at without a phone.
-//   npm run screenshot                                 all screens (including the map), portrait and landscape
+//   npm run screenshot                                 all screens (the map, the picker, the game), portrait and landscape
 //   node tools/screenshot.mjs --views portrait --only title,play --out tmp/shots
 // Output goes to tmp/screenshots/ by default (git-ignored).
 
@@ -18,7 +18,7 @@ const option = (name, fallback) => {
   return i >= 0 ? args[i + 1] : fallback;
 };
 const views = option('--views', 'portrait,landscape').split(',');
-const only = option('--only', 'title,play,saves,settings,diagnostics,map').split(',');
+const only = option('--only', 'title,pick,play,report,budget,saves,settings,diagnostics,map').split(',');
 const outDir = path.resolve(root, option('--out', 'tmp/screenshots'));
 fs.mkdirSync(outDir, { recursive: true });
 
@@ -37,9 +37,33 @@ try {
     await openApp(page, site.url);
     if (only.includes('title')) await shot('title');
 
+    // The country picker: the strip of countries, then Iran chosen with its panel open.
+    await page.getByRole('button', { name: t('title.newGame'), exact: true }).click();
+    await page.waitForSelector('.pick-strip .chip', { timeout: 30_000 });
+    await page.waitForFunction(() => globalThis.__map?.info().ready, null, { timeout: 30_000 });
+    if (only.includes('pick')) await shot('pick');
+    await page.locator('.pick-strip [data-country="IRN"]').click();
+    await page.waitForSelector('.sheet__play');
+    await page.waitForTimeout(900); // the camera glide
+    if (only.includes('pick')) await shot('pick-iran');
+
+    // The game: as Türkiye after three months, with the report that End turn opens, then the budget.
+    await goTo(page, 'title');
     await newGame(page, 3);
-    await page.getByRole('button', { name: t('play.save') }).click();
+    await page.waitForSelector('.report:not([hidden])');
+    await page.waitForTimeout(900);
+    if (only.includes('report')) await shot('report');
+    if (only.includes('report')) {
+      await page.locator('[data-line="growth"] .report__toggle').click();
+      await page.locator('[data-line="interest"] .report__toggle').click();
+      await shot('report-why');
+    }
+    await page.getByRole('button', { name: t('play.budget'), exact: true }).click();
+    await page.waitForSelector('.budget:not([hidden])');
+    for (let i = 0; i < 3; i++) await page.getByRole('button', { name: t('budget.raise', { name: t('budget.military') }), exact: true }).click();
     await page.waitForTimeout(300);
+    if (only.includes('budget')) await shot('budget');
+    await page.getByRole('button', { name: t('play.budget'), exact: true }).click(); // close it
     if (only.includes('play')) await shot('play');
 
     if (only.includes('saves')) {
@@ -59,7 +83,6 @@ try {
     if (only.includes('map')) {
       // The whole map, then a tap on Iran (a region near the middle of its country) with the info panel open.
       await goTo(page, 'title');
-      await page.waitForSelector('.toast', { state: 'detached', timeout: 10_000 }).catch(() => {}); // the "Saved" toast from the Play screen
       await page.getByRole('button', { name: t('title.map'), exact: true }).click();
       await page.waitForFunction(() => globalThis.__map?.info().frames, null, { timeout: 30_000 });
       await page.waitForTimeout(1500); // the sharp texture is baked a moment after the first frame

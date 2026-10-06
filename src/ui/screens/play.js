@@ -1,37 +1,78 @@
-// The Phase 0b test game: a calendar, a seeded dice roll and a news list, so that turns, saving,
-// loading and determinism can be tried on a phone. Phase 1 replaces this with the real map.
+// The game screen (M1.1b): the map with the player's country marked, a status strip (country, date,
+// treasury) and an action bar (Menu, Budget, Report, End turn). Taps on the map open a country's
+// panel; End turn runs the month and opens the report. Everything the player changes goes through
+// game.dispatch or game.endTurn; this file never touches the state itself.
 
 import { t } from '../../util/i18n.js';
 import { copyText } from '../files.js';
 import { h } from '../dom.js';
-import { formatDate, monthName } from '../format.js';
-
-const EVENTS_SHOWN = 6;
+import { liveEconomy } from '../economyView.js';
+import { formatDate, formatMoneyMn, toneOf } from '../format.js';
+import { createMapStage } from '../components/mapStage.js';
+import { createBudgetPanel } from '../panels/budgetPanel.js';
+import { createCountryPanel } from '../panels/countryPanel.js';
+import { createReportPanel } from '../panels/reportPanel.js';
 
 /** @param {any} ctx */
 export function mountPlay(ctx) {
   const game = ctx.session.game;
+  const playerId = game.state.player.countryId;
+  const country = ctx.data.countries.byId[playerId];
+  /** Which panel is open: the tapped country's, the report, the budget, or none. @type {'info' | 'report' | 'budget' | null} */
+  let active = null;
 
-  const dateEl = h('div', { class: 'play__date' });
-  const metaEl = h('div', { class: 'muted' });
-  const rollEl = h('div', { class: 'play__roll' });
-  const eventsEl = h('ul', { class: 'events' });
+  // ---- the status strip -------------------------------------------------------------------------
+  const dateEl = h('span', { class: 'play-hud__date' });
+  const treasuryEl = h('span', { class: 'play-hud__treasury' });
+  const changeEl = h('span', { class: 'play-hud__change' });
+  const hud = h(
+    'header',
+    { class: 'play-hud', 'aria-live': 'polite' },
+    h('div', { class: 'play-hud__row' }, h('strong', { class: 'play-hud__name' }, country.name), dateEl),
+    h('div', { class: 'play-hud__row' }, treasuryEl, changeEl),
+  );
 
-  function render() {
-    const { clock, demo, news, meta } = game.state;
+  function renderHud() {
+    const { clock, countries } = game.state;
     dateEl.textContent = formatDate(clock, clock.scale === 'week');
-    metaEl.textContent = `${t('play.turn', { n: clock.turn })} · ${t('play.seed', { seed: meta.seed })}`;
-    rollEl.textContent = demo.lastRoll === null ? t('play.rollNone') : t('play.roll', { n: demo.lastRoll });
-    const recent = news.slice(-EVENTS_SHOWN).reverse();
-    eventsEl.replaceChildren(
-      ...(recent.length === 0
-        ? [h('li', { class: 'muted' }, t('play.events.empty'))]
-        : recent.map((/** @type {any} */ entry) =>
-            h('li', null, h('span', { class: 'muted' }, `${monthName(entry.month)} ${entry.year}`), ' ', t(entry.template, entry.params)),
-          )),
-    );
+    const { treasuryMn, last } = countries[playerId].economy;
+    treasuryEl.textContent = t('play.treasury', { amount: formatMoneyMn(treasuryMn) });
+    const change = last ? last.balanceMn - last.repaidMn + last.borrowedMn : 0;
+    changeEl.textContent = last ? formatMoneyMn(change, { signed: true }) : '';
+    changeEl.className = `play-hud__change ${toneOf(change)}`;
   }
 
+  // ---- panels ------------------------------------------------------------------------------------
+  const info = createCountryPanel({
+    data: ctx.data,
+    colorOf: (id) => stage.colorOf(id),
+    worldName: (id) => stage.worldName(id),
+    onRegion: (regionId) => stage.view?.select(regionId),
+    onClose: () => stage.view?.select(null),
+    economyOf: (id) => liveEconomy(game.state, id),
+    actionsFor: (id) => (id === playerId ? h('button', { class: 'btn btn--block sheet__play', type: 'button', onclick: () => openSheet('budget') }, t('play.openBudget')) : null),
+  });
+  const report = createReportPanel({ game, countryId: playerId, onClose: () => openSheet(null) });
+  const budget = createBudgetPanel({ game, countryId: playerId, onClose: () => openSheet(null) });
+
+  /** @param {'report' | 'budget' | null} name */
+  function openSheet(name) {
+    active = name;
+    if (name) stage.view?.select(null); // the map's own selection would otherwise be hidden but still there
+    if (name === 'report') report.show();
+    else report.hide();
+    if (name === 'budget') budget.show();
+    else budget.hide();
+    info.hide();
+    reportButton.setAttribute('aria-pressed', String(name === 'report'));
+    budgetButton.setAttribute('aria-pressed', String(name === 'budget'));
+    stage.measure();
+  }
+
+  /** @param {'report' | 'budget'} name */
+  const toggle = (name) => openSheet(active === name ? null : name);
+
+  // ---- turns and the menu -------------------------------------------------------------------------
   /** @param {{ system?: string, message: string, stack?: string }} error */
   async function showTurnFailed(error) {
     const details = [`system: ${error.system ?? '?'}`, `message: ${error.message}`, error.stack ?? ''].join('\n');
@@ -49,14 +90,19 @@ export function mountPlay(ctx) {
 
   function endTurn() {
     const result = game.endTurn();
-    if (!result.ok) void showTurnFailed(result.error);
-    render();
+    renderHud();
+    if (!result.ok) {
+      void showTurnFailed(result.error);
+      return;
+    }
+    openSheet('report'); // the month's report, ready to read
   }
 
   async function openMenu() {
     const choice = await ctx.dialog({
       title: t('play.menu.title'),
       actions: [
+        { label: t('play.menu.save'), value: 'save' },
         { label: t('play.menu.saves'), value: 'saves' },
         { label: t('play.menu.settings'), value: 'settings' },
         { label: t('play.menu.diagnostics'), value: 'diagnostics' },
@@ -64,42 +110,74 @@ export function mountPlay(ctx) {
         { label: t('common.close'), value: 'close', kind: 'ghost' },
       ],
     });
-    if (choice === 'quit') {
-      const sure = await ctx.confirm({
-        title: t('play.quit.title'),
-        body: t('play.quit.body'),
-        confirmLabel: t('play.quit.confirm'),
-        cancelLabel: t('common.cancel'),
-        danger: true,
-      });
+    if (choice === 'save') {
+      void ctx.quickSave();
+    } else if (choice === 'quit') {
+      const sure = await ctx.confirm({ title: t('play.quit.title'), body: t('play.quit.body'), confirmLabel: t('play.quit.confirm'), cancelLabel: t('common.cancel'), danger: true });
       if (sure) ctx.quitToTitle();
     } else if (choice && choice !== 'close') {
       ctx.navigate(choice);
     }
   }
 
-  const unsubscribe = [game.bus.on('turn:end', render), game.bus.on('state:restored', render)];
-  render();
-
-  const el = h(
-    'section',
-    { class: 'screen play' },
-    h('header', { class: 'play__top card' }, dateEl, metaEl, rollEl),
-    h('div', { class: 'card play__explain' }, h('h2', null, t('play.heading')), h('p', { class: 'muted' }, t('play.explain'))),
-    h('div', { class: 'card play__events' }, h('h2', null, t('play.events.title')), eventsEl),
-    h(
-      'div',
-      { class: 'actionbar' },
-      h('button', { class: 'btn', type: 'button', onclick: openMenu }, t('play.menu')),
-      h('button', { class: 'btn', type: 'button', onclick: () => ctx.quickSave() }, t('play.save')),
-      h('button', { class: 'btn btn--primary actionbar__main', type: 'button', onclick: endTurn }, t('play.endTurn')),
-    ),
+  // ---- the screen ---------------------------------------------------------------------------------
+  const budgetButton = h('button', { class: 'btn', type: 'button', 'aria-pressed': 'false', onclick: () => toggle('budget') }, t('play.budget'));
+  const reportButton = h('button', { class: 'btn', type: 'button', 'aria-pressed': 'false', onclick: () => toggle('report') }, t('play.report'));
+  const bar = h(
+    'div',
+    { class: 'actionbar actionbar--game' },
+    h('button', { class: 'btn', type: 'button', onclick: openMenu }, t('play.menu')),
+    budgetButton,
+    reportButton,
+    h('button', { class: 'btn btn--primary', type: 'button', onclick: endTurn }, t('play.endTurn')),
   );
 
+  const stage = createMapStage({
+    ctx,
+    bar,
+    hint: t('play.hint'),
+    onSelect: (selection) => {
+      if (selection.countryId) {
+        active = 'info';
+        report.hide();
+        budget.hide();
+        info.show(selection);
+      } else if (active === 'info') {
+        active = null;
+        info.hide();
+      }
+    },
+    onReady: (view) => {
+      view.setOwn(playerId);
+      view.focusCountry(playerId);
+    },
+  });
+  stage.area.append(hud, info.el, report.el, budget.el);
+  stage.watch({ chrome: [hud], sheets: [info.el, report.el, budget.el] });
+
+  renderHud();
+  const unsubscribe = [
+    game.bus.on('turn:end', () => {
+      renderHud();
+      info.refresh();
+      if (active === 'budget') budget.render();
+    }),
+    game.bus.on('state:restored', () => {
+      renderHud();
+      report.render();
+      budget.render();
+    }),
+    game.bus.on('command', () => {
+      if (active === 'budget') budget.render();
+      info.refresh();
+    }),
+  ];
+
   return {
-    el,
+    el: stage.el,
     destroy() {
       for (const off of unsubscribe) off();
+      stage.destroy();
     },
   };
 }

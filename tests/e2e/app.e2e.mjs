@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { goTo, newGame, openApp, t, waitForOffline, waitForSaved } from '../../tools/lib/drive.mjs';
+import { endTurn, goTo, newGame, openApp, t, waitForOffline, waitForSaved } from '../../tools/lib/drive.mjs';
 import { button, freshPage, startEnvironment, stopEnvironment } from './helpers.mjs';
 
 /** @type {Awaited<ReturnType<typeof startEnvironment>>} */
@@ -51,35 +51,38 @@ describe('the app', () => {
     await page.reload();
     await page.waitForSelector('.title');
     await newGame(page, 2);
-    assert.ok((await page.textContent('.play__date')).includes(t('month.3')));
+    assert.ok((await page.textContent('.play-hud__date')).includes(t('month.3')));
     assert.deepEqual(problems.filter((p) => !/ERR_INTERNET_DISCONNECTED/.test(p)), []);
     await context.close();
   });
 
-  it('keeps the game across a reload and replays the same dice after loading a save', async () => {
+  it('keeps the game across a reload and replays the same month after loading a save', async () => {
     const { context, page, problems } = await freshPage(env.browser);
     await openApp(page, env.site.url);
     await newGame(page, 3);
-    await button(page, t('play.save')).click(); // manual slot 1, at turn 3 (April)
-    await button(page, t('play.endTurn')).click(); // turn 4 (May)
-    const rollAtTurn4 = await page.textContent('.play__roll');
+    await button(page, t('play.menu')).click();
+    await button(page, t('play.menu.save')).click(); // manual slot 1, at turn 3 (April)
+    await page.getByText(t('play.saved', { slot: t('saves.slot.manual', { n: 1 }) })).waitFor();
+    await endTurn(page); // turn 4 (May)
+    const treasuryAtTurn4 = await page.textContent('.play-hud__treasury');
     await waitForSaved(page, 4); // saving is asynchronous; let it finish before closing the page
 
-    // Close and reopen: Continue brings back the newest autosave (turn 4).
+    // Close and reopen: Continue brings back the newest autosave (turn 4), named after the country.
     await page.reload();
-    await page.getByRole('button', { name: t('title.continue') }).click();
-    await page.waitForSelector('.play');
-    assert.ok((await page.textContent('.play__date')).includes(t('month.5')));
-    assert.equal(await page.textContent('.play__roll'), rollAtTurn4);
+    await page.getByRole('button', { name: new RegExp(t('title.continue')) }).click();
+    await page.waitForSelector('.play-hud');
+    assert.ok((await page.textContent('.play-hud__date')).includes(t('month.5')));
+    assert.equal(await page.textContent('.play-hud__treasury'), treasuryAtTurn4);
+    assert.ok((await page.textContent('.play-hud__name')).includes('Türkiye'));
 
-    // Load the older save from the Saves screen and end the same turn again: the same roll comes up.
+    // Load the older save from the Saves screen and end the same turn again: the same month comes out.
     await button(page, t('play.menu')).click();
     await button(page, t('play.menu.saves')).click();
     await button(page.locator('[data-slot="manual-1"]'), t('common.load')).click();
-    await page.waitForSelector('.play');
-    assert.ok((await page.textContent('.play__date')).includes(t('month.4')));
-    await button(page, t('play.endTurn')).click();
-    assert.equal(await page.textContent('.play__roll'), rollAtTurn4, 'save, load and replay give the same dice');
+    await page.waitForSelector('.play-hud');
+    assert.ok((await page.textContent('.play-hud__date')).includes(t('month.4')));
+    await endTurn(page);
+    assert.equal(await page.textContent('.play-hud__treasury'), treasuryAtTurn4, 'save, load and replay give the same month');
     assert.deepEqual(problems, []);
     await context.close();
   });
@@ -91,11 +94,11 @@ describe('the app', () => {
       await openApp(page, env.site.url);
       await newGame(page, 2);
       await goTo(page, 'saves');
-      await page.waitForSelector('[data-slot="auto-2"]');
+      await page.waitForSelector('[data-slot="auto-3"]'); // the game autosaves at its start (auto-1), then each turn (auto-2, auto-3)
 
       const [download] = await Promise.all([
         page.waitForEvent('download'),
-        button(page.locator('[data-slot="auto-2"]'), t('common.export')).click(),
+        button(page.locator('[data-slot="auto-3"]'), t('common.export')).click(),
       ]);
       assert.equal(download.suggestedFilename(), 'grand-strategy_turn-2_2026-03.gsave');
       const file = path.join(tmp, download.suggestedFilename());
@@ -141,25 +144,25 @@ describe('the app', () => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await openApp(page, env.site.url);
     await newGame(page, 1);
-    const dateBefore = await page.textContent('.play__date');
+    const dateBefore = await page.textContent('.play-hud__date');
 
     await page.evaluate(() => {
       const game = /** @type {any} */ (globalThis).__app.ctx.session.game;
       game.systems.push({ id: 'broken', order: 1, cadence: 'any', step: () => { throw new Error('deliberate test failure'); } });
     });
-    await button(page, t('play.endTurn')).click();
+    await endTurn(page);
     await page.getByText(t('play.turnFailed.title')).waitFor();
     assert.ok((await page.locator('.dialog__details').inputValue()).includes('deliberate test failure'));
     await button(page, t('play.turnFailed.copy')).click();
     await page.getByText(t('common.copied')).waitFor();
     assert.ok((await page.evaluate(() => navigator.clipboard.readText())).includes('deliberate test failure'));
-    assert.equal(await page.textContent('.play__date'), dateBefore, 'the game is back at the start of the turn');
+    assert.equal(await page.textContent('.play-hud__date'), dateBefore, 'the game is back at the start of the turn');
 
     await page.evaluate(() => {
       /** @type {any} */ (globalThis).__app.ctx.session.game.systems.pop();
     });
-    await button(page, t('play.endTurn')).click();
-    assert.notEqual(await page.textContent('.play__date'), dateBefore, 'the next turn works');
+    await endTurn(page);
+    assert.notEqual(await page.textContent('.play-hud__date'), dateBefore, 'the next turn works');
     await context.close();
   });
 
