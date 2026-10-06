@@ -230,3 +230,22 @@ export function tradeValue({ units, price }, { spread }, side) {
  * @param {{ perGameUnit: number }} priceUnit resources.json
  */
 export const pricePerUnit = (price, priceUnit) => (price * 1e6) / priceUnit.perGameUnit;
+
+/**
+ * What the state earns from the resources it sells abroad at the start of a scenario, as a share of GDP
+ * a year: for each resource the surplus of the country's starting figures, at the starting price, times
+ * the state's share of that trade. The Gulf states' tax rates in countries.json are what is left of their
+ * old all-in rates after this (G-39), so taxes plus this is what the state collects.
+ * @param {{ economy: { gdpBn: number }, resources: { production: Record<string, number>, consumption: Record<string, number>, stateShare?: Record<string, number> } }} start a country's `start` block
+ * @param {Array<{ id: string, defaultStateShare: number, basePrice: number, price: { elasticity: number, tensionSensitivity: number } }>} resources the resources in play
+ * @param {{ startTension: number, priceFloor: number, priceCeiling: number }} market balance.json → market
+ */
+export function startIncomeShare(start, resources, market) {
+  const { production, consumption, stateShare } = start.resources;
+  let monthly = 0;
+  for (const resource of resources) {
+    const surplus = Math.max(0, (production[resource.id] ?? 0) - (consumption[resource.id] ?? 0));
+    monthly += surplus * startPrice(resource, market.startTension, market) * (stateShare?.[resource.id] ?? resource.defaultStateShare);
+  }
+  return (monthly * 12) / (start.economy.gdpBn * 1000);
+}

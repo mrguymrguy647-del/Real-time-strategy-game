@@ -5,6 +5,7 @@
 import { t } from '../../util/i18n.js';
 import { h } from '../dom.js';
 import { startEconomy } from '../economyView.js';
+import { startResources } from '../resourcesView.js';
 import { createMapStage } from '../components/mapStage.js';
 import { createCountryPanel } from '../panels/countryPanel.js';
 
@@ -17,6 +18,7 @@ export function mountMap(ctx) {
     onRegion: (regionId) => stage.view?.select(regionId),
     onClose: () => stage.view?.select(null),
     economyOf: (countryId) => startEconomy(ctx.data, countryId),
+    resourcesOf: (countryId) => startResources(ctx.data, countryId),
   });
   const title = h('h1', null, t('map.title'));
   const top = h('header', { class: 'map-top' }, h('button', { class: 'btn btn--small', type: 'button', onclick: () => ctx.back() }, t('common.back')), title);

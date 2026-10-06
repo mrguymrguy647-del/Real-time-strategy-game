@@ -17,6 +17,31 @@ const world = /** @type {NonNullable<typeof withWorld.world>} */ (withWorld.worl
 const regionsDoc = await readJsonFromDisk('data/regions.json');
 const countriesDoc = await readJsonFromDisk('data/countries.json');
 
+describe('putting a longitude and latitude on the map', () => {
+  it('lands a region\'s own centre point inside that region', () => {
+    const hits = createHitIndex(geometry.regions);
+    for (const id of ['IRQ-basra', 'TUR-central_anatolia', 'SAU-riyadh', 'EGY-cairo_giza', 'IRN-tehran', 'YEM-sanaa', 'ISR-tel_aviv']) {
+      const region = regionsDoc.items.find((/** @type {any} */ r) => r.id === id);
+      const [x, y] = geometry.project(region.lonlat[0], region.lonlat[1]);
+      assert.equal(hits.hit(x, y, 0)?.id, id, id);
+    }
+  });
+
+  it('puts the straits where they belong: inside the map, on the water between the regions that control them', async () => {
+    const { items } = await readJsonFromDisk('data/chokepoints.json');
+    for (const strait of items) {
+      const [x, y] = geometry.project(strait.position[0], strait.position[1]);
+      assert.ok(x > 0 && x < geometry.width && y > 0 && y < geometry.height, `${strait.id} is on the map`);
+      // within a few hundred kilometres of the regions that control it (a world unit is about 1.5 km)
+      const near = strait.controlRegions.map((id) => {
+        const region = geometry.regions.find((r) => r.id === id);
+        return region ? Math.hypot(region.label[0] - x, region.label[1] - y) : Infinity;
+      });
+      assert.ok(Math.min(...near) < 350, `${strait.id} is ${Math.min(...near).toFixed(0)} units from its control regions`);
+    }
+  });
+});
+
 describe('map geometry in world units', () => {
   it('spans the world width, with y pointing down and the whole map inside', () => {
     assert.equal(geometry.width, WORLD_WIDTH);

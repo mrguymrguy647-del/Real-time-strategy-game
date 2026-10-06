@@ -18,7 +18,7 @@ const option = (name, fallback) => {
   return i >= 0 ? args[i + 1] : fallback;
 };
 const views = option('--views', 'portrait,landscape').split(',');
-const only = option('--only', 'title,pick,play,report,budget,saves,settings,diagnostics,map').split(',');
+const only = option('--only', 'title,pick,play,report,resources,region,budget,saves,settings,diagnostics,map').split(',');
 const outDir = path.resolve(root, option('--out', 'tmp/screenshots'));
 fs.mkdirSync(outDir, { recursive: true });
 
@@ -57,6 +57,36 @@ try {
       await page.locator('[data-line="growth"] .report__toggle').click();
       await page.locator('[data-line="interest"] .report__toggle').click();
       await shot('report-why');
+      await page.evaluate(() => void (document.querySelector('.report').scrollTop = 1e6)); // the resources block is at the bottom
+      await page.waitForTimeout(200);
+      await shot('report-resources');
+    }
+    if (only.includes('resources')) {
+      // The Resources panel: the first resources, then the straits with a "what if it closed?" open.
+      await page.getByRole('button', { name: t('common.close'), exact: true }).first().click();
+      await page.getByRole('button', { name: t('play.resources'), exact: true }).click();
+      await page.waitForSelector('.resources:not([hidden]) .res');
+      await page.waitForTimeout(300);
+      await shot('resources');
+      await page.locator('.resources .res__ladder summary').first().click();
+      await page.evaluate(() => void (document.querySelector('.resources').scrollTop = 1e6));
+      await page.locator('[data-strait="bab_el_mandeb"] .strait__toggle').click();
+      await page.waitForSelector('[data-closure]');
+      await page.evaluate(() => void (document.querySelector('.resources').scrollTop = 1e6));
+      await page.waitForTimeout(300);
+      await shot('resources-straits');
+      await page.getByRole('button', { name: t('play.resources'), exact: true }).click(); // close it
+    }
+    if (only.includes('region')) {
+      // A region of another country, with what holding it would be worth.
+      await page.getByRole('button', { name: t('common.close'), exact: true }).first().click().catch(() => {});
+      await page.evaluate(() => globalThis.__map.select('IRQ-basra'));
+      await page.waitForSelector('.capture');
+      await page.waitForTimeout(900);
+      await shot('region-capture');
+      await page.evaluate(() => void (document.querySelector('.sheet:not([hidden])').scrollTop = 1e6));
+      await shot('region-capture-bottom');
+      await page.locator('.sheet:not([hidden]) .sheet__close').click();
     }
     await page.getByRole('button', { name: t('play.budget'), exact: true }).click();
     await page.waitForSelector('.budget:not([hidden])');

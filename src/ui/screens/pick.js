@@ -6,6 +6,7 @@ import { t } from '../../util/i18n.js';
 import { playableOf } from '../../core/scenario.js';
 import { h } from '../dom.js';
 import { startEconomy } from '../economyView.js';
+import { startResources } from '../resourcesView.js';
 import { createMapStage } from '../components/mapStage.js';
 import { createCountryPanel } from '../panels/countryPanel.js';
 
@@ -49,6 +50,7 @@ export function mountPick(ctx) {
     onRegion: (regionId) => stage.view?.select(regionId),
     onClose: clearSelection,
     economyOf: (countryId) => startEconomy(ctx.data, countryId),
+    resourcesOf: (countryId) => (playable.has(countryId) ? startResources(ctx.data, countryId) : null),
     actionsFor: (countryId) =>
       playable.has(countryId)
         ? h('button', { class: 'btn btn--primary btn--block sheet__play', type: 'button', onclick: () => ctx.startGame(countryId) }, t('pick.play', { name: ctx.data.countries.byId[countryId].name }))

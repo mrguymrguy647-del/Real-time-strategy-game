@@ -3,16 +3,12 @@
 // Map units are kilometres in Mercator, x east and y north (the same as src/ui/map/topology.js).
 
 import { poleOfInaccessibility } from '../../src/ui/map/labels.js';
+import { inverseMercator, mercator } from '../../src/ui/map/projection.js';
 import { arcsUsedBy, decodeArcs, featuresOf } from '../../src/ui/map/topology.js';
 
-const EARTH_RADIUS_KM = 6378.137;
 const RAD = Math.PI / 180;
 
-/** @param {number} lon @param {number} lat @returns {[number, number]} map units (km) */
-export const mercator = (lon, lat) => [EARTH_RADIUS_KM * lon * RAD, EARTH_RADIUS_KM * Math.log(Math.tan(Math.PI / 4 + (lat * RAD) / 2))];
-
-/** @param {number} x @param {number} y @returns {[number, number]} [lon, lat] */
-export const inverseMercator = (x, y) => [(x / EARTH_RADIUS_KM) / RAD, (2 * Math.atan(Math.exp(y / EARTH_RADIUS_KM)) - Math.PI / 2) / RAD];
+export { inverseMercator, mercator };
 
 /** Project GeoJSON coordinates (any nesting) from lon/lat to map units. @param {any} coords @returns {any} */
 export function projectCoordinates(coords) {

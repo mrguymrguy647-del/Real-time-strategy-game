@@ -6,6 +6,7 @@
     {
       "id": "hormuz",
       "name": "Strait of Hormuz",
+      "shortName": "Hormuz",
       "blurb": "The only sea exit of the Gulf: about a fifth of the world's oil passes here.",
       "position": [56.5, 26.6],
       "controlRegions": ["IRN-hormozgan", "OMN-musandam"],
@@ -14,6 +15,7 @@
     {
       "id": "suez",
       "name": "Suez Canal",
+      "shortName": "Suez",
       "blurb": "Links the Red Sea and the Mediterranean; the pipelines beside it carry oil too.",
       "position": [32.4, 30.5],
       "controlRegions": ["EGY-canal"],
@@ -22,6 +24,7 @@
     {
       "id": "bab_el_mandeb",
       "name": "Bab-el-Mandeb",
+      "shortName": "Bab-el-Mandeb",
       "blurb": "The narrow gate between the Red Sea and the Indian Ocean.",
       "position": [43.35, 12.65],
       "controlRegions": ["YEM-aden", "YEM-tihama"],

@@ -388,7 +388,7 @@ describe('the budget', () => {
     await newGame(page, 0, 'YEM'); // a deficit every month, but a long runway at the start
     await button(page, t('play.budget')).click();
     await page.waitForSelector('.budget:not([hidden])');
-    assert.equal(await page.locator('[data-alert]').count(), 0, 'plenty of months of money left');
+    assert.equal(await page.locator('.budget [data-alert]').count(), 0, 'plenty of months of money left');
 
     /** Set the treasury, then redraw the panel by moving a lever up and down. @param {number} millions */
     const treasury = async (millions) => {
@@ -397,12 +397,12 @@ describe('the budget', () => {
       await button(page, t('budget.lower', { name: t('budget.tax') })).click();
     };
     await treasury(100);
-    await page.waitForSelector('[data-alert="runway"]');
-    assert.match(await page.locator('[data-alert="runway"]').textContent(), /about \d+ months?/);
+    await page.waitForSelector('.budget [data-alert="runway"]');
+    assert.match(await page.locator('.budget [data-alert="runway"]').textContent(), /about \d+ months?/);
 
     await treasury(0);
-    await page.waitForSelector('[data-alert="borrowing"]');
-    assert.ok((await page.locator('[data-alert="borrowing"]').textContent()).includes('borrow'));
+    await page.waitForSelector('.budget [data-alert="borrowing"]');
+    assert.ok((await page.locator('.budget [data-alert="borrowing"]').textContent()).includes('borrow'));
     await context.close();
   });
 });

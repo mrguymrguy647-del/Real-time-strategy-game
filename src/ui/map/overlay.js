@@ -1,7 +1,8 @@
 // What sits on top of the baked map as HTML and SVG, so it stays crisp at any zoom: the outline of the
 // selected country and region (an SVG whose group is moved by the camera, strokes of constant pixel
-// width) and the country and region names (HTML text positioned from the camera). Plain Phaser text
-// shrinks with the camera zoom, so it is not used (ARCHITECTURE §9.5).
+// width), the country and region names, and the markers of the places that can be tapped (the
+// straits), all HTML positioned from the camera. Plain Phaser text shrinks with the camera zoom, so it
+// is not used (ARCHITECTURE §9.5).
 
 import { longerSide } from './box.js';
 import { chooseLabels } from './labelLayout.js';
@@ -58,7 +59,9 @@ export function createOverlay({ parent, geometry, countryName, regionName }) {
   const labelLayer = document.createElement('div');
   labelLayer.className = 'map__labels';
   labelLayer.setAttribute('aria-hidden', 'true');
-  parent.append(svg, labelLayer);
+  const markerLayer = document.createElement('div');
+  markerLayer.className = 'map__markers';
+  parent.append(svg, labelLayer, markerLayer);
 
   /** @param {string} cls @param {string} text */
   const makeLabel = (cls, text) => {
@@ -96,6 +99,8 @@ export function createOverlay({ parent, geometry, countryName, regionName }) {
     if (d === undefined) cache.set(id, (d = pathData(polygons)));
     return d;
   };
+  /** @type {Array<{ id: string, at: [number, number], el: HTMLElement }>} */
+  let markers = [];
   const countries = new Map(geometry.countries.map((c) => [c.id, c]));
   const regions = new Map(geometry.regions.map((r) => [r.id, r]));
   const greyCountries = geometry.world?.byId ?? new Map();
@@ -131,6 +136,39 @@ export function createOverlay({ parent, geometry, countryName, regionName }) {
         const box = boxes[i];
         if (show[i] && box) label.el.style.transform = `translate(${box.x.toFixed(1)}px, ${box.y.toFixed(1)}px) translate(-50%, -50%)`;
       });
+      // The markers: where they are, unless they are off the screen or under a panel.
+      for (const marker of markers) {
+        const [x, y] = worldToScreen(view, viewport, marker.at[0], marker.at[1]);
+        const visible = x >= 0 && x <= viewport.width - insets.right && y >= 0 && y <= viewport.height - insets.bottom;
+        marker.el.hidden = !visible;
+        if (visible) marker.el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -50%)`;
+      }
+    },
+
+    /**
+     * The tappable places on the map (the straits). Replaces the ones there were.
+     * @param {Array<{ id: string, at: [number, number], label: string, title: string, blocked?: boolean, onTap: (id: string) => void }>} next
+     *   `at` in world units; `label` is the short text shown, `title` the full name
+     */
+    setMarkers(next) {
+      for (const marker of markers) marker.el.remove();
+      markers = next.map((spec) => {
+        const el = document.createElement('button');
+        el.type = 'button';
+        el.className = `map__marker${spec.blocked ? ' is-blocked' : ''}`;
+        el.setAttribute('data-marker', spec.id);
+        el.setAttribute('aria-label', spec.title);
+        const icon = document.createElement('span');
+        icon.setAttribute('aria-hidden', 'true');
+        icon.textContent = '⚓';
+        el.append(icon, ` ${spec.label}`);
+        // The map beneath captures the pointer on a press; a marker must not start a pan, or its tap never arrives.
+        el.addEventListener('pointerdown', (event) => event.stopPropagation());
+        el.addEventListener('click', () => spec.onTap(spec.id));
+        el.hidden = true; // placed by the next update()
+        markerLayer.append(el);
+        return { id: spec.id, at: spec.at, el };
+      });
     },
 
     /** Outline a playable country (and a region of it), or a grey one. @param {{ countryId: string | null, regionId: string | null, world: boolean }} selection */
@@ -150,6 +188,7 @@ export function createOverlay({ parent, geometry, countryName, regionName }) {
     destroy() {
       svg.remove();
       labelLayer.remove();
+      markerLayer.remove();
     },
   };
 }

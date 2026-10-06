@@ -1,6 +1,7 @@
 // Turning game values into text. Wording always comes from data/i18n/en.json (G-30).
 
-import { t } from '../util/i18n.js';
+import { pricePerUnit } from '../formulas/market.js';
+import { t, tn } from '../util/i18n.js';
 
 /** @param {number} month 1-12 */
 export function monthName(month) {
@@ -112,6 +113,45 @@ export function formatPercent(fraction, { signed = false, decimals = 1 } = {}) {
 export function formatUsd(dollars) {
   const n = Math.abs(dollars) >= 100 ? Math.round(dollars).toLocaleString('en-US') : trimmed(dollars);
   return t('units.money.plain', { n });
+}
+
+/**
+ * A quantity of a resource: "0.25", "3.5", "16", "118" (fewer decimals as the number grows). Always
+ * positive: the caller says whether it is a gain or a loss.
+ * @param {number} n
+ */
+export function formatUnits(n) {
+  const abs = Math.abs(n);
+  return String(abs < 10 ? Math.round(abs * 100) / 100 : abs < 100 ? Math.round(abs * 10) / 10 : Math.round(abs));
+}
+
+/**
+ * "3.1 months" or "1 month".
+ * @param {number} months
+ */
+export function formatMonths(months) {
+  const n = Math.round(months * 10) / 10;
+  return tn('res.months', n, { n: String(n) });
+}
+
+/**
+ * The price of a resource in the unit people know: "$77.4 per barrel", "$735 per tonne".
+ * @param {{ priceUnit: { label: string, perGameUnit: number } }} resource
+ * @param {number} price USD millions per game unit
+ */
+export function formatPrice(resource, price) {
+  return t('units.price', { amount: formatUsd(pricePerUnit(price, resource.priceUnit)), unit: resource.priceUnit.label });
+}
+
+/**
+ * What a shortage step does to a stat, in words: "Mechanized mobility ×0.8", "Public approval −15".
+ * @param {{ stat?: string, op?: 'add' | 'mul', value?: number, do?: string }} effect
+ */
+export function effectText(effect) {
+  if (!effect.stat || typeof effect.value !== 'number') return String(effect.do ?? '');
+  const name = t(`stat.${effect.stat}`);
+  if (effect.op === 'mul') return t('res.effect.mul', { name, value: String(Math.round(effect.value * 100) / 100) });
+  return t('res.effect.add', { name, value: `${signOf(effect.value)}${Math.abs(effect.value)}` });
 }
 
 /**

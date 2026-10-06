@@ -10,48 +10,58 @@ import { resourcesSystem } from './resources.js';
 import { countryFlows, resourceMonth } from './resourceFlows.js';
 
 /**
- * Run the resources system for some months on a copy of the state.
+ * A copy of the state that can be played forward with the resources system alone.
  * @param {any} state
  * @param {import('../core/data.js').GameData} data
- * @param {number} months
  * @param {string | null} closed a chokepoint to close completely, or null for none
  */
-function simulate(state, data, months, closed) {
+function fork(state, data, closed) {
   const copy = structuredClone(state);
   if (closed) copy.world.chokepoints[closed].blockade = 1;
   const ctx = /** @type {any} */ ({ state: copy, data, rng: createRng(copy.rng), news() {} });
-  for (let i = 0; i < months; i++) resourcesSystem.step(ctx);
-  return copy;
+  return { state: copy, step: () => resourcesSystem.step(ctx) };
 }
 
 /**
  * What it would do to the world and to one country if a chokepoint were closed for some months, set
- * against the same months with it open (so the random mood of the market does not blur the answer).
+ * against the same months with it open (so the random mood of the market does not blur the answer):
+ * the price of each resource, the country's income from it, and whether and when its reserve runs out.
  * @param {any} state
  * @param {import('../core/data.js').GameData} data
  * @param {string} countryId
  * @param {string} chokepointId
  * @param {{ months?: number }} [options]
  */
-export function closureEstimate(state, data, countryId, chokepointId, { months = 3 } = {}) {
-  const open = simulate(state, data, months, null);
-  const closed = simulate(state, data, months, chokepointId);
-  const share = countryFlows(closed, data, countryId).blocked;
+export function closureEstimate(state, data, countryId, chokepointId, { months = 6 } = {}) {
+  const open = fork(state, data, null);
+  const closed = fork(state, data, chokepointId);
+  /** @type {Record<string, number | null>} the first month a shortage begins that the open strait would not have caused */
+  const firstShort = Object.fromEntries(data.activeResources.map((resource) => [resource.id, null]));
+  for (let month = 1; month <= months; month++) {
+    open.step();
+    closed.step();
+    for (const resource of data.activeResources) {
+      const id = resource.id;
+      if (firstShort[id] === null && closed.state.countries[countryId].resources[id].step > 0 && open.state.countries[countryId].resources[id].step === 0) firstShort[id] = month;
+    }
+  }
   return {
     months,
     chokepointId,
-    blocked: share,
+    blocked: countryFlows(closed.state, data, countryId).blocked,
     resources: data.activeResources.map((resource) => {
       const id = resource.id;
-      const mine = closed.countries[countryId].resources[id];
+      const mine = closed.state.countries[countryId].resources[id];
       return {
         id,
-        priceChange: closed.world.market[id].price / open.world.market[id].price - 1,
+        priceChange: closed.state.world.market[id].price / open.state.world.market[id].price - 1,
+        incomeChangeMn: (mine.last?.incomeMn ?? 0) - (open.state.countries[countryId].resources[id].last?.incomeMn ?? 0),
         stockAfter: mine.stock,
         coverage: mine.last?.coverage ?? 1,
         step: mine.step,
         label: mine.step > 0 ? resource.shortage[mine.step - 1].label : null,
-        stepIfOpen: open.countries[countryId].resources[id].step,
+        stepIfOpen: open.state.countries[countryId].resources[id].step,
+        firstShort: firstShort[id],
       };
     }),
   };

@@ -482,7 +482,11 @@ describe('what closing a strait would do (the closure estimate)', () => {
     assert.equal(byId.food.step, 3, 'Kuwait\'s food would run out within the year');
     assert.equal(byId.food.label, 'Famine');
     assert.equal(byId.food.stepIfOpen, 0);
+    assert.equal(byId.food.firstShort, 7, 'six months of stock, then the shortage begins in the seventh');
     assert.equal(byId.oil.step, 0, 'its own oil stays at home');
+    assert.equal(byId.oil.firstShort, null);
+    assert.ok(byId.oil.incomeChangeMn < -3_000, 'and its oil income stops');
+    assert.equal(byId.food.incomeChangeMn, 0);
   });
 
   it('says nothing is wrong for a country that does not trade through that strait', () => {

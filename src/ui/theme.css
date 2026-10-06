@@ -249,8 +249,8 @@ h2 { font-size: 1.05rem; line-height: 1.25; color: var(--muted); font-weight: 60
 .pick-strip .chip.is-active { background: var(--accent); }
 .chip__dot { display: inline-block; width: 0.7rem; height: 0.7rem; margin-right: 0.45rem; border: 1px solid rgb(255 255 255 / 0.55); border-radius: 50%; background: #5d7a99; vertical-align: -0.05rem; }
 .screen--bar .actionbar { position: relative; margin: 0; padding: 0.5rem calc(var(--safe-right) + 0.75rem) calc(var(--safe-bottom) + 0.5rem) calc(var(--safe-left) + 0.75rem); background: var(--surface); border-top: 1px solid var(--line); }
-.actionbar--game { grid-template-columns: 1fr 1fr 1fr 1.7fr; }
-.actionbar--game .btn { padding-inline: 0.3rem; }
+.actionbar--game { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, 1.3fr) minmax(0, 1.05fr) minmax(0, 1.5fr); gap: 0.35rem; }
+.actionbar--game .btn { padding-inline: 0.2rem; font-size: 0.84rem; }
 .actionbar--game .btn[aria-pressed="true"] { border-color: var(--accent); }
 .play-hud { position: absolute; z-index: 5; top: calc(var(--safe-top) + 0.5rem); left: calc(var(--safe-left) + 0.5rem); right: calc(var(--safe-right) + 0.5rem); padding: 0.4rem 0.8rem; border: 1px solid var(--line); border-radius: 0.9rem; background: rgb(11 26 43 / 0.92); pointer-events: none; }
 .play-hud__row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
@@ -264,10 +264,10 @@ h2 { font-size: 1.05rem; line-height: 1.25; color: var(--muted); font-weight: 60
   .play-hud { padding-inline: 0.65rem; }
   .play-hud__row > * { white-space: nowrap; }
   .play-hud__treasury, .play-hud__change, .play-hud__date { font-size: 0.85rem; }
-  .actionbar--game { gap: 0.35rem; }
-  .actionbar--game .btn { font-size: 0.9rem; }
+  .actionbar--game .btn { font-size: 0.76rem; }
+  .play-hud__chips { font-size: 0.78rem; }
 }
-@media (max-height: 640px) and (orientation: portrait) {
+@media (max-height: 900px) and (orientation: portrait) {
   .map__hud { display: grid; grid-template-columns: repeat(2, auto); gap: 0.4rem; }
   .map__btn { width: 2.75rem; height: 2.75rem; }
 }
@@ -327,4 +327,63 @@ h2 { font-size: 1.05rem; line-height: 1.25; color: var(--muted); font-weight: 60
   .play-hud, .map-top--stack { right: calc(var(--safe-right) + 0.5rem + var(--sheet-w, 0px)); }
   .play-hud { padding-block: 0.25rem; }
   .sheet--tall { max-height: none; }
+}
+
+/* Resources (M1.2): the strip under the treasury, the country panel's resources, the capture estimate, the Resources panel */
+.play-hud__chips { display: flex; justify-content: space-between; gap: 0.35rem; margin: 0.25rem 0 0; padding: 0.3rem 0 0; border-top: 1px solid var(--line); font-size: 0.85rem; }
+.chip-res { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.chip-res.is-low { color: var(--gold); }
+.chip-res.is-short { color: var(--danger); font-weight: 700; }
+.sheet__resources { margin-top: 0.7rem; padding-top: 0.5rem; border-top: 1px solid var(--line); }
+.sheet__resources h3 { margin-bottom: 0.3rem; font-size: 0.95rem; }
+.facts--resources { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.fact__more { display: block; font-size: 0.75rem; font-weight: 400; }
+.capture { margin-top: 0.5rem; padding: 0.5rem 0.7rem; border: 1px dashed var(--line); border-radius: 0.7rem; }
+.capture h4 { margin: 0 0 0.25rem; color: var(--muted); font-size: 0.85rem; }
+.capture ul { margin: 0; padding-left: 1.1rem; font-size: 0.9rem; }
+.sheet .capture__note { margin: 0.3rem 0 0; font-size: 0.75rem; }
+.res__intro { margin: 0 0 0.4rem; font-size: 0.85rem; }
+.res-list { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.4rem; }
+.res { padding: 0.6rem 0.75rem; border: 1px solid var(--line); border-radius: 0.8rem; background: var(--surface-2); }
+.res.is-short { border-color: var(--danger); }
+.res__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.1rem 0.6rem; }
+.res__name { font-size: 1.05rem; }
+.res__price { color: var(--gold); font-weight: 700; font-variant-numeric: tabular-nums; }
+.sheet .res__change { margin: 0; font-size: 0.8rem; }
+.res__facts { margin-top: 0.4rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.sheet .res__income, .sheet .res__ok, .res__blocked { margin: 0.35rem 0 0; font-size: 0.85rem; }
+.res__blocked { color: var(--gold); }
+.res__short { margin: 0.4rem 0 0; padding: 0.4rem 0.6rem; border: 1px solid var(--danger); border-radius: 0.6rem; background: rgb(255 107 139 / 0.08); font-size: 0.85rem; }
+.res__short ul { margin: 0.2rem 0 0; padding-left: 1.1rem; }
+.res__trade { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.55rem; }
+.res__btn { padding-inline: 0.3rem; text-align: center; }
+.res__btn small { font-size: 0.78rem; }
+.res__ladder { margin-top: 0.4rem; font-size: 0.85rem; }
+.res__ladder summary { display: flex; align-items: center; min-height: 2.5rem; color: var(--muted); cursor: pointer; }
+.res__ladder ul { margin: 0.1rem 0 0; padding-left: 1.1rem; }
+.res__ladder li.is-now { color: var(--danger); }
+.straits { margin-top: 0.9rem; padding-top: 0.6rem; border-top: 1px solid var(--line); }
+.straits h3 { font-size: 0.95rem; }
+.strait { margin-top: 0.6rem; padding: 0.6rem 0.75rem; border: 1px solid var(--line); border-radius: 0.8rem; background: var(--surface-2); }
+.sheet .strait p { margin: 0.25rem 0 0; font-size: 0.85rem; }
+.strait__head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.6rem; }
+.strait__toggle { margin-top: 0.5rem; }
+.strait__result { margin-top: 0.4rem; }
+.strait__result ul { margin: 0.2rem 0 0; padding-left: 1.1rem; font-size: 0.85rem; }
+.strait__result li.is-bad { color: var(--danger); }
+.report__resources { margin-top: 0.8rem; padding-top: 0.5rem; border-top: 1px solid var(--line); }
+.report__resources h3 { margin-bottom: 0.25rem; font-size: 0.95rem; }
+.report__res { margin: 0 0 0.5rem; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; }
+.report__open { margin-top: 0.2rem; }
+.sheet__region + .facts { margin-top: 0.7rem; padding-top: 0.5rem; border-top: 1px solid var(--line); }
+.map__markers { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.map__marker { position: absolute; left: 0; top: 0; z-index: 2; appearance: none; display: inline-flex; align-items: center; gap: 0.15rem; min-height: 2rem; padding: 0.15rem 0.6rem; border: 1px solid var(--gold); border-radius: 999px; background: rgb(11 26 43 / 0.9); color: var(--gold); font: inherit; font-size: 0.78rem; font-weight: 700; white-space: nowrap; pointer-events: auto; cursor: pointer; will-change: transform; }
+.map__marker.is-blocked { border-color: var(--danger); color: var(--danger); background: rgb(60 12 24 / 0.92); }
+.map__marker:active { filter: brightness(1.25); }
+@media (max-width: 340px) {
+  .actionbar--game { gap: 0.25rem; }
+  .actionbar--game .btn { padding-inline: 0.1rem; font-size: 0.72rem; }
+}
+@media (max-height: 640px) and (orientation: portrait) {
+  .map-area:has(.sheet--tall:not([hidden])) .map__hud { display: none; } /* no room for the zoom buttons beside a tall panel; pinching still works */
 }

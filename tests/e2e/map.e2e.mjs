@@ -256,6 +256,7 @@ describe('the map screen', () => {
     await page.waitForSelector('.sheet:not([hidden])');
     await stillCamera(page);
     const row = page.locator('.chips');
+    await row.scrollIntoViewIfNeeded(); // the row is below the country's facts and resources, at the end of the panel
     const room = await row.evaluate((el) => el.scrollWidth - el.clientWidth);
     assert.ok(room > 100, `a country with 11 regions has more chips than fit on a phone (${room}px of overflow)`);
 

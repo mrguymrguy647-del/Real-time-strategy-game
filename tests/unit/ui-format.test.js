@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { setStrings } from '../../src/util/i18n.js';
 import { economyMonth } from '../../src/formulas/economy.js';
 import { whyLines } from '../../src/ui/components/why.js';
-import { formatMoneyMn, formatParams, formatPercent, formatUsd, newsText, toneOf } from '../../src/ui/format.js';
+import { effectText, formatMoneyMn, formatMonths, formatParams, formatPercent, formatPrice, formatUnits, formatUsd, newsText, toneOf } from '../../src/ui/format.js';
+import { lastsText, positionText } from '../../src/ui/resourceText.js';
 import { loadTestData } from '../helpers/data.js';
 
 const data = await loadTestData();
@@ -147,5 +148,57 @@ describe('the "why" of a number', () => {
 
   it('refuses a number it has no words for', () => {
     assert.throws(() => whyLines('mystery', month.taxes), /Unknown number "mystery"/);
+  });
+});
+
+describe('resources in words', () => {
+  it('writes a quantity with fewer decimals as it grows, always positive', () => {
+    assert.equal(formatUnits(0.05), '0.05');
+    assert.equal(formatUnits(0.254), '0.25');
+    assert.equal(formatUnits(3.5), '3.5');
+    assert.equal(formatUnits(9.999), '10');
+    assert.equal(formatUnits(16.54), '16.5');
+    assert.equal(formatUnits(117.6), '118');
+    assert.equal(formatUnits(-7.64), '7.64');
+  });
+
+  it('writes months with a plural, and one decimal at most', () => {
+    assert.equal(formatMonths(1), '1 month');
+    assert.equal(formatMonths(3.04), '3 months');
+    assert.equal(formatMonths(3.14), '3.1 months');
+    assert.equal(formatMonths(0.5), '0.5 months');
+    assert.equal(formatMonths(12), '12 months');
+  });
+
+  it('writes a price in the unit people know', () => {
+    const { oil, steel, rare } = data.resources.byId;
+    assert.equal(formatPrice(oil, 770), '$77 per barrel');
+    assert.equal(formatPrice(oil, 779.9), '$78 per barrel');
+    assert.equal(formatPrice(steel, 73.5), '$735 per tonne');
+    assert.equal(formatPrice(rare, 172.5), '$172,500 per tonne');
+  });
+
+  it('says what a shortage step does to a stat', () => {
+    assert.equal(effectText({ stat: 'country.mechanized.mobility', op: 'mul', value: 0.8 }), 'Mechanized mobility ×0.8');
+    assert.equal(effectText({ stat: 'country.air.sorties', op: 'mul', value: 0 }), 'Air sorties ×0');
+    assert.equal(effectText({ stat: 'country.approval.people', op: 'add', value: -15 }), 'Public approval −15');
+    assert.equal(effectText({ stat: 'country.unrest', op: 'add', value: 10 }), 'Unrest +10');
+    for (const resource of data.activeResources) for (const step of resource.shortage) for (const effect of step.effects) assert.ok(!effectText(effect).includes('⟦'), `${resource.id}: ${effectText(effect)} has a label`);
+  });
+
+  it('says whether a country sells, buys or makes what it uses, and how long its reserve lasts', () => {
+    assert.equal(positionText({ production: 27, consumption: 10.5 }), 'Sells 16.5 a month');
+    assert.equal(positionText({ production: 0.25, consumption: 3.5 }), 'Buys 3.25 a month');
+    assert.equal(positionText({ production: 4, consumption: 4 }), 'Makes what it uses');
+    assert.equal(lastsText({ production: 0.25, consumption: 3.5, stock: 9.75 }), 'Reserve lasts 3 months');
+    assert.equal(lastsText({ production: 0.25, consumption: 3.5, stock: 9.75 }, { short: true }), 'lasts 3 months if trade stops');
+    assert.equal(lastsText({ production: 27, consumption: 10.5, stock: 63 }), null, 'a seller has no shortfall to cover');
+  });
+
+  it('fills the news about prices and shortages', () => {
+    assert.equal(newsText({ template: 'news.market.up', params: { resource: 'Oil', percent: 7, priceUsd: 83.4, unit: 'barrel' } }), 'Oil rose 7% to $83.4 per barrel.');
+    assert.equal(newsText({ template: 'news.market.down', params: { resource: 'Steel and iron', percent: 6, priceUsd: 690, unit: 'tonne' } }), 'Steel and iron fell 6% to $690 per tonne.');
+    assert.equal(newsText({ template: 'news.resources.shortage', params: { resource: 'Food', label: 'Famine' } }), 'Food is running short: Famine.');
+    assert.equal(newsText({ template: 'news.resources.recovered', params: { resource: 'Food' } }), 'Food supplies are back to normal.');
   });
 });
