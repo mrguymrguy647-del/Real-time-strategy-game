@@ -72,6 +72,23 @@ describe('headless game', () => {
     assert.throws(() => createGame({ data, state: orphan }), /country is not in the game/);
   });
 
+  it('refuses a loaded state whose countries are missing what the economy and the screens read', () => {
+    /** @param {(state: any) => void} damage */
+    const refused = (damage) => {
+      const state = JSON.parse(JSON.stringify(newGame(1).state));
+      damage(state);
+      return assert.throws(() => createGame({ data, state }), /Cannot continue/);
+    };
+    refused((state) => void delete state.countries.TUR.economy);
+    refused((state) => void delete state.countries.TUR.budget);
+    refused((state) => void (state.countries.TUR.economy.gdpBn = 0));
+    refused((state) => void (state.countries.TUR.economy.treasuryMn = -5));
+    refused((state) => void (state.countries.TUR.budget.military = null));
+    refused((state) => void delete state.countries.TUR.government);
+    refused((state) => void (state.countries.TUR = 'Türkiye'));
+    refused((state) => void (state.player.countryId = 'constructor'));
+  });
+
   it('rejects an unknown scenario and a country that cannot be played', () => {
     assert.throws(() => createGame({ data, scenarioId: 'nope' }), /Unknown scenario "nope"/);
     assert.throws(() => createGame({ data, playerId: 'USA' }), /"USA" cannot be played/);

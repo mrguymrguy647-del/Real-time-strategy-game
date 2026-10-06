@@ -1,5 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { findProblems } from '../../src/core/invariants.js';
 import { createGame } from '../../src/game.js';
 import { economyAlerts, previewEconomy } from '../../src/systems/economy.js';
 import { loadTestData } from '../helpers/data.js';
@@ -135,6 +136,21 @@ describe('the budget levers', () => {
       assert.equal(result.error.code, code, JSON.stringify(command));
     }
     assert.equal(JSON.stringify(game.state), before);
+  });
+
+  it('refuses a country id that is only on the prototype, instead of throwing', () => {
+    const game = newGame();
+    for (const countryId of ['constructor', '__proto__', 'toString', 'hasOwnProperty', undefined, 7]) {
+      assert.deepEqual(game.dispatch({ type: 'SET_TAX', countryId, rate: 0.3 }), { ok: false, error: { code: 'unknown_country', message: 'SET_TAX refused: unknown_country' } });
+      assert.equal(game.dispatch({ type: 'SET_BUDGET', countryId, category: 'research', share: 0.01 }).error.code, 'unknown_country');
+    }
+  });
+
+  it('never stores negative zero (a save file would turn it into 0)', () => {
+    const game = newGame();
+    assert.deepEqual(game.dispatch({ type: 'SET_BUDGET', countryId: 'TUR', category: 'research', share: -0.00004 }), ok);
+    assert.ok(Object.is(game.state.countries.TUR.budget.research, 0), 'a hair below zero rounds to plain 0');
+    assert.deepEqual(findProblems(game.state), []);
   });
 
   it('accepts exactly the edges of the range', () => {

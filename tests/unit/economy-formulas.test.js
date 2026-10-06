@@ -231,9 +231,11 @@ describe('treasury runway', () => {
 });
 
 describe('the levers\' bounds and steps', () => {
-  it('tidy removes floating-point tails', () => {
+  it('tidy removes floating-point tails, and never gives negative zero', () => {
     assert.equal(tidy(0.1 + 0.005), 0.105);
     assert.equal(tidy(0.27 + 0.03), 0.3);
+    assert.ok(Object.is(tidy(-0.00004), 0));
+    assert.ok(Object.is(tidy(-0), 0));
   });
 
   it('a tax rate may move 10 points either way, within the absolute limits', () => {

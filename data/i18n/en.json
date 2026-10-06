@@ -10,6 +10,7 @@
     "app.phaseNote": "Phase 1 preview: the map, your country's budget and the monthly report. War, resources and diplomacy come next.",
     "app.loading": "Loading…",
     "app.noscript": "This game needs JavaScript. Please turn it on and reload the page.",
+    "app.screenFailed": "That screen could not be shown, so you are back at the title screen.",
     "app.bootFailed.title": "The game could not start",
     "app.bootFailed.body": "Some game files could not be loaded. Check your connection once, then try again.",
     "app.bootFailed.retry": "Try again",

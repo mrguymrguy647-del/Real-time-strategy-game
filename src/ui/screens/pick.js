@@ -21,12 +21,33 @@ export function mountPick(ctx) {
     .filter((/** @type {any} */ country) => playable.has(country.id))
     .sort((/** @type {any} */ a, /** @type {any} */ b) => a.aiTier - b.aiTier || b.start.economy.gdpBn - a.start.economy.gdpBn);
 
+  /** Choose a country: on the map when it is up (the panel then follows the selection), else straight in the panel. @param {any} country */
+  function choose(country) {
+    if (stage.view) {
+      stage.view.select(country.capital.region);
+      return;
+    }
+    panel.show({ countryId: country.id, regionId: country.capital.region, world: false });
+    markActive(country.id);
+    stage.measure();
+  }
+
+  function clearSelection() {
+    if (stage.view) {
+      stage.view.select(null);
+      return;
+    }
+    panel.hide();
+    markActive(null);
+    stage.measure();
+  }
+
   const panel = createCountryPanel({
     data: ctx.data,
     colorOf: (countryId) => stage.colorOf(countryId),
     worldName: (countryId) => stage.worldName(countryId),
     onRegion: (regionId) => stage.view?.select(regionId),
-    onClose: () => stage.view?.select(null),
+    onClose: clearSelection,
     economyOf: (countryId) => startEconomy(ctx.data, countryId),
     actionsFor: (countryId) =>
       playable.has(countryId)
@@ -34,7 +55,15 @@ export function mountPick(ctx) {
         : null,
   });
 
-  const strip = h('div', { class: 'pick-strip chips', role: 'group', 'aria-label': t('pick.list') });
+  // The strip is made at once, not when the map is ready: if the map cannot be drawn on some phone, a
+  // country can still be chosen from it and the game started.
+  const strip = h(
+    'div',
+    { class: 'pick-strip chips', role: 'group', 'aria-label': t('pick.list') },
+    ordered.map((/** @type {any} */ country) =>
+      h('button', { class: 'chip', type: 'button', 'aria-pressed': 'false', 'data-country': country.id, onclick: () => choose(country) }, h('span', { class: 'chip__dot' }), country.name),
+    ),
+  );
   /** @param {string | null} countryId */
   function markActive(countryId) {
     for (const chip of strip.children) {
@@ -63,18 +92,10 @@ export function mountPick(ctx) {
       panel.show(selection);
       markActive(selection.world ? null : selection.countryId);
     },
-    onReady: (view) => {
-      strip.replaceChildren(
-        ...ordered.map((/** @type {any} */ country) =>
-          h(
-            'button',
-            { class: 'chip', type: 'button', 'aria-pressed': 'false', 'data-country': country.id, onclick: () => view.select(country.capital.region) },
-            h('span', { class: 'chip__dot', style: `background:${stage.colorOf(country.id)}` }),
-            country.name,
-          ),
-        ),
-      );
-      stage.measure(); // the strip is part of what names keep clear of
+    onReady: () => {
+      // the colors the countries have on the map
+      for (const chip of strip.children) chip.querySelector('.chip__dot')?.setAttribute('style', `background:${stage.colorOf(chip.getAttribute('data-country') ?? '')}`);
+      stage.measure();
     },
   });
   stage.area.append(top, panel.el);

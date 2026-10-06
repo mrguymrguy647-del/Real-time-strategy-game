@@ -16,7 +16,8 @@ describe('money for the report', () => {
     const cases = [
       [0, '$0 million'],
       [850, '$850 million'],
-      [999.6, '$1000 million'],
+      [999.4, '$999 million'],
+      [999.6, '$1 billion'],
       [1_000, '$1 billion'],
       [29_810, '$29.8 billion'],
       [99_940, '$99.9 billion'],
@@ -32,6 +33,9 @@ describe('money for the report', () => {
     assert.equal(formatMoneyMn(29_810, { signed: true }), '+$29.8 billion');
     assert.equal(formatMoneyMn(-1_200, { signed: true }), '−$1.2 billion');
     assert.equal(formatMoneyMn(0, { signed: true }), '$0 million');
+    assert.equal(formatMoneyMn(0.3, { signed: true }), '$0 million', 'an amount that rounds to nothing has no sign');
+    assert.equal(formatMoneyMn(-0.3, { signed: true }), '$0 million');
+    assert.equal(formatMoneyMn(-0.3), '$0 million');
     assert.equal(formatMoneyMn(-1_200), '−$1.2 billion');
   });
 });

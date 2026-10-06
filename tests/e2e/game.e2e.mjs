@@ -73,6 +73,31 @@ describe('choosing a country', () => {
     await context.close();
   });
 
+  it('still lets you choose and play when the map cannot be drawn', async () => {
+    const { context, page } = await freshPage(env.browser);
+    await page.route('**/data/map/middle_east.topo.json', (route) => route.fulfill({ status: 500, body: 'no map today' }));
+    await openApp(page, env.site.url);
+    await openPicker(page);
+    await page.waitForSelector('.map-status:not([hidden])'); // the map says it could not be shown
+    assert.ok((await page.locator('.map-status').textContent()).includes(t('map.failed', { error: '' }).slice(0, 20)));
+
+    await page.locator('.pick-strip [data-country="JOR"]').click();
+    await page.waitForSelector('.sheet__play');
+    assert.equal(await page.locator('.sheet__title').textContent(), 'Jordan');
+    assert.equal(await page.locator('.pick-strip [data-country="JOR"]').getAttribute('aria-pressed'), 'true');
+    await page.locator('.sheet__play').click();
+    await page.waitForSelector('.play-hud');
+    assert.equal(await page.locator('.play-hud__name').textContent(), 'Jordan');
+
+    // The game itself needs no map: the budget, End turn and the report all work.
+    await button(page, t('play.budget')).click();
+    await button(page, t('budget.raise', { name: t('budget.tax') })).click();
+    await endTurn(page);
+    await page.waitForSelector('.report:not([hidden])');
+    assert.ok((await page.textContent('.play-hud__date')).includes(t('month.2')));
+    await context.close();
+  });
+
   it('also chooses by tapping a country on the map, and refuses the grey world', async () => {
     const { context, page } = await freshPage(env.browser);
     await openApp(page, env.site.url);
@@ -192,6 +217,50 @@ describe('a month of play', () => {
   });
 });
 
+describe('panels', () => {
+  it('say which panel is open: tapping a country replaces the report, and the Report button stops looking pressed', async () => {
+    const { context, page } = await freshPage(env.browser);
+    await openApp(page, env.site.url);
+    await newGame(page, 1, 'TUR');
+    await page.waitForSelector('.report:not([hidden])');
+    const reportButton = button(page, t('play.report'));
+    assert.equal(await reportButton.getAttribute('aria-pressed'), 'true');
+    await page.waitForFunction(() => Boolean(/** @type {any} */ (globalThis).__map?.info().ready), null, { timeout: 30_000 });
+
+    await page.evaluate(() => /** @type {any} */ (globalThis).__map.select('IRN-tehran'));
+    await page.waitForFunction(() => document.querySelector('.sheet:not([hidden]) .sheet__title')?.textContent === 'Iran');
+    assert.equal(await page.locator('.report:not([hidden])').count(), 0, 'the report made way for the country');
+    assert.equal(await reportButton.getAttribute('aria-pressed'), 'false');
+    assert.equal(await button(page, t('play.budget')).getAttribute('aria-pressed'), 'false');
+
+    await button(page, t('play.budget')).click();
+    assert.equal(await button(page, t('play.budget')).getAttribute('aria-pressed'), 'true');
+    assert.equal(await reportButton.getAttribute('aria-pressed'), 'false');
+    await context.close();
+  });
+
+  it('leaving the game screen stops a held button from ordering anything more', async () => {
+    const { context, page } = await freshPage(env.browser);
+    await openApp(page, env.site.url);
+    await newGame(page, 0, 'TUR');
+    await button(page, t('play.budget')).click();
+    await page.waitForSelector('.budget:not([hidden])');
+    const raise = button(page, t('budget.raise', { name: t('budget.tax') }));
+    const box = /** @type {any} */ (await raise.boundingBox());
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.waitForTimeout(700); // the hold has started repeating
+    // Go away without lifting the finger (a second finger on Menu, then Settings).
+    await page.evaluate(() => void (location.hash = '#/settings'));
+    await page.waitForSelector('.segmented');
+    const before = /** @type {number} */ (await stateAt(page, 'countries.TUR.economy.taxRate'));
+    await page.waitForTimeout(600);
+    assert.equal(await stateAt(page, 'countries.TUR.economy.taxRate'), before, 'the repeat stopped when the screen went away');
+    await page.mouse.up();
+    await context.close();
+  });
+});
+
 describe('the budget', () => {
   it('moves a lever one step at a time, as a command, and the forecast follows', async () => {
     const { context, page, problems } = await freshPage(env.browser);
@@ -285,6 +354,30 @@ describe('the budget', () => {
     await treasury(0);
     await page.waitForSelector('[data-alert="borrowing"]');
     assert.ok((await page.locator('[data-alert="borrowing"]').textContent()).includes('borrow'));
+    await context.close();
+  });
+});
+
+describe('damaged saves', () => {
+  it('are refused when opened, with a message, instead of leaving a broken screen', async () => {
+    const { context, page } = await freshPage(env.browser);
+    await openApp(page, env.site.url);
+    await newGame(page, 1, 'TUR');
+    await waitForSaved(page, 1);
+    // Break the newest autosave the way a hand-edited file could: the player's country has no budget.
+    await page.evaluate(async () => {
+      const { storage, saves } = /** @type {any} */ (globalThis).__app.ctx;
+      const [newest] = await saves.list();
+      const record = await storage.get('saves', newest.slot);
+      delete record.state.countries.TUR.budget;
+      await storage.putMany([{ store: 'saves', key: newest.slot, value: record }]);
+    });
+    await page.reload();
+    await page.waitForSelector('.title');
+    await page.getByRole('button', { name: new RegExp(t('title.continue')) }).click();
+    // The newest save is damaged, so Continue loads the older one (the autosave from the start of the game) and says so.
+    await page.waitForSelector('.play-hud');
+    await page.getByText(t('title.skipped', { slots: 'auto-2' })).waitFor();
     await context.close();
   });
 });
