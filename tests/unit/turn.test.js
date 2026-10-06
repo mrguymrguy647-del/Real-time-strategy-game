@@ -73,7 +73,7 @@ describe('turn runner', () => {
     let explode = true;
     const game = makeGame([
       system('mutate', 1, 'any', (ctx) => {
-        ctx.state.demo.rolls = 99;
+        ctx.state.countries.TUR.economy.treasuryMn = 1;
         ctx.state.world.flags.touched = true;
         ctx.rng.next();
         ctx.rng.next();
@@ -118,7 +118,7 @@ describe('turn runner', () => {
   it('records news with the date the turn leads to, and keeps only the newest', () => {
     const game = makeGame([
       system('spam', 1, 'any', (ctx) => {
-        for (let i = 0; i < NEWS_LIMIT + 100; i++) ctx.news({ importance: 1, template: 'news.demoRoll', params: { n: i } });
+        for (let i = 0; i < NEWS_LIMIT + 100; i++) ctx.news({ importance: 1, template: 'news.test', params: { n: i } });
       }),
     ]);
     game.endTurn();

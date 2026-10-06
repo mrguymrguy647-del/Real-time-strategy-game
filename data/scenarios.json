@@ -1,8 +1,26 @@
 {
   "schema": "scenarios",
   "version": 1,
-  "_note": "Phase 0b has only an empty test scenario. The Middle East 2026 scenario arrives with Phase 1.",
+  "_note": "Phase 1 has one real scenario. scaffold_test is an empty world that unit tests use for the calendar, saves and the turn runner; the game never offers it.",
   "items": [
+    {
+      "id": "me_2026",
+      "name": "Middle East 2026",
+      "blurb": "Sixteen countries, one oil market, three chokepoints.",
+      "startDate": "2026-01",
+      "worldMode": "real",
+      "theaters": ["middle_east"],
+      "playable": null,
+      "offMap": {
+        "patrons": [
+          { "id": "patron_a", "name": "Great Power A" },
+          { "id": "patron_b", "name": "Great Power B" },
+          { "id": "patron_c", "name": "Great Power C" }
+        ]
+      },
+      "goal": { "type": "regional_power", "years": 10 },
+      "overrides": {}
+    },
     {
       "id": "scaffold_test",
       "name": "Scaffold test",

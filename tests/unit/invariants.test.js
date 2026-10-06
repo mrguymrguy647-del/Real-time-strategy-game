@@ -9,6 +9,12 @@ describe('invariants', () => {
     assert.deepEqual(findProblems({ a: 1, b: [1, 2, { c: 'x', d: null, e: true }], f: bare }), []);
   });
 
+  it('reports negative zero, which a save file would turn into 0', () => {
+    const problems = findProblems({ a: { balance: -0 }, b: 0 });
+    assert.equal(problems.length, 1);
+    assert.match(problems[0], /\$\.a\.balance.*negative zero/);
+  });
+
   it('reports non-finite numbers with their path', () => {
     const problems = findProblems({ economy: { gdp: NaN }, list: [1, Infinity] });
     assert.equal(problems.length, 2);

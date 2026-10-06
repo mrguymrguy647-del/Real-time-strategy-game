@@ -1,7 +1,7 @@
 {
   "schema": "countries",
   "version": 1,
-  "_note": "Phase 1, milestone M1.1a: identity, government, capital, population and GDP. The economy, military, resource and internal blocks (DATA_SCHEMAS §4) arrive with M1.1b and later. Numbers are rounded, game-balanced approximations (G-22).",
+  "_note": "Phase 1, milestone M1.1b: identity, government, capital, population, GDP, the economy skeleton (growth, tax, debt, treasury) and the budget shares. The military, resource and internal blocks (DATA_SCHEMAS §4) arrive with later milestones. Numbers are rounded, game-balanced approximations (G-22).",
   "items": [
     {
       "id": "TUR",
@@ -13,11 +13,13 @@
       "aiTier": 1,
       "population": 85300,
       "start": {
-        "economy": { "gdpBn": 1300 }
+        "economy": { "gdpBn": 1300, "growth": 0.035, "taxRate": 0.27, "debtPctGdp": 0.3, "treasuryMn": 150000 },
+        "budget": { "military": 0.021, "research": 0.006, "welfare": 0.19, "infrastructure": 0.045 }
       },
       "sources": {
         "population": "UN World Population Prospects 2024, rounded",
-        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced",
+        "budget": "IMF fiscal data and SIPRI 2024, rounded and game-balanced; revenue includes resource income until M1.2"
       }
     },
     {
@@ -30,11 +32,13 @@
       "aiTier": 1,
       "population": 89000,
       "start": {
-        "economy": { "gdpBn": 430 }
+        "economy": { "gdpBn": 430, "growth": 0.02, "taxRate": 0.14, "debtPctGdp": 0.35, "treasuryMn": 30000 },
+        "budget": { "military": 0.035, "research": 0.004, "welfare": 0.075, "infrastructure": 0.02 }
       },
       "sources": {
         "population": "UN World Population Prospects 2024, rounded",
-        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced",
+        "budget": "IMF fiscal data and SIPRI 2024, rounded and game-balanced; revenue includes resource income until M1.2"
       }
     },
     {
@@ -47,11 +51,13 @@
       "aiTier": 1,
       "population": 35000,
       "start": {
-        "economy": { "gdpBn": 1100 }
+        "economy": { "gdpBn": 1100, "growth": 0.035, "taxRate": 0.3, "debtPctGdp": 0.26, "treasuryMn": 450000 },
+        "budget": { "military": 0.07, "research": 0.006, "welfare": 0.14, "infrastructure": 0.06 }
       },
       "sources": {
         "population": "UN World Population Prospects 2024, rounded",
-        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced",
+        "budget": "IMF fiscal data and SIPRI 2024, rounded and game-balanced; revenue includes resource income until M1.2"
       }
     },
     {
@@ -64,11 +70,13 @@
       "aiTier": 1,
       "population": 114000,
       "start": {
-        "economy": { "gdpBn": 350 }
+        "economy": { "gdpBn": 350, "growth": 0.04, "taxRate": 0.19, "debtPctGdp": 0.85, "treasuryMn": 46000 },
+        "budget": { "military": 0.012, "research": 0.006, "welfare": 0.1, "infrastructure": 0.03 }
       },
       "sources": {
         "population": "UN World Population Prospects 2024, rounded",
-        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced",
+        "budget": "IMF fiscal data and SIPRI 2024, rounded and game-balanced; revenue includes resource income until M1.2"
       }
     },
     {
@@ -81,12 +89,14 @@
       "aiTier": 1,
       "population": 9900,
       "start": {
-        "economy": { "gdpBn": 530 }
+        "economy": { "gdpBn": 530, "growth": 0.03, "taxRate": 0.37, "debtPctGdp": 0.68, "treasuryMn": 215000 },
+        "budget": { "military": 0.075, "research": 0.01, "welfare": 0.2, "infrastructure": 0.04 }
       },
       "note": "The status of Jerusalem is disputed; it is listed as the seat of government.",
       "sources": {
         "population": "UN World Population Prospects 2024, rounded",
-        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced",
+        "budget": "IMF fiscal data and SIPRI 2024, rounded and game-balanced; revenue includes resource income until M1.2"
       }
     },
     {
@@ -99,11 +109,13 @@
       "aiTier": 1,
       "population": 46000,
       "start": {
-        "economy": { "gdpBn": 270 }
+        "economy": { "gdpBn": 270, "growth": 0.03, "taxRate": 0.33, "debtPctGdp": 0.4, "treasuryMn": 100000 },
+        "budget": { "military": 0.035, "research": 0.001, "welfare": 0.21, "infrastructure": 0.05 }
       },
       "sources": {
         "population": "UN World Population Prospects 2024, rounded",
-        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced",
+        "budget": "IMF fiscal data and SIPRI 2024, rounded and game-balanced; revenue includes resource income until M1.2"
       }
     },
     {
@@ -116,12 +128,14 @@
       "aiTier": 2,
       "population": 24000,
       "start": {
-        "economy": { "gdpBn": 20 }
+        "economy": { "gdpBn": 20, "growth": 0.015, "taxRate": 0.12, "debtPctGdp": 0.5, "treasuryMn": 500 },
+        "budget": { "military": 0.04, "research": 0.001, "welfare": 0.05, "infrastructure": 0.02 }
       },
       "note": "A transitional authority governs.",
       "sources": {
         "population": "UN World Population Prospects 2024, rounded",
-        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced",
+        "budget": "IMF fiscal data and SIPRI 2024, rounded and game-balanced; revenue includes resource income until M1.2"
       }
     },
     {
@@ -134,11 +148,13 @@
       "aiTier": 2,
       "population": 11500,
       "start": {
-        "economy": { "gdpBn": 52 }
+        "economy": { "gdpBn": 52, "growth": 0.025, "taxRate": 0.27, "debtPctGdp": 0.9, "treasuryMn": 20000 },
+        "budget": { "military": 0.05, "research": 0.004, "welfare": 0.13, "infrastructure": 0.03 }
       },
       "sources": {
         "population": "UN World Population Prospects 2024, rounded",
-        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced",
+        "budget": "IMF fiscal data and SIPRI 2024, rounded and game-balanced; revenue includes resource income until M1.2"
       }
     },
     {
@@ -151,12 +167,14 @@
       "aiTier": 2,
       "population": 35000,
       "start": {
-        "economy": { "gdpBn": 18 }
+        "economy": { "gdpBn": 18, "growth": 0.005, "taxRate": 0.1, "debtPctGdp": 0.5, "treasuryMn": 1000 },
+        "budget": { "military": 0.045, "research": 0.0005, "welfare": 0.04, "infrastructure": 0.01 }
       },
       "note": "Authority is divided between armed factions; the classification is approximate.",
       "sources": {
         "population": "UN World Population Prospects 2024, rounded",
-        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced",
+        "budget": "IMF fiscal data and SIPRI 2024, rounded and game-balanced; revenue includes resource income until M1.2"
       }
     },
     {
@@ -169,11 +187,13 @@
       "aiTier": 2,
       "population": 11000,
       "start": {
-        "economy": { "gdpBn": 540 }
+        "economy": { "gdpBn": 540, "growth": 0.04, "taxRate": 0.25, "debtPctGdp": 0.3, "treasuryMn": 250000 },
+        "budget": { "military": 0.055, "research": 0.015, "welfare": 0.12, "infrastructure": 0.04 }
       },
       "sources": {
         "population": "UN World Population Prospects 2024, rounded",
-        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced",
+        "budget": "IMF fiscal data and SIPRI 2024, rounded and game-balanced; revenue includes resource income until M1.2"
       }
     },
     {
@@ -186,11 +206,13 @@
       "aiTier": 3,
       "population": 5800,
       "start": {
-        "economy": { "gdpBn": 20 }
+        "economy": { "gdpBn": 20, "growth": 0.01, "taxRate": 0.14, "debtPctGdp": 1.0, "treasuryMn": 10000 },
+        "budget": { "military": 0.028, "research": 0.0005, "welfare": 0.06, "infrastructure": 0.01 }
       },
       "sources": {
         "population": "UN World Population Prospects 2024, rounded",
-        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced",
+        "budget": "IMF fiscal data and SIPRI 2024, rounded and game-balanced; revenue includes resource income until M1.2"
       }
     },
     {
@@ -203,11 +225,13 @@
       "aiTier": 3,
       "population": 4900,
       "start": {
-        "economy": { "gdpBn": 160 }
+        "economy": { "gdpBn": 160, "growth": 0.025, "taxRate": 0.45, "debtPctGdp": 0.05, "treasuryMn": 150000 },
+        "budget": { "military": 0.05, "research": 0.004, "welfare": 0.3, "infrastructure": 0.05 }
       },
       "sources": {
         "population": "UN World Population Prospects 2024, rounded",
-        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced",
+        "budget": "IMF fiscal data and SIPRI 2024, rounded and game-balanced; revenue includes resource income until M1.2"
       }
     },
     {
@@ -220,11 +244,13 @@
       "aiTier": 3,
       "population": 3000,
       "start": {
-        "economy": { "gdpBn": 220 }
+        "economy": { "gdpBn": 220, "growth": 0.025, "taxRate": 0.38, "debtPctGdp": 0.45, "treasuryMn": 150000 },
+        "budget": { "military": 0.04, "research": 0.01, "welfare": 0.2, "infrastructure": 0.09 }
       },
       "sources": {
         "population": "UN World Population Prospects 2024, rounded",
-        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced",
+        "budget": "IMF fiscal data and SIPRI 2024, rounded and game-balanced; revenue includes resource income until M1.2"
       }
     },
     {
@@ -237,11 +263,13 @@
       "aiTier": 3,
       "population": 1600,
       "start": {
-        "economy": { "gdpBn": 46 }
+        "economy": { "gdpBn": 46, "growth": 0.03, "taxRate": 0.24, "debtPctGdp": 0.9, "treasuryMn": 6000 },
+        "budget": { "military": 0.045, "research": 0.002, "welfare": 0.12, "infrastructure": 0.03 }
       },
       "sources": {
         "population": "UN World Population Prospects 2024, rounded",
-        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced",
+        "budget": "IMF fiscal data and SIPRI 2024, rounded and game-balanced; revenue includes resource income until M1.2"
       }
     },
     {
@@ -254,11 +282,13 @@
       "aiTier": 3,
       "population": 5200,
       "start": {
-        "economy": { "gdpBn": 105 }
+        "economy": { "gdpBn": 105, "growth": 0.03, "taxRate": 0.31, "debtPctGdp": 0.36, "treasuryMn": 20000 },
+        "budget": { "military": 0.07, "research": 0.002, "welfare": 0.15, "infrastructure": 0.05 }
       },
       "sources": {
         "population": "UN World Population Prospects 2024, rounded",
-        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced",
+        "budget": "IMF fiscal data and SIPRI 2024, rounded and game-balanced; revenue includes resource income until M1.2"
       }
     },
     {
@@ -271,12 +301,14 @@
       "aiTier": 3,
       "population": 5500,
       "start": {
-        "economy": { "gdpBn": 14 }
+        "economy": { "gdpBn": 14, "growth": 0.005, "taxRate": 0.17, "debtPctGdp": 0.4, "treasuryMn": 300 },
+        "budget": { "military": 0.03, "research": 0.001, "welfare": 0.12, "infrastructure": 0.01 }
       },
       "note": "The seat of the Palestinian Authority; the status of the territories is disputed.",
       "sources": {
         "population": "UN World Population Prospects 2024, rounded",
-        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced",
+        "budget": "IMF fiscal data and SIPRI 2024, rounded and game-balanced; revenue includes resource income until M1.2"
       }
     }
   ]

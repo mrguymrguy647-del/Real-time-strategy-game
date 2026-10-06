@@ -2,6 +2,8 @@
 // checked without a phone. `npm test` runs it with --soak.
 //
 //   npm run simulate -- --seeds 1,2,3 --turns 120
+//   npm run simulate -- --report         (how each country's economy looks after the run)
+//   npm run simulate -- --player EGY     (whose country the player has; the economies are the same)
 //   npm run simulate -- --bench          (prints the CPU benchmark to compare with a phone)
 //   node tools/simulate.mjs --soak       (3 seeds x 60 turns, invariants on, determinism check)
 
@@ -16,11 +18,13 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /** @param {string[]} argv */
 function parseArgs(argv) {
-  const options = { seeds: [1], turns: 120, soak: false, bench: false };
+  const options = { seeds: [1], turns: 120, soak: false, bench: false, report: false, player: 'TUR' };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--soak') Object.assign(options, { soak: true, seeds: [1, 2, 3], turns: 60 });
     else if (arg === '--bench') options.bench = true;
+    else if (arg === '--report') options.report = true;
+    else if (arg === '--player') options.player = argv[++i];
     else if (arg === '--seeds') options.seeds = argv[++i].split(',').map(Number);
     else if (arg === '--turns') options.turns = Number(argv[++i]);
     else throw new Error(`Unknown option: ${arg}`);
@@ -33,7 +37,7 @@ const data = await loadData(async (p) => JSON.parse(await fs.readFile(path.join(
 
 /** @param {number} seed @param {number} turns */
 function run(seed, turns) {
-  const game = createGame({ data, seed, checkInvariants: true });
+  const game = createGame({ data, seed, playerId: options.player, checkInvariants: true });
   let max = 0;
   const start = performance.now();
   for (let i = 0; i < turns; i++) {
@@ -46,6 +50,22 @@ function run(seed, turns) {
   return { game, total, max, json: JSON.stringify(game.state) };
 }
 
+/** One line per country: how its economy ended up (for balancing, M1.5). @param {any} game */
+function economyReport(game) {
+  const years = game.state.clock.turn / 12;
+  const lines = [`${'country'.padEnd(8)}${'GDP bn'.padStart(15)}${'a year'.padStart(9)}${'treasury bn'.padStart(14)}${'debt % GDP'.padStart(12)}${'balance % GDP'.padStart(15)}`];
+  for (const [id, country] of Object.entries(game.state.countries)) {
+    const { economy } = /** @type {any} */ (country);
+    const start = data.countries.byId[id].start;
+    const yearly = (economy.gdpBn / start.economy.gdpBn) ** (1 / years) - 1;
+    const balance = economy.last ? economy.last.balanceMn / ((economy.gdpBn * 1000) / 12) : 0;
+    lines.push(
+      `${id.padEnd(8)}${`${start.economy.gdpBn} -> ${economy.gdpBn.toFixed(0)}`.padStart(15)}${`${(yearly * 100).toFixed(1)}%`.padStart(9)}${(economy.treasuryMn / 1000).toFixed(1).padStart(14)}${((economy.debtMn / (economy.gdpBn * 1000)) * 100).toFixed(0).padStart(12)}${`${(balance * 100).toFixed(1)}%`.padStart(15)}`,
+    );
+  }
+  return lines.join('\n');
+}
+
 let failed = false;
 for (const seed of options.seeds) {
   try {
@@ -55,6 +75,7 @@ for (const seed of options.seeds) {
     console.log(
       `seed ${seed}: ${options.turns} turns ok · ${(total / options.turns).toFixed(3)} ms/turn (max ${max.toFixed(2)}) · state ${(json.length / 1024).toFixed(1)} KB · ends ${date}`,
     );
+    if (options.report) console.log(economyReport(game));
   } catch (err) {
     failed = true;
     console.error(`seed ${seed}: FAILED - ${err instanceof Error ? err.message : err}`);

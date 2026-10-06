@@ -4,6 +4,18 @@
   "_note": "Draft v0 numbers from GAME_DESIGN Appendix B. Every tunable number lives here; formulas receive their section as parameters.",
   "values": {
     "time": { "capitalRegroupMonths": 4 },
+    "economy": {
+      "_note": "Economy skeleton (G-35), draft v0, tuned with the simulator in M1.5. Shares are fractions of GDP; rates are per year.",
+      "taxRange": 0.1,
+      "taxMin": 0.02,
+      "taxMax": 0.6,
+      "taxStep": 0.005,
+      "budgetStep": { "military": 0.005, "research": 0.0025, "welfare": 0.005, "infrastructure": 0.0025 },
+      "budgetRange": { "military": 0.05, "research": 0.02, "welfare": 0.08, "infrastructure": 0.04 },
+      "interest": { "base": 0.04, "riskStart": 0.6, "riskSlope": 0.02, "max": 0.12 },
+      "growth": { "taxDrag": 0.4, "infrastructure": 0.8, "research": 1.0, "debtDrag": 0.01, "min": -0.15, "max": 0.15 },
+      "warnings": { "debtRatio": 1.0, "runwayMonths": 6 }
+    },
     "combat": {
       "techPerLevel": 0.06,
       "supplyFloor": 0.3,

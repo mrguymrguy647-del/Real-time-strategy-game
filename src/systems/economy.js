@@ -1,0 +1,89 @@
+// The monthly economy (turn order 50, G-35). Every country collects its taxes, pays for its budget
+// and the interest on its debt, and its treasury, debt and GDP move accordingly (formulas/economy.js
+// does the arithmetic; this file only reads the state, applies the result and tells the news).
+// The player's country also keeps the explanation of each number for the report's "why?".
+
+import { modifiersFor } from '../core/modifiers.js';
+import { economyMonth } from '../formulas/economy.js';
+
+/**
+ * Everything economyMonth needs for one country, read from the state and the data.
+ * @param {any} state
+ * @param {import('../core/data.js').GameData} data
+ * @param {string} countryId
+ */
+function inputsFor(state, data, countryId) {
+  const country = state.countries[countryId];
+  const { start } = data.countries.byId[countryId];
+  const params = data.balance.economy;
+  const difficulty = data.balance.difficulty[state.meta.difficulty] ?? {};
+  return {
+    input: {
+      economy: country.economy,
+      budget: country.budget,
+      trend: start.economy.growth,
+      reference: { taxRate: start.economy.taxRate, budget: start.budget, debtRatio: start.economy.debtPctGdp },
+      modifiers: modifiersFor(data, country, 'country.economy.growth'),
+      incomeMultiplier: countryId === state.player.countryId ? 1 : (difficulty.aiIncome ?? 1),
+    },
+    params: { interest: params.interest, growth: params.growth },
+  };
+}
+
+/**
+ * What next month would do to a country with its standing orders as they are now. Changes nothing:
+ * this is the what-if of ARCHITECTURE §6.8, and the turn itself uses the same function.
+ * @param {any} state
+ * @param {import('../core/data.js').GameData} data
+ * @param {string} countryId
+ */
+export function previewEconomy(state, data, countryId) {
+  const { input, params } = inputsFor(state, data, countryId);
+  return economyMonth(input, params);
+}
+
+/** @type {import('../core/turn.js').System} */
+export const economySystem = {
+  id: 'economy',
+  order: 50,
+  cadence: 'monthly',
+  step(ctx) {
+    const { state, data } = ctx;
+    const debtLimit = data.balance.economy.warnings.debtRatio;
+    for (const id of Object.keys(state.countries)) {
+      const { economy } = state.countries[id];
+      const result = previewEconomy(state, data, id);
+      const previous = economy.last;
+      const ratioBefore = economy.debtMn / (economy.gdpBn * 1000);
+
+      economy.gdpBn = result.next.gdpBn;
+      economy.treasuryMn = result.next.treasuryMn;
+      economy.debtMn = result.next.debtMn;
+      economy.last = {
+        period: { year: state.clock.year, month: state.clock.month }, // its own object: state never shares references
+        revenueMn: result.revenue.value,
+        spendingMn: result.spending.value,
+        interestMn: result.interest.value,
+        rate: result.interestRate.value,
+        growth: result.growth.value,
+        balanceMn: result.balanceMn,
+        borrowedMn: result.borrowedMn,
+        repaidMn: result.repaidMn,
+      };
+      if (id !== state.player.countryId) continue;
+
+      economy.last.why = { revenue: result.revenue, spending: result.spending, interestRate: result.interestRate, interest: result.interest, growth: result.growth };
+      const borrowedBefore = (previous?.borrowedMn ?? 0) >= 1;
+      const borrowedNow = result.borrowedMn >= 1;
+      if (borrowedNow && !borrowedBefore) {
+        ctx.news({ importance: 3, template: 'news.economy.borrowing', params: { amountMn: result.borrowedMn }, refs: [id] });
+      } else if (borrowedBefore && !borrowedNow) {
+        ctx.news({ importance: 2, template: 'news.economy.solvent', refs: [id] });
+      }
+      const ratioAfter = economy.debtMn / (economy.gdpBn * 1000);
+      if (ratioBefore < debtLimit && ratioAfter >= debtLimit) {
+        ctx.news({ importance: 2, template: 'news.economy.debtHigh', params: { percent: Math.round(ratioAfter * 100) }, refs: [id] });
+      }
+    }
+  },
+};

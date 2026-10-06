@@ -9,7 +9,7 @@
     "_note": { "type": "string" },
     "values": {
       "type": "object",
-      "required": ["time", "combat", "endurance", "stability", "market", "difficulty"],
+      "required": ["time", "economy", "combat", "endurance", "stability", "market", "difficulty"],
       "additionalProperties": false,
       "properties": {
         "time": {
@@ -17,6 +17,53 @@
           "required": ["capitalRegroupMonths"],
           "additionalProperties": false,
           "properties": { "capitalRegroupMonths": { "type": "integer", "minimum": 1, "maximum": 24 } }
+        },
+        "economy": {
+          "type": "object",
+          "required": ["taxRange", "taxMin", "taxMax", "taxStep", "budgetStep", "budgetRange", "interest", "growth", "warnings"],
+          "additionalProperties": false,
+          "properties": {
+            "_note": { "type": "string" },
+            "taxRange": { "type": "number", "exclusiveMinimum": 0, "maximum": 0.5 },
+            "taxMin": { "$ref": "common#/definitions/fraction" },
+            "taxMax": { "$ref": "common#/definitions/fraction" },
+            "taxStep": { "type": "number", "exclusiveMinimum": 0, "maximum": 0.05 },
+            "budgetStep": { "$ref": "#/definitions/perCategory" },
+            "budgetRange": { "$ref": "#/definitions/perCategory" },
+            "interest": {
+              "type": "object",
+              "required": ["base", "riskStart", "riskSlope", "max"],
+              "additionalProperties": false,
+              "properties": {
+                "base": { "$ref": "common#/definitions/fraction" },
+                "riskStart": { "type": "number", "minimum": 0, "maximum": 5 },
+                "riskSlope": { "type": "number", "minimum": 0, "maximum": 1 },
+                "max": { "$ref": "common#/definitions/fraction" }
+              }
+            },
+            "growth": {
+              "type": "object",
+              "required": ["taxDrag", "infrastructure", "research", "debtDrag", "min", "max"],
+              "additionalProperties": false,
+              "properties": {
+                "taxDrag": { "type": "number", "minimum": 0, "maximum": 5 },
+                "infrastructure": { "type": "number", "minimum": 0, "maximum": 5 },
+                "research": { "type": "number", "minimum": 0, "maximum": 5 },
+                "debtDrag": { "type": "number", "minimum": 0, "maximum": 1 },
+                "min": { "type": "number", "minimum": -1, "maximum": 0 },
+                "max": { "type": "number", "minimum": 0, "maximum": 1 }
+              }
+            },
+            "warnings": {
+              "type": "object",
+              "required": ["debtRatio", "runwayMonths"],
+              "additionalProperties": false,
+              "properties": {
+                "debtRatio": { "type": "number", "exclusiveMinimum": 0, "maximum": 10 },
+                "runwayMonths": { "type": "integer", "minimum": 1, "maximum": 60 }
+              }
+            }
+          }
         },
         "combat": {
           "type": "object",
@@ -104,6 +151,17 @@
     }
   },
   "definitions": {
+    "perCategory": {
+      "type": "object",
+      "required": ["military", "research", "welfare", "infrastructure"],
+      "additionalProperties": false,
+      "properties": {
+        "military": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "research": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "welfare": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "infrastructure": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 }
+      }
+    },
     "stance": {
       "type": "object",
       "required": ["attack", "defense"],

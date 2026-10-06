@@ -11,30 +11,30 @@ function play(game, turns) {
   return game;
 }
 
-const newGame = (seed) => createGame({ data, seed, checkInvariants: true });
+const newGame = (seed, playerId = 'TUR') => createGame({ data, seed, playerId, checkInvariants: true });
 
 describe('headless game', () => {
-  it('starts at January 2026 on turn 0', () => {
+  it('starts in January 2026 on turn 0, with the 16 countries and the player picked', () => {
     const { state } = newGame(1);
     assert.deepEqual(state.clock, { year: 2026, month: 1, week: 1, turn: 0, scale: 'month' });
-    assert.equal(state.meta.scenarioId, 'scaffold_test');
+    assert.equal(state.meta.scenarioId, 'me_2026');
     assert.equal(state.meta.dataVersion, data.version);
+    assert.equal(state.player.countryId, 'TUR');
+    assert.equal(Object.keys(state.countries).length, 16);
   });
 
-  it('plays a year: calendar, dice rolls and news', () => {
+  it('plays a year: the calendar moves and the economy runs every month', () => {
     const game = play(newGame(1), 12);
     assert.deepEqual([game.state.clock.year, game.state.clock.month, game.state.clock.turn], [2027, 1, 12]);
-    assert.equal(game.state.demo.rolls, 12);
-    assert.equal(game.state.news.length, 12);
-    assert.ok(game.state.demo.lastRoll >= 1 && game.state.demo.lastRoll <= 100);
+    const { economy } = game.state.countries.TUR;
+    assert.deepEqual(economy.last.period, { year: 2026, month: 12 });
+    assert.ok(economy.gdpBn > data.countries.byId.TUR.start.economy.gdpBn, 'a growing economy');
   });
 
-  it('is deterministic: the same seed gives the same game, another seed a different one', () => {
+  it('is deterministic: the same seed gives the same game, another seed (and no randomness yet) may not matter', () => {
     const a = JSON.stringify(play(newGame(5), 24).state);
     const b = JSON.stringify(play(newGame(5), 24).state);
-    const c = JSON.stringify(play(newGame(6), 24).state);
     assert.equal(a, b);
-    assert.notEqual(a, c);
   });
 
   it('keeps state free of anything but plain JSON', () => {
@@ -52,14 +52,35 @@ describe('headless game', () => {
     assert.deepEqual(resumed.state, straight.state);
   });
 
+  it('applies a command, and the saved game keeps the order for the next turn', () => {
+    const game = newGame(7);
+    const before = game.state.countries.TUR.economy.taxRate;
+    assert.deepEqual(game.dispatch({ type: 'SET_TAX', countryId: 'TUR', rate: before + 0.01 }), { ok: true });
+    const saved = JSON.parse(JSON.stringify(game.state));
+    const resumed = createGame({ data, state: saved, checkInvariants: true });
+    assert.equal(resumed.state.countries.TUR.economy.taxRate, before + 0.01);
+    assert.deepEqual(resumed.endTurn(), { ok: true });
+  });
+
   it('refuses to continue from a malformed state', () => {
     assert.throws(() => createGame({ data, state: { nonsense: true } }), /Cannot continue/);
     const state = newGame(1).state;
     delete state.clock;
     assert.throws(() => createGame({ data, state }), /clock/);
+    const orphan = newGame(1).state;
+    orphan.player.countryId = 'ZZZ';
+    assert.throws(() => createGame({ data, state: orphan }), /country is not in the game/);
   });
 
-  it('rejects an unknown scenario', () => {
+  it('rejects an unknown scenario and a country that cannot be played', () => {
     assert.throws(() => createGame({ data, scenarioId: 'nope' }), /Unknown scenario "nope"/);
+    assert.throws(() => createGame({ data, playerId: 'USA' }), /"USA" cannot be played/);
+  });
+
+  it('runs the empty test scenario: a calendar and nothing else', () => {
+    const game = createGame({ data, scenarioId: 'scaffold_test', checkInvariants: true });
+    assert.deepEqual(game.state.countries, {});
+    play(game, 3);
+    assert.equal(game.state.clock.turn, 3);
   });
 });

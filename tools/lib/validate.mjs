@@ -242,6 +242,18 @@ export function validateDataset({ files, schemas, rawTexts = {} }) {
       const capitals = own.flatMap((/** @type {any} */ r) => r.cities.filter((/** @type {any} */ c) => c.tier === 'capital'));
       if (capitals.length !== 1) fail(label, `needs exactly one city with tier "capital" (found ${capitals.length})`);
 
+      // The economy skeleton (G-35): sane starting taxes, and a starting budget that roughly balances,
+      // so a slipped decimal point cannot start a country bankrupt or with a mountain of cash.
+      if (schemaOk.has('balance')) {
+        const params = files.balance.values.economy;
+        const { economy, budget } = country.start;
+        if (economy.taxRate < params.taxMin || economy.taxRate > params.taxMax) fail(label, `start.economy.taxRate ${economy.taxRate} is outside ${params.taxMin}..${params.taxMax}`);
+        const spent = Object.values(budget).reduce((a, /** @type {any} */ share) => a + share, 0);
+        const rate = Math.min(params.interest.max, params.interest.base + params.interest.riskSlope * Math.max(0, economy.debtPctGdp - params.interest.riskStart));
+        const balance = economy.taxRate - spent - economy.debtPctGdp * rate;
+        if (balance < -0.08 || balance > 0.1) fail(label, `the starting budget balance is ${(balance * 100).toFixed(1)}% of GDP, outside -8%..+10%`);
+      }
+
       // Shares: set on every region of the country or on none, and summing to 1.
       for (const field of ['popShare', 'gdpShare']) {
         const given = own.filter((/** @type {any} */ r) => field in r);
@@ -258,7 +270,18 @@ export function validateDataset({ files, schemas, rawTexts = {} }) {
     }
   }
 
-  if (schemaOk.has('scenarios')) checkUniqueIds(files.scenarios.items, pathOf.scenarios);
+  if (schemaOk.has('scenarios')) {
+    checkUniqueIds(files.scenarios.items, pathOf.scenarios);
+    if (schemaOk.has('countries')) {
+      const theaters = new Set(files.countries.items.map((/** @type {any} */ c) => c.theater));
+      for (const scenario of files.scenarios.items) {
+        const label = `${pathOf.scenarios} (${scenario.id})`;
+        for (const theater of scenario.theaters) if (!theaters.has(theater)) fail(label, `unknown theater "${theater}"`);
+        const inside = new Set(files.countries.items.filter((/** @type {any} */ c) => scenario.theaters.includes(c.theater)).map((/** @type {any} */ c) => c.id));
+        for (const id of scenario.playable ?? []) if (!inside.has(id)) fail(label, `playable country "${id}" is not in the scenario's theaters`);
+      }
+    }
+  }
 
   if (schemaOk.has('i18n')) {
     const where = pathOf.i18n;

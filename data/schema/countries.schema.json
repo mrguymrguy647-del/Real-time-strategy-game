@@ -12,7 +12,7 @@
   "definitions": {
     "country": {
       "type": "object",
-      "required": ["id", "name", "adjective", "theater", "capital", "government", "aiTier", "population"],
+      "required": ["id", "name", "adjective", "theater", "capital", "government", "aiTier", "population", "start"],
       "additionalProperties": false,
       "properties": {
         "id": { "type": "string", "pattern": "^[A-Z]{3}$" },
@@ -35,11 +35,23 @@
         "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
         "start": {
           "type": "object",
+          "required": ["economy", "budget"],
           "additionalProperties": false,
           "properties": {
+            "budget": {
+              "type": "object",
+              "required": ["military", "research", "welfare", "infrastructure"],
+              "additionalProperties": false,
+              "properties": {
+                "military": { "$ref": "common#/definitions/fraction" },
+                "research": { "$ref": "common#/definitions/fraction" },
+                "welfare": { "$ref": "common#/definitions/fraction" },
+                "infrastructure": { "$ref": "common#/definitions/fraction" }
+              }
+            },
             "economy": {
               "type": "object",
-              "required": ["gdpBn"],
+              "required": ["gdpBn", "growth", "taxRate", "debtPctGdp", "treasuryMn"],
               "additionalProperties": false,
               "properties": {
                 "gdpBn": { "type": "number", "exclusiveMinimum": 0 },
@@ -47,7 +59,7 @@
                 "taxRate": { "$ref": "common#/definitions/fraction" },
                 "debtPctGdp": { "type": "number", "minimum": 0 },
                 "inflation": { "type": "number", "minimum": -0.5 },
-                "treasuryMn": { "type": "number" }
+                "treasuryMn": { "type": "number", "minimum": 0 }
               }
             }
           }

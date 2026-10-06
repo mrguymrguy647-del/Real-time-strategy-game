@@ -74,7 +74,7 @@ describe('data validation', () => {
   });
 
   it('checks UI text: placeholders, plural pairs, empty strings', () => {
-    expectError((f) => void (f.i18n.strings['news.demoRoll'] = 'The dice rolled {n.'), /broken \{placeholder\}/);
+    expectError((f) => void (f.i18n.strings['news.economy.debtHigh'] = 'Debt passed {percent.'), /broken \{placeholder\}/);
     expectError((f) => void (f.i18n.strings['x.count.one'] = '{n} thing'), /no matching "\.other"/);
     expectError((f) => void (f.i18n.strings['x.count.other'] = '{n} things'), /no matching "\.one"/);
     expectError((f) => void (f.i18n.strings['x.empty'] = ''), /minLength|NOT have fewer than 1/i);
@@ -134,6 +134,39 @@ describe('countries and regions', () => {
         r.output = { oil: i === 0 ? 0.5 : 0.25 };
       });
     });
+    assert.deepEqual(errors, []);
+  });
+});
+
+describe('economy and scenarios', () => {
+  /** @param {any} f @param {string} id */
+  const country = (f, id) => f.countries.items.find((/** @type {any} */ c) => c.id === id);
+  /** @param {any} f @param {string} id */
+  const scenario = (f, id) => f.scenarios.items.find((/** @type {any} */ s) => s.id === id);
+
+  it('requires the economy and budget blocks for every country, in range', () => {
+    expectError((f) => void delete country(f, 'KWT').start.budget, /must have required property 'budget'/);
+    expectError((f) => void delete country(f, 'KWT').start.economy.treasuryMn, /must have required property 'treasuryMn'/);
+    expectError((f) => void (country(f, 'KWT').start.economy.taxRate = 1.4), /must be <= 1/);
+    expectError((f) => void (country(f, 'KWT').start.budget.military = -0.1), /must be >= 0/);
+  });
+
+  it('catches a starting budget that is far out of balance (a slipped decimal point)', () => {
+    expectError((f) => void (country(f, 'KWT').start.budget.welfare = 0.9), /starting budget balance is -\d+\.\d% of GDP/);
+    expectError((f) => void (country(f, 'KWT').start.economy.taxRate = 0.58), /starting budget balance is \d+\.\d% of GDP, outside/);
+    expectError((f) => void (country(f, 'KWT').start.economy.taxRate = 0.01), /outside 0\.02\.\.0\.6/);
+  });
+
+  it('checks the economy section of balance.json', () => {
+    expectError((f) => void (f.balance.values.economy.taxStep = 0), /must be > 0/);
+    expectError((f) => void delete f.balance.values.economy.budgetStep.research, /must have required property 'research'/);
+    expectError((f) => void (f.balance.values.economy.growth.min = 0.1), /must be <= 0/);
+  });
+
+  it('requires a scenario to name real theaters and playable countries inside them', () => {
+    expectError((f) => void scenario(f, 'me_2026').theaters.push('mars'), /unknown theater "mars"/);
+    expectError((f) => void (scenario(f, 'me_2026').playable = ['TUR', 'USA']), /playable country "USA" is not in the scenario's theaters/);
+    const { errors } = check((f) => void (scenario(f, 'me_2026').playable = ['TUR', 'IRN']));
     assert.deepEqual(errors, []);
   });
 });

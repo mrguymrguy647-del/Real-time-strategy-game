@@ -1,7 +1,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { SaveError } from '../../src/core/errors.js';
-import { migrateRecord } from '../../src/core/migrations.js';
+import { MIGRATIONS, migrateRecord } from '../../src/core/migrations.js';
+import { SAVE_VERSION } from '../../src/core/version.js';
 
 const record = (version) => ({ saveVersion: version, state: { meta: { saveVersion: version }, marker: [] } });
 
@@ -53,5 +54,10 @@ describe('save migrations', () => {
     for (const bad of [null, 'text', {}, { saveVersion: 0 }, { saveVersion: 1.5 }, { saveVersion: '1' }]) {
       assert.throws(() => migrateRecord(bad, { target: 1, migrations: {} }), code('bad_file'), JSON.stringify(bad));
     }
+  });
+
+  it('refuses a save from the Phase 0b test game (version 1) with its own reason, since it has no country', () => {
+    assert.equal(SAVE_VERSION, 2);
+    assert.throws(() => migrateRecord(record(1), { migrations: MIGRATIONS }), (err) => code('too_old')(err) && /no country/.test(err.message));
   });
 });

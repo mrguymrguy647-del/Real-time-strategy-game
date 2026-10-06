@@ -2,7 +2,7 @@
 
 /**
  * Problems while saving, loading, importing or exporting.
- * Codes: bad_slot, not_found, write_failed, read_failed, bad_file, too_new,
+ * Codes: bad_slot, not_found, write_failed, read_failed, bad_file, too_new, too_old,
  * migration_missing, migration_failed, storage_unavailable.
  */
 export class SaveError extends Error {

@@ -128,7 +128,9 @@
     "play.quit.body": "Your progress is autosaved every turn. Anything since the last turn is lost.",
     "play.quit.confirm": "Quit",
 
-    "news.demoRoll": "The dice rolled {n}.",
+    "news.economy.borrowing": "The treasury ran dry. The state borrowed {amountMn} to pay its bills.",
+    "news.economy.solvent": "The treasury is paying its own way again.",
+    "news.economy.debtHigh": "Public debt passed {percent}% of GDP.",
 
     "saves.title": "Saves",
     "saves.autosaves": "Autosaves",
@@ -158,6 +160,7 @@
     "saves.error.read_failed": "Could not read the saves. Storage may be blocked.",
     "saves.error.bad_file": "That file is not a readable save from this game.",
     "saves.error.too_new": "That save was made by a newer version of the game. Update the app first.",
+    "saves.error.too_old": "That save is from the early test version, which had no countries, so it cannot be continued. Start a new game.",
     "saves.error.migration_missing": "That save is too old to open.",
     "saves.error.migration_failed": "That save could not be upgraded.",
     "saves.error.storage_unavailable": "Saving is not available in this browser mode.",

@@ -18,7 +18,7 @@ function setup({ dataVersion = data.version, storage = createMemoryStorage() } =
 
 /** A real game state after some turns. */
 function stateAfter(turns, seed = 1) {
-  const game = createGame({ data, seed, checkInvariants: true });
+  const game = createGame({ data, seed, playerId: 'TUR', checkInvariants: true });
   for (let i = 0; i < turns; i++) assert.ok(game.endTurn().ok);
   return game.state;
 }
@@ -57,9 +57,20 @@ describe('save manager', () => {
     const { manager } = setup();
     const state = stateAfter(1);
     const pending = manager.save('manual-1', state);
-    state.demo.rolls = 999; // the game keeps running while the write is in flight
+    state.countries.TUR.economy.treasuryMn = 999; // the game keeps running while the write is in flight
     await pending;
-    assert.notEqual((await manager.load('manual-1')).state.demo.rolls, 999);
+    assert.notEqual((await manager.load('manual-1')).state.countries.TUR.economy.treasuryMn, 999);
+  });
+
+  it('skips a save from the early test game and loads the newest one it can read', async () => {
+    const { manager, storage } = setup();
+    await manager.save('manual-1', stateAfter(2));
+    const old = { slot: 'manual-2', savedAt: 9_999_999_999, saveVersion: 1, dataVersion: 'old', meta: { countryId: null, year: 2026, month: 3, week: 1, turn: 2, scenarioId: 'scaffold_test', difficulty: 'normal' }, state: { meta: { saveVersion: 1 } } };
+    await storage.putMany([{ store: 'saves', key: 'manual-2', value: old }, { store: 'slots', key: 'manual-2', value: { slot: 'manual-2', savedAt: old.savedAt, saveVersion: 1, dataVersion: 'old', meta: old.meta } }]);
+    await assert.rejects(manager.load('manual-2'), code('too_old'));
+    const latest = await manager.loadLatest();
+    assert.equal(latest?.slot, 'manual-1');
+    assert.deepEqual(latest?.skipped, ['manual-2']);
   });
 
   it('rotates through three autosave slots', async () => {
