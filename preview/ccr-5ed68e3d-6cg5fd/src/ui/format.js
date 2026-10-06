@@ -77,11 +77,15 @@ const signOf = (n) => (n > 0 ? '+' : n < 0 ? '\u2212' : '');
  */
 export function formatMoneyMn(millions, { signed = false } = {}) {
   const abs = Math.abs(millions);
+  if (abs < 999.5) {
+    const n = Math.round(abs);
+    // an amount that rounds to nothing carries no sign: "$0 million", never "+$0 million"
+    return (n === 0 ? '' : signed ? signOf(millions) : millions < 0 ? '\u2212' : '') + t('units.money.million', { n });
+  }
   const sign = signed ? signOf(millions) : millions < 0 ? '\u2212' : '';
   if (abs >= 999_500) return sign + t('units.money.trillion', { n: trimmed2(abs / 1e6) });
   if (abs >= 1e5) return sign + t('units.money.billion', { n: Math.round(abs / 1e3) });
-  if (abs >= 1e3) return sign + t('units.money.billion', { n: trimmed(abs / 1e3) });
-  return sign + t('units.money.million', { n: Math.round(abs) });
+  return sign + t('units.money.billion', { n: trimmed(abs / 1e3) });
 }
 
 /** Two decimals at most, none when they would be zero: 1.31, 1.3, 2. @param {number} n */

@@ -165,7 +165,18 @@ export function createApp({ root, data, saves, settings, pwa, storage, storageEr
       setHash(route, true);
     }
     screen?.destroy?.();
-    screen = ROUTES[route](ctx);
+    screen = null;
+    try {
+      screen = ROUTES[route](ctx);
+    } catch (err) {
+      // For example a saved game with something missing: say so and go back to the title, never leave a dead screen.
+      console.error(`The "${route}" screen could not be built`, err);
+      if (route === 'title') throw err;
+      toasts.show(t('app.screenFailed'), { duration: 7000 });
+      route = 'title';
+      setHash(route, true);
+      screen = ROUTES.title(ctx);
+    }
     root.replaceChildren(screen.el);
     window.scrollTo(0, 0);
   }

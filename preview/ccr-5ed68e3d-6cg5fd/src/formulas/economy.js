@@ -135,8 +135,8 @@ export function economyMonth({ economy, budget, trend, reference, modifiers, inc
   return { revenue: income, spending: costs, interestRate: rate, interest: interestPaid, growth, balanceMn, borrowedMn, repaidMn, next };
 }
 
-/** Rounds to four decimals, so a share such as 0.1 + 0.005 stays 0.105 and not 0.10500000000000001. @param {number} value */
-export const tidy = (value) => Math.round(value * 10000) / 10000;
+/** Rounds to four decimals, so a share such as 0.1 + 0.005 stays 0.105 and not 0.10500000000000001 (and never gives -0, which a save file would turn into 0). @param {number} value */
+export const tidy = (value) => Math.round(value * 10000) / 10000 + 0; // + 0 turns a -0 into 0
 
 /**
  * How far a tax rate may be moved from where the country started, and in what steps. Rates change

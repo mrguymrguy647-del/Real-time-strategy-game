@@ -84,6 +84,37 @@ export function checkStateShape(state) {
   }
   if (!state.countries || typeof state.countries !== 'object' || Array.isArray(state.countries)) problems.push('countries is missing');
   if (!state.player || typeof state.player !== 'object') problems.push('player is missing');
-  else if (state.player.countryId !== null && !state.countries?.[state.player.countryId]) problems.push('the player\'s country is not in the game');
+  else if (state.player.countryId !== null && !(state.countries && Object.hasOwn(state.countries, state.player.countryId))) problems.push('the player\'s country is not in the game');
+  if (state.countries && typeof state.countries === 'object') {
+    for (const [id, country] of Object.entries(state.countries)) problems.push(...checkCountryShape(id, country));
+  }
+  return problems;
+}
+
+const BUDGET_KEYS = ['military', 'research', 'welfare', 'infrastructure'];
+
+/**
+ * A country in a loaded or imported state must have what the economy and the screens read, so a
+ * hand-edited or damaged save is refused when it is opened, not when a screen falls over on it.
+ * @param {string} id
+ * @param {any} country
+ * @returns {string[]}
+ */
+function checkCountryShape(id, country) {
+  const where = `country ${id}`;
+  if (!country || typeof country !== 'object') return [`${where} is not an object`];
+  /** @type {string[]} */
+  const problems = [];
+  if (typeof country.government !== 'string') problems.push(`${where} has no government`);
+  const economy = country.economy;
+  if (!economy || typeof economy !== 'object') {
+    problems.push(`${where} has no economy`);
+  } else {
+    if (!(Number.isFinite(economy.gdpBn) && economy.gdpBn > 0)) problems.push(`${where} has a bad GDP`);
+    for (const key of ['taxRate', 'treasuryMn', 'debtMn']) if (!Number.isFinite(economy[key]) || economy[key] < 0) problems.push(`${where} has a bad ${key}`);
+  }
+  const budget = country.budget;
+  if (!budget || typeof budget !== 'object') problems.push(`${where} has no budget`);
+  else for (const key of BUDGET_KEYS) if (!Number.isFinite(budget[key]) || budget[key] < 0) problems.push(`${where} has a bad ${key} budget`);
   return problems;
 }

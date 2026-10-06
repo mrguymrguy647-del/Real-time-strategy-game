@@ -55,21 +55,26 @@ export function mountPlay(ctx) {
   const report = createReportPanel({ game, countryId: playerId, onClose: () => openSheet(null) });
   const budget = createBudgetPanel({ game, countryId: playerId, onClose: () => openSheet(null) });
 
-  /** @param {'report' | 'budget' | null} name */
-  function openSheet(name) {
+  /** Show exactly one panel (or none), and let the buttons say which one is open. @param {'info' | 'report' | 'budget' | null} name */
+  function showOnly(name) {
     active = name;
-    if (name) {
-      stage.hideHint(); // whoever opens the budget or the report is past the first-turn hint
-      stage.view?.select(null); // the map's own selection would otherwise be hidden but still there
-    }
     if (name === 'report') report.show();
     else report.hide();
     if (name === 'budget') budget.show();
     else budget.hide();
-    info.hide();
+    if (name !== 'info') info.hide();
     reportButton.setAttribute('aria-pressed', String(name === 'report'));
     budgetButton.setAttribute('aria-pressed', String(name === 'budget'));
     stage.measure();
+  }
+
+  /** Open the report or the budget (or close what is open). @param {'report' | 'budget' | null} name */
+  function openSheet(name) {
+    if (name) {
+      stage.hideHint(); // whoever opens the budget or the report is past the first-turn hint
+      stage.view?.select(null); // the map's own selection would otherwise be hidden but still there
+    }
+    showOnly(name);
   }
 
   /** @param {'report' | 'budget'} name */
@@ -141,13 +146,10 @@ export function mountPlay(ctx) {
     hint: t('play.hint'),
     onSelect: (selection) => {
       if (selection.countryId) {
-        active = 'info';
-        report.hide();
-        budget.hide();
+        showOnly('info'); // a tapped country takes the place of the report or the budget
         info.show(selection);
       } else if (active === 'info') {
-        active = null;
-        info.hide();
+        showOnly(null);
       }
     },
     onReady: (view) => {
@@ -180,6 +182,7 @@ export function mountPlay(ctx) {
     el: stage.el,
     destroy() {
       for (const off of unsubscribe) off();
+      budget.destroy(); // a held button must not keep ordering things from a screen that is gone
       stage.destroy();
     },
   };

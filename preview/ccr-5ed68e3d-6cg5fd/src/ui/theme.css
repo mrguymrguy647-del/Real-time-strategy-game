@@ -247,7 +247,7 @@ h2 { font-size: 1.05rem; line-height: 1.25; color: var(--muted); font-weight: 60
 .pick-strip { margin: 0; padding: 0 0 0.1rem; width: 100%; }
 .pick-strip .chip { background: rgb(18 38 61 / 0.94); }
 .pick-strip .chip.is-active { background: var(--accent); }
-.chip__dot { display: inline-block; width: 0.7rem; height: 0.7rem; margin-right: 0.45rem; border: 1px solid rgb(255 255 255 / 0.55); border-radius: 50%; vertical-align: -0.05rem; }
+.chip__dot { display: inline-block; width: 0.7rem; height: 0.7rem; margin-right: 0.45rem; border: 1px solid rgb(255 255 255 / 0.55); border-radius: 50%; background: #5d7a99; vertical-align: -0.05rem; }
 .screen--bar .actionbar { position: relative; margin: 0; padding: 0.5rem calc(var(--safe-right) + 0.75rem) calc(var(--safe-bottom) + 0.5rem) calc(var(--safe-left) + 0.75rem); background: var(--surface); border-top: 1px solid var(--line); }
 .actionbar--game { grid-template-columns: 1fr 1fr 1fr 1.7fr; }
 .actionbar--game .btn { padding-inline: 0.3rem; }

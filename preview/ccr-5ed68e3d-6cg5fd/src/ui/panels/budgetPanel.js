@@ -1,7 +1,10 @@
 // The budget (GAME_DESIGN §4.1): the tax rate and the four spending shares, as standing orders for
 // every coming month. Plus and minus buttons move a lever one step; each change is a command (the
-// same one the AI will use), and the forecast under the levers is the real next month, computed
+// same one the AI will use), and the forecast above the levers is the real next month, computed
 // with the same formulas, so what it promises is what happens.
+//
+// The panel is built once and refresh() changes its numbers in place: a button that is being held
+// down is never replaced under the finger (a replaced element can lose the touch).
 
 import { t } from '../../util/i18n.js';
 import { BUDGET_CATEGORIES, budgetBounds, monthlyGdpMn, stepValue, taxBounds } from '../../formulas/economy.js';
@@ -14,11 +17,18 @@ import { sheetHead } from '../components/sheetHead.js';
 /** The levers, in the order they are shown. */
 const LEVERS = ['tax', ...BUDGET_CATEGORIES];
 
+/** Holding a button down keeps stepping: after a short wait, ten times a second, until the finger lifts or the limit is reached. */
+const HOLD_DELAY_MS = 450;
+const HOLD_REPEAT_MS = 100;
+
 /**
  * @param {{ game: import('../../game.js').Game, countryId: string, onClose: () => void }} options
  */
 export function createBudgetPanel({ game, countryId, onClose }) {
   const el = h('aside', { class: 'sheet sheet--tall budget', role: 'region', 'aria-label': t('budget.title'), hidden: true });
+  /** The parts of each lever row that change. @type {Map<string, { value: HTMLElement, money: HTMLElement, minus: HTMLButtonElement, plus: HTMLButtonElement }>} */
+  const rows = new Map();
+  const forecastHost = h('div', { class: 'forecast-host' });
 
   /** @param {string} lever */
   function valueOf(lever) {
@@ -38,61 +48,48 @@ export function createBudgetPanel({ game, countryId, onClose }) {
     const next = stepValue(valueOf(lever), direction, boundsOf(lever));
     if (next === valueOf(lever)) return false; // already at its limit: nothing to order
     game.dispatch(lever === 'tax' ? { type: 'SET_TAX', countryId, rate: next } : { type: 'SET_BUDGET', countryId, category: lever, share: next });
-    // The command redrew the panel; give the button that was used its focus back (for keyboards and switches).
-    el.querySelectorAll(`[data-lever="${lever}"] .stepper__btn`)[direction > 0 ? 1 : 0]?.focus({ preventScroll: true });
-    return true;
+    return true; // the command made the screen call refresh()
   }
 
-  /** Holding a button down keeps stepping: after a short wait, ten times a second, until the finger lifts or the limit is reached. */
-  const HOLD_DELAY_MS = 450;
-  const HOLD_REPEAT_MS = 100;
+  // ---- press and hold ---------------------------------------------------------------------------
   /** @type {ReturnType<typeof setTimeout> | undefined} */
   let holdDelay;
   /** @type {ReturnType<typeof setInterval> | undefined} */
   let holdRepeat;
+  /** Stop repeating and forget the window listeners of the hold in progress. */
   function stopHold() {
     clearTimeout(holdDelay);
     clearInterval(holdRepeat);
+    window.removeEventListener('pointerup', stopHold);
+    window.removeEventListener('pointercancel', stopHold);
   }
   /** @param {string} lever @param {1 | -1} direction */
   function startHold(lever, direction) {
     stopHold();
     holdDelay = setTimeout(() => {
-      // The panel is redrawn at every step, so the button under the finger is replaced: the repeat
-      // lives here, and a pointer event on the window ends it.
       holdRepeat = setInterval(() => {
         if (!change(lever, direction)) stopHold();
       }, HOLD_REPEAT_MS);
       if (!change(lever, direction)) stopHold();
     }, HOLD_DELAY_MS);
-    window.addEventListener('pointerup', stopHold, { once: true });
-    window.addEventListener('pointercancel', stopHold, { once: true });
+    window.addEventListener('pointerup', stopHold);
+    window.addEventListener('pointercancel', stopHold);
   }
 
+  // ---- building ---------------------------------------------------------------------------------
   /** @param {string} lever */
-  function leverRow(lever) {
-    const { gdpBn } = game.state.countries[countryId].economy;
-    const value = valueOf(lever);
-    const bounds = boundsOf(lever);
+  function buildRow(lever) {
     const name = t(`budget.${lever}`);
-    const atMin = value <= bounds.min + 1e-9;
-    const atMax = value >= bounds.max - 1e-9;
+    const value = h('output', { class: 'stepper__value', 'data-value': '' });
+    const money = h('span', { class: 'muted lever__money' });
+    const minus = h('button', { class: 'stepper__btn', type: 'button', 'aria-label': t('budget.lower', { name }), onclick: () => change(lever, -1), onpointerdown: () => startHold(lever, -1) }, '−');
+    const plus = h('button', { class: 'stepper__btn', type: 'button', 'aria-label': t('budget.raise', { name }), onclick: () => change(lever, 1), onpointerdown: () => startHold(lever, 1) }, '+');
+    rows.set(lever, { value, money, minus, plus });
     return h(
       'div',
       { class: 'lever', 'data-lever': lever },
       h('div', { class: 'lever__text' }, h('strong', null, name), h('span', { class: 'muted lever__hint' }, t(`budget.${lever}.hint`))),
-      h(
-        'div',
-        { class: 'lever__control' },
-        h(
-          'div',
-          { class: 'stepper' },
-          h('button', { class: 'stepper__btn', type: 'button', 'aria-label': t('budget.lower', { name }), disabled: atMin, onclick: () => change(lever, -1), onpointerdown: () => startHold(lever, -1) }, '−'),
-          h('output', { class: 'stepper__value', 'data-value': '' }, formatPercent(value, { decimals: 2 })),
-          h('button', { class: 'stepper__btn', type: 'button', 'aria-label': t('budget.raise', { name }), disabled: atMax, onclick: () => change(lever, 1), onpointerdown: () => startHold(lever, 1) }, '+'),
-        ),
-        h('span', { class: 'muted lever__money' }, t('budget.perMonth', formatParams({ amountMn: value * monthlyGdpMn(gdpBn) }))),
-      ),
+      h('div', { class: 'lever__control' }, h('div', { class: 'stepper' }, minus, value, plus), money),
     );
   }
 
@@ -121,23 +118,30 @@ export function createBudgetPanel({ game, countryId, onClose }) {
     );
   }
 
-  function render() {
-    const country = game.data.countries.byId[countryId];
-    const scrolled = el.scrollTop;
-    el.replaceChildren(
-      sheetHead({ title: t('budget.title'), subtitle: t('budget.subtitle', { name: country.name }), onClose }),
-      forecast(),
-      h('div', { class: 'levers' }, LEVERS.map(leverRow)),
-    );
-    el.scrollTop = scrolled;
+  /** Bring every number up to date, in place. */
+  function refresh() {
+    const { gdpBn } = game.state.countries[countryId].economy;
+    for (const lever of LEVERS) {
+      const row = /** @type {NonNullable<ReturnType<typeof rows.get>>} */ (rows.get(lever));
+      const value = valueOf(lever);
+      const bounds = boundsOf(lever);
+      row.value.textContent = formatPercent(value, { decimals: 2 });
+      row.money.textContent = t('budget.perMonth', formatParams({ amountMn: value * monthlyGdpMn(gdpBn) }));
+      row.minus.disabled = value <= bounds.min + 1e-9;
+      row.plus.disabled = value >= bounds.max - 1e-9;
+    }
+    forecastHost.replaceChildren(forecast());
   }
 
-  render();
+  const country = game.data.countries.byId[countryId];
+  el.append(sheetHead({ title: t('budget.title'), subtitle: t('budget.subtitle', { name: country.name }), onClose }), forecastHost, h('div', { class: 'levers' }, LEVERS.map(buildRow)));
+  refresh();
+
   return {
     el,
-    render,
+    render: refresh,
     show() {
-      render();
+      refresh();
       el.hidden = false;
       el.scrollTop = 0;
     },
@@ -145,5 +149,7 @@ export function createBudgetPanel({ game, countryId, onClose }) {
       stopHold();
       el.hidden = true;
     },
+    /** Stop anything still running (a held button) when the screen goes away. */
+    destroy: stopHold,
   };
 }

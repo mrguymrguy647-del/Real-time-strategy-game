@@ -115,6 +115,7 @@ export function createMapStage({ ctx, hint: hintText, bar, onSelect, onReady }) 
       onReady?.(view);
     } catch (err) {
       console.error('Map failed', err);
+      status.hidden = false; // also when the map was already up and something after it failed
       status.textContent = t('map.failed', { error: err instanceof Error ? err.message : String(err) });
     }
   }

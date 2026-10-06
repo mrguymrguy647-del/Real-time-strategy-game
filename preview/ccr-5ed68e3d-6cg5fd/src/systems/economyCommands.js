@@ -10,11 +10,14 @@ const EPSILON = 1e-9;
 /** @param {unknown} value @returns {value is number} */
 const isNumber = (value) => typeof value === 'number' && Number.isFinite(value);
 
+/** A country that is really in the game (not "constructor" or "__proto__"). @param {any} state @param {unknown} id */
+const inGame = (state, id) => typeof id === 'string' && Object.hasOwn(state.countries, id);
+
 /** @type {Record<string, import('../core/commands.js').CommandDefinition>} */
 export const economyCommands = {
   SET_TAX: {
     validate({ state, data }, command) {
-      if (!state.countries[command.countryId]) return 'unknown_country';
+      if (!inGame(state, command.countryId)) return 'unknown_country';
       if (!isNumber(command.rate)) return 'bad_value';
       const bounds = taxBounds(data.countries.byId[command.countryId].start.economy.taxRate, data.balance.economy);
       const rate = tidy(command.rate);
@@ -27,7 +30,7 @@ export const economyCommands = {
 
   SET_BUDGET: {
     validate({ state, data }, command) {
-      if (!state.countries[command.countryId]) return 'unknown_country';
+      if (!inGame(state, command.countryId)) return 'unknown_country';
       if (!(/** @type {readonly string[]} */ (BUDGET_CATEGORIES).includes(command.category))) return 'unknown_category';
       if (!isNumber(command.share)) return 'bad_value';
       const start = data.countries.byId[command.countryId].start.budget[command.category];
