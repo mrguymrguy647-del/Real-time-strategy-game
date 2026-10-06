@@ -5,12 +5,15 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { ARC, WORLD_WIDTH, buildMapGeometry } from '../../src/ui/map/mapData.js';
-import { createHitIndex, pointInPolygon } from '../../src/ui/map/hit.js';
+import { createHitIndex, distanceToRing, pointInPolygon } from '../../src/ui/map/hit.js';
 import { COUNTRY_PALETTE } from '../../src/ui/map/coloring.js';
 import { ROOT, readJsonFromDisk } from '../helpers/data.js';
 
 const topology = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/map/middle_east.topo.json'), 'utf8'));
 const geometry = buildMapGeometry(topology);
+const worldTopology = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/map/world.topo.json'), 'utf8'));
+const withWorld = buildMapGeometry(topology, worldTopology);
+const world = /** @type {NonNullable<typeof withWorld.world>} */ (withWorld.world);
 const regionsDoc = await readJsonFromDisk('data/regions.json');
 const countriesDoc = await readJsonFromDisk('data/countries.json');
 
@@ -49,13 +52,13 @@ describe('map geometry in world units', () => {
   });
 
   it('draws shared borders once: every arc has exactly one kind, and every kind occurs', () => {
-    const counts = [0, 0, 0, 0];
+    const counts = [0, 0, 0, 0, 0];
     for (const kind of geometry.arcKind) counts[kind]++;
-    assert.ok(counts[ARC.OUTER] > 0 && counts[ARC.REGION] > 0 && counts[ARC.BORDER] > 0 && counts[ARC.CONTEXT] > 0, `arc kinds ${counts}`);
+    assert.ok(counts[ARC.OUTER] > 0 && counts[ARC.REGION] > 0 && counts[ARC.BORDER] > 0 && counts[ARC.CONTEXT] > 0 && counts[ARC.EDGE] > 0, `arc kinds ${counts}`);
     assert.equal(counts.reduce((a, b) => a + b, 0), geometry.arcs.length);
   });
 
-  it('gives the edge of the map no coast line: arcs along it belong to the grey neighbours only', () => {
+  it('gives the edge of the theater no line: arcs along its box are their own kind and are never drawn', () => {
     const { width, height } = geometry;
     const onEdge = (/** @type {Float64Array} */ arc) => {
       const xs = Array.from({ length: arc.length / 2 }, (_, i) => arc[i * 2]);
@@ -67,7 +70,7 @@ describe('map geometry in world units', () => {
     geometry.arcs.forEach((arc, index) => {
       if (!onEdge(arc)) return;
       edgeArcs++;
-      assert.equal(geometry.arcKind[index], ARC.CONTEXT, `arc ${index} runs along the map edge but would be drawn`);
+      assert.equal(geometry.arcKind[index], ARC.EDGE, `arc ${index} runs along the map edge but would be drawn`);
     });
     assert.ok(edgeArcs > 0, 'the grey neighbours are cut at the map edge');
   });
@@ -111,5 +114,68 @@ describe('tapping the real map', () => {
   it('can still tap a tiny region with a little slop (Bahrain)', () => {
     const [x, y] = regionAt('BHR-capital').label;
     assert.equal(index.hit(x + 6, y, 12)?.id, 'BHR-capital');
+  });
+});
+
+describe('the grey world around the theater', () => {
+  it('is absent unless asked for, and the theater is the same either way', () => {
+    assert.equal(geometry.world, null);
+    assert.deepEqual(withWorld.theater, { minX: 0, minY: 0, maxX: geometry.width, maxY: geometry.height });
+    assert.deepEqual(withWorld.regions.map((r) => r.id), geometry.regions.map((r) => r.id));
+  });
+
+  it('is a rectangle that contains the theater, wider than it is tall, and about 26 times its width', () => {
+    const { rect } = world;
+    assert.ok(rect.minX < 0 && rect.minY < 0 && rect.maxX > geometry.width && rect.maxY > geometry.height, 'the theater sits inside the world');
+    const width = rect.maxX - rect.minX;
+    assert.ok(width > geometry.width * 8 && width < geometry.width * 10, `${width / geometry.width} theater widths across`);
+    assert.ok((rect.maxY - rect.minY) / width > 0.5 && (rect.maxY - rect.minY) / width < 0.65, 'the map is about 0.59 as tall as wide');
+  });
+
+  it('has the countries of the world but none of the 16 playable ones, and no Antarctica', () => {
+    const ids = new Set(world.countries.map((c) => c.id));
+    assert.ok(world.countries.length > 220, `${world.countries.length} grey countries`);
+    for (const id of ['FRA', 'DEU', 'USA', 'BRA', 'CHN', 'IND', 'RUS', 'AUS', 'LBY', 'SDN', 'GEO']) assert.ok(ids.has(id), `${id} is missing`);
+    for (const country of countriesDoc.items) assert.equal(ids.has(country.id), false, `${country.id} is playable, so it is not grey`);
+    assert.equal(ids.has('ATA'), false);
+    assert.equal(ids.size, world.countries.length, 'ids are unique');
+  });
+
+  it('gives every grey country a name, shapes inside the world, a label inside its largest shape, and a mainland box', () => {
+    for (const country of world.countries) {
+      assert.ok(country.name.length > 0, `${country.id} has no name`);
+      assert.ok(country.box.minX >= world.rect.minX - 1 && country.box.maxX <= world.rect.maxX + 1 && country.box.minY >= world.rect.minY - 1 && country.box.maxY <= world.rect.maxY + 1, `${country.id} sticks out of the world`);
+      assert.ok(country.polygons.some((p) => pointInPolygon(p, country.label[0], country.label[1])), `${country.id}'s label is outside it`);
+      assert.ok(country.focus.minX >= country.box.minX && country.focus.maxX <= country.box.maxX, `${country.id}'s mainland is part of it`);
+      assert.ok(country.size > 0 && country.size <= Math.max(country.box.maxX - country.box.minX, country.box.maxY - country.box.minY) + 1e-6);
+    }
+    // France has overseas land far away, but its label size is that of the mainland.
+    const france = world.byId.get('FRA');
+    assert.ok(france && france.size < (france.box.maxX - france.box.minX) / 3, 'the mainland is much smaller than the box that holds the overseas parts too');
+  });
+
+  it('lines up with the theater: where Egypt ends Libya begins, within a few units', () => {
+    const egypt = geometry.countries.find((c) => c.id === 'EGY');
+    const libya = world.byId.get('LBY');
+    assert.ok(egypt && libya);
+    // The western edge of Egypt is its border with Libya (the straight part: the same meridian, 25 degrees east).
+    const western = [];
+    for (const polygon of egypt.polygons) for (let i = 0; i < polygon[0].length; i += 2) if (polygon[0][i] < egypt.box.minX + 3) western.push([polygon[0][i], polygon[0][i + 1]]);
+    assert.ok(western.length > 0);
+    for (const [x, y] of western) {
+      const gap = Math.min(...libya.polygons.map((polygon) => (pointInPolygon(polygon, x, y) ? 0 : Math.min(...polygon.map((ring) => distanceToRing(ring, x, y))))));
+      assert.ok(gap < 6, `Egypt's border point (${x.toFixed(0)}, ${y.toFixed(0)}) is ${gap.toFixed(1)} units from Libya`);
+    }
+  });
+
+  it('answers a tap on a grey country (and not on the sea), and a playable country is not hit by it', () => {
+    const grey = createHitIndex(world.countries, { cell: 256 });
+    const georgia = world.byId.get('GEO');
+    assert.ok(georgia);
+    assert.equal(grey.hit(georgia.label[0], georgia.label[1])?.id, 'GEO');
+    assert.equal(grey.hit(world.rect.minX + 50, (world.rect.minY + world.rect.maxY) / 2 + 600), null, 'the Pacific is nothing');
+    const iran = geometry.countries.find((c) => c.id === 'IRN');
+    assert.ok(iran);
+    assert.equal(grey.hit(iran.label[0], iran.label[1])?.id ?? null, null, 'the playable countries are not in the grey index');
   });
 });

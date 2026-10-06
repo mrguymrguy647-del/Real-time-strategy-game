@@ -3,6 +3,7 @@
 // width) and the country and region names (HTML text positioned from the camera). Plain Phaser text
 // shrinks with the camera zoom, so it is not used (ARCHITECTURE §9.5).
 
+import { longerSide } from './box.js';
 import { chooseLabels } from './labelLayout.js';
 import { NO_INSETS, worldToScreen } from './view.js';
 
@@ -26,9 +27,6 @@ export function pathData(polygons) {
   }
   return parts.join('');
 }
-
-/** @param {{ minX: number, minY: number, maxX: number, maxY: number }} box */
-const longerSide = (box) => Math.max(box.maxX - box.minX, box.maxY - box.minY);
 
 /**
  * @param {{
@@ -70,11 +68,14 @@ export function createOverlay({ parent, geometry, countryName, regionName }) {
     labelLayer.append(el);
     return el;
   };
-  // In priority order, so when names collide the country beats its regions and the bigger beats the smaller.
+  // In priority order, so when names collide a playable country beats a grey one, a country beats
+  // regions, and the bigger beats the smaller. `rank` is 0 playable country, 1 grey country, 2 region.
+  const label = (/** @type {string} */ cls, /** @type {string} */ text, /** @type {[number, number]} */ at, /** @type {number} */ size, /** @type {number} */ rank) => ({ el: makeLabel(cls, text), at, size, rank, shown: false, w: 0, h: 0 });
   const labels = [
-    ...geometry.countries.map((c) => ({ el: makeLabel('map__label', countryName(c.id)), at: c.label, size: longerSide(c.box), region: false, shown: false, w: 0, h: 0 })),
-    ...geometry.regions.map((r) => ({ el: makeLabel('map__label map__label--region', regionName(r.id)), at: r.label, size: longerSide(r.box), region: true, shown: false, w: 0, h: 0 })),
-  ].sort((a, b) => Number(a.region) - Number(b.region) || b.size - a.size);
+    ...geometry.countries.map((c) => label('map__label', countryName(c.id), c.label, longerSide(c.box), 0)),
+    ...(geometry.world?.countries ?? []).map((c) => label('map__label map__label--world', c.name, c.label, c.size, 1)),
+    ...geometry.regions.map((r) => label('map__label map__label--region', regionName(r.id), r.label, longerSide(r.box), 2)),
+  ].sort((a, b) => a.rank - b.rank || b.size - a.size);
 
   /** Read the size of labels that have not been measured yet, all in one layout pass. @param {typeof labels} fresh */
   function measure(fresh) {
@@ -96,10 +97,15 @@ export function createOverlay({ parent, geometry, countryName, regionName }) {
   };
   const countries = new Map(geometry.countries.map((c) => [c.id, c]));
   const regions = new Map(geometry.regions.map((r) => [r.id, r]));
+  const greyCountries = geometry.world?.byId ?? new Map();
 
   return {
-    /** Move everything to match the camera. @param {import('./view.js').View} view @param {import('./view.js').Viewport} viewport @param {import('./view.js').Insets} [insets] what a panel covers */
-    update(view, viewport, insets = NO_INSETS) {
+    /**
+     * Move everything to match the camera.
+     * @param {import('./view.js').View} view @param {import('./view.js').Viewport} viewport
+     * @param {import('./view.js').Insets} [insets] what a panel covers @param {import('./labelLayout.js').LabelBox[]} [reserved] where buttons sit
+     */
+    update(view, viewport, insets = NO_INSETS, reserved = []) {
       svg.setAttribute('width', String(viewport.width));
       svg.setAttribute('height', String(viewport.height));
       const tx = viewport.width / 2 - view.cx * view.zoom;
@@ -107,7 +113,7 @@ export function createOverlay({ parent, geometry, countryName, regionName }) {
       world.setAttribute('transform', `translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${view.zoom.toFixed(5)})`);
       const wanted = labels.filter((label) => {
         const pixels = label.size * view.zoom;
-        return label.region ? pixels >= REGION_LABEL_MIN_PX && view.zoom >= REGION_LABEL_MIN_ZOOM : pixels >= COUNTRY_LABEL_MIN_PX;
+        return label.rank === 2 ? pixels >= REGION_LABEL_MIN_PX && view.zoom >= REGION_LABEL_MIN_ZOOM : pixels >= COUNTRY_LABEL_MIN_PX;
       });
       measure(wanted.filter((label) => label.w === 0));
       const boxes = labels.map((label) => {
@@ -115,7 +121,7 @@ export function createOverlay({ parent, geometry, countryName, regionName }) {
         const [x, y] = worldToScreen(view, viewport, label.at[0], label.at[1]);
         return { x, y, w: label.w, h: label.h };
       });
-      const show = chooseLabels(boxes, { left: insets.left, top: insets.top, right: viewport.width - insets.right, bottom: viewport.height - insets.bottom });
+      const show = chooseLabels(boxes, { left: insets.left, top: insets.top, right: viewport.width - insets.right, bottom: viewport.height - insets.bottom }, reserved);
       labels.forEach((label, i) => {
         if (show[i] !== label.shown) {
           label.shown = show[i];
@@ -126,11 +132,11 @@ export function createOverlay({ parent, geometry, countryName, regionName }) {
       });
     },
 
-    /** @param {string | null} countryId @param {string | null} regionId */
-    setSelection(countryId, regionId) {
-      const country = countryId ? countries.get(countryId) : null;
+    /** Outline a playable country (and a region of it), or a grey one. @param {{ countryId: string | null, regionId: string | null, world: boolean }} selection */
+    setSelection({ countryId, regionId, world }) {
+      const country = countryId ? (world ? greyCountries.get(countryId) : countries.get(countryId)) : null;
       const region = regionId ? regions.get(regionId) : null;
-      countryPath.setAttribute('d', country ? dataFor(`c:${country.id}`, country.polygons) : '');
+      countryPath.setAttribute('d', country ? dataFor(`${world ? 'w' : 'c'}:${country.id}`, country.polygons) : '');
       regionPath.setAttribute('d', region ? dataFor(`r:${region.id}`, region.polygons) : '');
     },
 

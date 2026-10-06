@@ -64,6 +64,12 @@ describe('chooseLabels', () => {
     assert.deepEqual(chooseLabels([box(230, 100), box(100, 100)], { left: 0, top: 0, right: 250, bottom: 300 }), [false, true]);
   });
 
+  it('keeps clear of reserved places such as buttons, though they are not labels themselves', () => {
+    const button = box(100, 100, 80, 40); // a button sits here
+    assert.deepEqual(chooseLabels([box(120, 105), box(300, 100)], screen, [button]), [false, true]);
+    assert.deepEqual(chooseLabels([box(120, 105)], screen), [true], 'the same label is fine without the button');
+  });
+
   it('handles an empty list', () => {
     assert.deepEqual(chooseLabels([], screen), []);
   });

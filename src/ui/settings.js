@@ -1,7 +1,8 @@
 // UI settings and how they are applied. The values themselves live in the "settings" store
 // (core/settings.js).
 
-export const SETTING_DEFAULTS = { textScale: 1 };
+/** `mapWorld`: draw the whole world in grey around the Middle East (switch off if the map is slow on a phone). */
+export const SETTING_DEFAULTS = { textScale: 1, mapWorld: true };
 
 /** The text sizes offered on the Settings screen. `key` picks the "settings.textSize.<key>" label. */
 export const TEXT_SCALES = [

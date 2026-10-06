@@ -1,5 +1,6 @@
-// The info panel for a tapped country (and the region inside it). A bottom sheet on a portrait phone,
-// a side sheet on a wide or landscape screen; the layout is CSS (.sheet). It only reads data.
+// The info panel for a tapped country (and the region inside it), or for a grey country of the rest of
+// the world, which only has a name. A bottom sheet on a portrait phone, a side sheet on a wide or
+// landscape screen; the layout is CSS (.sheet). It only reads data.
 
 import { t, tn } from '../../util/i18n.js';
 import { h } from '../dom.js';
@@ -9,11 +10,12 @@ import { formatMoney, formatPerPerson, formatPopulation } from '../format.js';
  * @param {{
  *   data: import('../../core/data.js').GameData,
  *   colorOf: (countryId: string) => string,
+ *   worldName: (countryId: string) => string,
  *   onRegion: (regionId: string) => void,
  *   onClose: () => void,
  * }} options
  */
-export function createCountryPanel({ data, colorOf, onRegion, onClose }) {
+export function createCountryPanel({ data, colorOf, worldName, onRegion, onClose }) {
   const el = h('aside', { class: 'sheet', role: 'region', 'aria-label': t('map.title'), hidden: true });
 
   /** @param {string} label @param {string} value */
@@ -39,10 +41,25 @@ export function createCountryPanel({ data, colorOf, onRegion, onClose }) {
   return {
     el,
 
-    /** @param {{ countryId: string | null, regionId: string | null }} selection */
-    show({ countryId, regionId }) {
+    /** @param {{ countryId: string | null, regionId: string | null, world: boolean }} selection */
+    show({ countryId, regionId, world }) {
       if (!countryId) {
         el.hidden = true;
+        return;
+      }
+      if (world) {
+        el.replaceChildren(
+          h(
+            'header',
+            { class: 'sheet__head' },
+            h('span', { class: 'sheet__swatch sheet__swatch--grey' }),
+            h('div', { class: 'sheet__heading' }, h('h2', { class: 'sheet__title' }, worldName(countryId)), h('p', { class: 'muted' }, t('map.panel.notPlayable'))),
+            h('button', { class: 'btn btn--ghost btn--small sheet__close', type: 'button', 'aria-label': t('map.panel.close'), onclick: onClose }, '×'),
+          ),
+          h('p', { class: 'muted sheet__note' }, t('map.panel.notPlayableBody')),
+        );
+        el.hidden = false;
+        el.scrollTop = 0;
         return;
       }
       const country = data.countries.byId[countryId];

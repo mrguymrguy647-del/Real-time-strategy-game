@@ -51,7 +51,7 @@ describe('the downloaded file', () => {
     await page.goto(pathToFileURL(file).href);
     await page.waitForSelector('.title');
     await button(page, t('title.map')).click();
-    await page.waitForFunction(() => Boolean(/** @type {any} */ (globalThis).__map?.info().frames), null, { timeout: 30_000 });
+    await page.waitForFunction(() => Boolean(/** @type {any} */ (globalThis).__map?.info().ready), null, { timeout: 30_000 });
     const info = await page.evaluate(() => /** @type {any} */ (globalThis).__map.info());
     assert.equal(info.webgl, true);
     assert.equal(info.phaser, JSON.parse(fs.readFileSync(path.join(ROOT, 'vendor/phaser/VERSION.json'), 'utf8')).version);
