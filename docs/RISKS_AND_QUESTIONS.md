@@ -2,20 +2,16 @@
 
 > Related: [../GAME_DESIGN.md](../GAME_DESIGN.md) · [ARCHITECTURE.md](ARCHITECTURE.md) · [DATA_SCHEMAS.md](DATA_SCHEMAS.md)
 
-## Status after your approval (2026-10-05)
+## Status (2026-10-06): Phase 0b approved, Phase 1 started
 
 **Decided** (your "approved" accepted every ✔ default): Q1–Q6, which were the questions blocking Phase 0b and Phase 1, plus Q8–Q10 and Q15–Q16.
 **Decided by your addition:** **G-30** — English only, all UI text in `data/i18n/en.json` (this replaces the earlier answer to Q14).
-**Decided later in chat:** **Q17** — your phone is Android (Chrome). iOS Safari stays supported.
+**Decided later in chat:** **Q17** — your phone is Android (Chrome); iOS Safari stays supported. **Q3** — keep the repo name. **Q13** — keep the title "Grand Strategy" for now.
+**Phase 0b gate passed (2026-10-06):** tested on your Android phone — opens full screen from the Home Screen icon, works in airplane mode, a save survives closing and reopening, both orientations usable. The Diagnostics report arrived as the template text only, so I still have no real-phone numbers (CPU speed, map speed test).
 
-**Still open — none of these stops me from building:**
-- **Q3 (rename) · Rename the repo?** Default: keep the current name.
-- **Q13 · Game title.** Default: keep the working title "Grand Strategy" (it is one line in `data/i18n/en.json`).
-
-**Comes up at the start of Phase 1:** Q7 — I send you the 16-country classification table to veto.
-**Parked for later phases:** Q11 (Phase 4), Q12 (Phase 2).
-
-**Needs you now (the Phase 0b gate):** (1) switch on GitHub Pages once (README, "Try it on your phone"); (2) open the preview on your phone, install it, and run the four checks; (3) paste the Diagnostics report and say "approved" or tell me what felt wrong. Phase 1 starts only after that.
+**Phase 1 order (G-32):** you asked for the interactive map first (pan, pinch-zoom, tap a country for its info panel), published as a preview before the economy and war systems.
+**Open with the first map preview:** Q7 — the 16-country government classification table, for you to veto (it is only data and easy to change).
+**Parked for later phases:** Q11 (Phase 4), Q12 (Phase 2), Q18 (an APK, default no).
 
 ---
 
