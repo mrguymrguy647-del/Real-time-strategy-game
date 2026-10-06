@@ -292,6 +292,16 @@ Phaser 4: import default or named, drawing into a RenderTexture must be followed
 
 Labels for the few visible major regions and countries are HTML elements positioned from the camera transform (or counter-scaled by `1/zoom`), with level-of-detail culling. The HUD is HTML. Plain Phaser text is not used for either (§3).
 
+### 9.6 As built in M1.1a
+
+- **Data:** `npm run build:map` → `data/map/middle_east.topo.json` (about 112 KB, 33 KB gzipped; budget 150 KB): objects `regions` (96), `countries` (16, sharing the regions' arcs) and `context` (grey neighbours clipped to the box), plus a `gs` block with the box (km) and a label point per country and region (found at build time with the pole-of-inaccessibility search, so a name never lands outside a crescent-shaped country). Natural Earth is cached in the git-ignored `.cache/` and pinned to a commit.
+- **Runtime geometry** (`topology.js`, `mapData.js`): decode once; **world units are the pixels of the sharpest texture** (3072 wide, y down). Each arc is classified once — coast or frontier, region line, country border, or grey-only — so a shared border is stroked once and the map edge gets no coast line. Neighbouring countries are found from shared arcs and colored with a greedy graph coloring (`coloring.js`).
+- **Rendering** (`bake.js`, `phaserMap.js`): Canvas2D bakes the map twice, 1024 px and 3072 px wide (the sharp one a moment after the first frame); Phaser 4.2.1 shows whichever is nearer one texture pixel per device pixel, with hysteresis. The camera is a plain `{cx, cy, zoom}` value (`view.js`, no Phaser) that is copied to the Phaser camera each frame; Phaser's own input is off, and its loop sleeps when nothing moves. The grey neighbours fade into the sea at the map edge.
+- **Overlay** (`overlay.js`, `labelLayout.js`): the selection outline is an SVG moved by the camera (strokes keep a constant pixel width); names are HTML. A name is shown when its shape is big enough on screen, fully inside the part of the screen no panel covers, and not on top of a more important name.
+- **Input** (`gestures.js`, `hit.js`): one Pointer Events handler; a drag pans (with a glide), two fingers pinch about their midpoint, a quick touch taps. A tap is tested against a grid of region boxes, then point-in-polygon with a small slop (10 px, at most 25 world units) so tiny regions can be hit with a thumb.
+- **Panels:** `clampView` and `viewForBox` take **insets** (the part of the screen a panel covers), so a country is framed in what is left and an edge country can be brought out from behind the sheet. The info sheet is HTML (`panels/countryPanel.js`): a bottom sheet in portrait, a side sheet in landscape, compact, scrolling inside itself.
+- **Not in the one-file download:** the map needs Phaser, which that file does not include yet (R18); it says so instead of failing.
+
 ## 10. UI
 
 - **Screens:** Title → New Game (country picker on the map, difficulty, world mode) → Game; plus Settings, Diagnostics, and (Phase 2) Battle.
@@ -376,7 +386,7 @@ Rule of thumb (an assumption to calibrate with your Diagnostics benchmark): **No
 
 ## 17. Phase 1 technical plan (sketch)
 
-- **M1.1a (first, G-32):** the interactive map. `tools/build-map.mjs` for the 16-country theater (§9.1), `data/countries.json` and `data/regions.json` (identity, geography, government; economy blocks follow in M1.1b), `src/ui/map/*` (§9.2–§9.3), the map screen and a country info panel. Published as a preview before anything else.
+- **M1.1a (first, G-32) — built:** the interactive map. `tools/build-map.mjs` for the 16-country theater (§9.1), `data/countries.json` and `data/regions.json` (identity, geography, government; economy blocks follow in M1.1b), `src/ui/map/*` (§9.2–§9.6), the map screen (reached from the title screen's *Explore the map*) and a country info panel. Published as a preview before anything else. Not yet there, by design: ownership tints, the player's country, the country picker (M1.1b).
 - **M1.1b:** the `core/*` pipeline for real play; `systems/economy.js` + `formulas/economy.js`; country picker; report panel; autosave.
 - **M1.2:** `systems/resources.js`, `formulas/market.js`, chokepoints, shortage ladder via effects, capture-estimate preview.
 - **M1.3:** `systems/war.js`, `formulas/combat.js`, fronts, commands, off-map patrons, diplomacy stub.

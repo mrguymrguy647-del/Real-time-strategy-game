@@ -9,8 +9,9 @@
 **Decided later in chat:** **Q17** — your phone is Android (Chrome); iOS Safari stays supported. **Q3** — keep the repo name. **Q13** — keep the title "Grand Strategy" for now.
 **Phase 0b gate passed (2026-10-06):** tested on your Android phone — opens full screen from the Home Screen icon, works in airplane mode, a save survives closing and reopening, both orientations usable. The Diagnostics report arrived as the template text only, so I still have no real-phone numbers (CPU speed, map speed test).
 
-**Phase 1 order (G-32):** you asked for the interactive map first (pan, pinch-zoom, tap a country for its info panel), published as a preview before the economy and war systems.
+**Phase 1 order (G-32):** you asked for the interactive map first (pan, pinch-zoom, tap a country for its info panel), published as a preview before the economy and war systems. **M1.1a is built** and published as a preview; the economy skeleton, country picker and report (M1.1b) wait for your feedback on the map.
 **Open with the first map preview:** Q7 — the 16-country government classification table, for you to veto (it is only data and easy to change).
+**Not yet seen on a real phone:** touch feel, the map's frame rate and how sharp it looks at deep zoom (the sandbox only has software rendering).
 **Parked for later phases:** Q11 (Phase 4), Q12 (Phase 2), Q18 (an APK, default no).
 
 ---
@@ -101,4 +102,4 @@ Each entry: what could go wrong → what I do about it.
 
 **R17 · Session continuity.** Each cloud session starts cold, and the container is discarded when it ends. → Everything worth keeping is committed and pushed; `CLAUDE.md` holds status and decisions; each phase has a written plan.
 
-**R18 · The one-file download can drift from the web app.** It is built from the same sources, but it omits Phaser, so it stops being useful once the map arrives (Phase 1 M1.1), and a file opened from a phone's Downloads may get no storage or a stricter viewer. → Tests open it from disk and inside a locked-down frame (it falls back to memory saves and says so); screen switching does not depend on the URL; at M1.1 the bundler must inline Phaser (or load it from a data: URL) with a test that the map starts from the file. Until then Phaser-dependent checks say "not included".
+**R18 · The one-file download can drift from the web app.** It is built from the same sources, but it omits Phaser, so the map (M1.1a) does not work in it and says so, and a file opened from a phone's Downloads may get no storage or a stricter viewer. → Tests open it from disk and inside a locked-down frame (it falls back to memory saves and says so); screen switching does not depend on the URL; at M1.1 the bundler must inline Phaser (or load it from a data: URL) with a test that the map starts from the file. Until then Phaser-dependent checks say "not included".

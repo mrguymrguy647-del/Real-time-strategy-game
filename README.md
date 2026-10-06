@@ -2,7 +2,7 @@
 
 An offline, turn-based, modern-era grand strategy game for phones (working title *Grand Strategy*). Every country in the world is AI-controlled; you pick one. War, economy, resources, diplomacy, technology and government all feed each other, so every success creates a new problem.
 
-**Status:** Phase 0b — the installable, offline-capable app shell exists and is tested. It contains a small test game (calendar, seeded dice, saves) plus a Diagnostics screen; the real game starts in Phase 1.
+**Status:** Phase 1, milestone M1.1a — the interactive map of the 16-country Middle East theater is in (drag to pan, pinch to zoom, tap a country or a region for its info panel). The app shell from Phase 0b (offline, installable, saves, Diagnostics) is still there with its small test game; the economy and war systems come next.
 
 ## Try it on your phone
 
@@ -35,6 +35,8 @@ If Settings looks cramped, use the browser's *Desktop site* option.
 - **Android (Chrome):** open the preview link → tap *Install* on the title screen (or the ⋮ menu → *Install app*) → open it from the new Home Screen icon.
 - **iPhone / iPad (Safari):** open the preview link → tap the Share button → *Add to Home Screen*.
 
+**Try the map.** On the title screen tap **Explore the map**. Drag to move, pinch to zoom (or use the + and − buttons), tap a country: a panel shows its facts, and the chips at the bottom of the panel switch between its regions. ⌖ shows the whole map again. The map needs the web link above; the one-file download does not include it yet (it says so).
+
 **What to check** (open *Diagnostics* in the app and tap *Copy report* to send me the result)
 1. Opens from the Home Screen icon, full screen.
 2. Switch on airplane mode → it still opens and a test game still works.
@@ -46,11 +48,12 @@ If Settings looks cramped, use the browser's *Desktop site* option.
 Node 22 or newer. No bundler; the only runtime file is the vendored Phaser.
 
 ```text
-npm ci               install dev tools (ajv, typescript, playwright-core)
+npm ci               install dev tools (ajv, typescript, playwright-core, mapshaper)
 npm test             unit tests, data validation and a simulation soak
 npm run typecheck    JSDoc type check of src/
 npm run build        build the site into dist/
 npm run build:single build the one-file download into dist-single/
+npm run build:map    rebuild the map geometry (data/map/*.topo.json) and the generated fields of data/regions.json (downloads Natural Earth into .cache/ the first time)
 npm run serve        build and serve dist/ at http://127.0.0.1:4173/
 npm run e2e          Playwright tests in a phone-sized Chromium
 npm run screenshot   phone screenshots of every screen into tmp/screenshots/
