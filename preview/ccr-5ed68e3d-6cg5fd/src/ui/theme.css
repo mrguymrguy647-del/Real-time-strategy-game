@@ -311,6 +311,12 @@ h2 { font-size: 1.05rem; line-height: 1.25; color: var(--muted); font-weight: 60
 .stepper__btn:active { filter: brightness(1.25); }
 .stepper__btn:disabled { opacity: 0.35; }
 .stepper__value { min-width: 4.2rem; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+.debt { margin-top: 0.7rem; padding-top: 0.6rem; border-top: 1px solid var(--line); }
+.debt__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.2rem 0.75rem; }
+.debt__value { font-weight: 600; font-variant-numeric: tabular-nums; }
+.sheet .debt__hint { margin: 0.2rem 0 0.5rem; font-size: 0.8rem; }
+.debt__buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.debt__btn { padding-inline: 0.4rem; }
 .forecast { margin-bottom: 0.4rem; padding: 0.6rem 0.8rem; border: 1px solid var(--line); border-radius: 0.8rem; background: var(--surface-2); }
 .forecast h3 { margin-bottom: 0.3rem; font-size: 0.9rem; color: var(--muted); font-weight: 600; }
 .forecast__total { font-size: 1.05rem; }

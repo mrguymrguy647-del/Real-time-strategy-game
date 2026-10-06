@@ -64,14 +64,14 @@ export function createReportPanel({ game, countryId, onClose }) {
     if (!last) {
       parts.push(h('p', { class: 'muted report__empty' }, t('report.empty')), ...alerts);
     } else {
-      const change = last.balanceMn - last.repaidMn + last.borrowedMn;
+      const change = last.balanceMn + last.borrowedMn; // what the month did to the treasury
       const why = last.why;
       parts.push(
         h(
           'div',
           { class: 'report__headline' },
           h('span', { class: 'report__label' }, t('report.treasury')),
-          h('strong', { class: 'report__big', 'data-treasury': '' }, formatMoneyMn(economy.treasuryMn)),
+          h('strong', { class: 'report__big', 'data-treasury': '' }, formatMoneyMn(economy.treasuryMn, { precise: true })),
           h('span', { class: `report__change ${toneOf(change)}` }, t('report.treasuryChange', { change: formatMoneyMn(change, { signed: true }) })),
         ),
         ...alerts,
@@ -89,7 +89,6 @@ export function createReportPanel({ game, countryId, onClose }) {
           }),
           line({ id: 'balance', label: t('report.balance'), value: formatMoneyMn(last.balanceMn, { signed: true }), signed: last.balanceMn }),
           last.borrowedMn >= 1 ? line({ id: 'borrowed', label: t('report.borrowed'), value: formatMoneyMn(last.borrowedMn), signed: -1 }) : null,
-          last.repaidMn >= 1 ? line({ id: 'repaid', label: t('report.repaid'), value: formatMoneyMn(last.repaidMn), signed: 1 }) : null,
           line({ id: 'growth', label: t('report.growth'), value: t('report.growthValue', { rate: formatPercent(last.growth, { signed: true }) }), signed: last.growth, why: [whyList('growth', why.growth)] }),
         ),
         h(

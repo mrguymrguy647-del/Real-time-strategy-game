@@ -36,8 +36,8 @@ export function mountPlay(ctx) {
     const { clock, countries } = game.state;
     dateEl.textContent = formatDate(clock, clock.scale === 'week');
     const { treasuryMn, last } = countries[playerId].economy;
-    treasuryEl.textContent = t('play.treasury', { amount: formatMoneyMn(treasuryMn) });
-    const change = last ? last.balanceMn - last.repaidMn + last.borrowedMn : 0;
+    treasuryEl.textContent = t('play.treasury', { amount: formatMoneyMn(treasuryMn, { precise: true }) });
+    const change = last ? last.balanceMn + last.borrowedMn : 0; // what the last month did to the treasury
     changeEl.textContent = last ? formatMoneyMn(change, { signed: true }) : '';
     changeEl.className = `play-hud__change ${toneOf(change)}`;
   }
@@ -173,6 +173,7 @@ export function mountPlay(ctx) {
       budget.render();
     }),
     game.bus.on('command', () => {
+      renderHud(); // a repayment changes the treasury at once
       if (active === 'budget') budget.render();
       info.refresh();
     }),

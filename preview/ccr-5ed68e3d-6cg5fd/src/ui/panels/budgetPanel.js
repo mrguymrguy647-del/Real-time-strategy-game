@@ -7,7 +7,7 @@
 // down is never replaced under the finger (a replaced element can lose the touch).
 
 import { t } from '../../util/i18n.js';
-import { BUDGET_CATEGORIES, budgetBounds, monthlyGdpMn, stepValue, taxBounds } from '../../formulas/economy.js';
+import { BUDGET_CATEGORIES, budgetBounds, monthlyGdpMn, repayAmounts, stepValue, taxBounds } from '../../formulas/economy.js';
 import { previewEconomy } from '../../systems/economy.js';
 import { h } from '../dom.js';
 import { formatMoneyMn, formatParams, formatPercent, toneOf } from '../format.js';
@@ -29,6 +29,12 @@ export function createBudgetPanel({ game, countryId, onClose }) {
   /** The parts of each lever row that change. @type {Map<string, { value: HTMLElement, money: HTMLElement, minus: HTMLButtonElement, plus: HTMLButtonElement }>} */
   const rows = new Map();
   const forecastHost = h('div', { class: 'forecast-host' });
+  // The debt section: what is owed, and two buttons that pay some of it back out of the treasury.
+  const debtValue = h('span', { class: 'debt__value', 'data-debt': '' });
+  const repayShareAmount = h('small', null);
+  const repayAllAmount = h('small', null);
+  const repayShareButton = h('button', { class: 'btn btn--two-line debt__btn', type: 'button', 'data-repay': 'share', onclick: () => repay('shareMn') }, h('span', null, t('budget.repayShare', { percent: formatPercent(game.data.balance.economy.repayShare, { decimals: 0 }) })), repayShareAmount);
+  const repayAllButton = h('button', { class: 'btn btn--two-line debt__btn', type: 'button', 'data-repay': 'all', onclick: () => repay('allMn') }, h('span', null, t('budget.repayAll')), repayAllAmount);
 
   /** @param {string} lever */
   function valueOf(lever) {
@@ -49,6 +55,12 @@ export function createBudgetPanel({ game, countryId, onClose }) {
     if (next === valueOf(lever)) return false; // already at its limit: nothing to order
     game.dispatch(lever === 'tax' ? { type: 'SET_TAX', countryId, rate: next } : { type: 'SET_BUDGET', countryId, category: lever, share: next });
     return true; // the command made the screen call refresh()
+  }
+
+  /** Pay back part of the debt out of the treasury. @param {'shareMn' | 'allMn'} which */
+  function repay(which) {
+    const amountMn = repayAmounts(game.state.countries[countryId].economy, game.data.balance.economy.repayShare)[which];
+    if (amountMn >= 1) game.dispatch({ type: 'REPAY_DEBT', countryId, amountMn });
   }
 
   // ---- press and hold ---------------------------------------------------------------------------
@@ -130,11 +142,29 @@ export function createBudgetPanel({ game, countryId, onClose }) {
       row.minus.disabled = value <= bounds.min + 1e-9;
       row.plus.disabled = value >= bounds.max - 1e-9;
     }
+    const { economy } = game.state.countries[countryId];
+    debtValue.textContent = t('map.panel.debtValue', { amount: formatMoneyMn(economy.debtMn, { precise: true }), percent: formatPercent(economy.debtMn / (economy.gdpBn * 1000), { decimals: 0 }) });
+    const amounts = repayAmounts(economy, game.data.balance.economy.repayShare);
+    repayShareAmount.textContent = formatMoneyMn(amounts.shareMn, { precise: true });
+    repayAllAmount.textContent = formatMoneyMn(amounts.allMn, { precise: true });
+    repayShareButton.disabled = amounts.shareMn < 1; // nothing owed, or nothing to pay with
+    repayAllButton.disabled = amounts.allMn < 1;
     forecastHost.replaceChildren(forecast());
   }
 
   const country = game.data.countries.byId[countryId];
-  el.append(sheetHead({ title: t('budget.title'), subtitle: t('budget.subtitle', { name: country.name }), onClose }), forecastHost, h('div', { class: 'levers' }, LEVERS.map(buildRow)));
+  el.append(
+    sheetHead({ title: t('budget.title'), subtitle: t('budget.subtitle', { name: country.name }), onClose }),
+    forecastHost,
+    h('div', { class: 'levers' }, LEVERS.map(buildRow)),
+    h(
+      'section',
+      { class: 'debt' },
+      h('div', { class: 'debt__head' }, h('strong', null, t('budget.debt')), debtValue),
+      h('p', { class: 'muted debt__hint' }, t('budget.debt.hint')),
+      h('div', { class: 'debt__buttons' }, repayShareButton, repayAllButton),
+    ),
+  );
   refresh();
 
   return {
