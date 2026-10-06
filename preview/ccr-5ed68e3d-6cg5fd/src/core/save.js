@@ -142,7 +142,7 @@ export function createSaveManager({ storage, dataVersion, now = () => Date.now()
     const summaries = await list();
     if (summaries.length === 0) return null;
     const playable = summaries.filter((summary) => summary.saveVersion >= OLDEST_PLAYABLE_SAVE);
-    if (playable.length === 0) throw new SaveError('too_old', 'every save is from the early test game, which cannot be continued');
+    if (playable.length === 0) throw new SaveError('too_old', 'every save is from an earlier preview of the game, which cannot be continued');
     /** @type {string[]} */
     const skipped = [];
     /** @type {unknown} */

@@ -316,6 +316,14 @@ export async function createMapView({ container, topology, worldTopology = null,
       overlay.setOwn(countryId);
       schedule();
     },
+    /**
+     * Put tappable markers on the map at places given as longitude and latitude (the straits).
+     * @param {Array<{ id: string, lonlat: [number, number], label: string, title: string, blocked?: boolean, onTap: (id: string) => void }>} markers
+     */
+    setMarkers(markers) {
+      overlay.setMarkers(markers.map((marker) => ({ ...marker, at: geometry.project(marker.lonlat[0], marker.lonlat[1]) })));
+      schedule();
+    },
     /** @param {string} id */
     focusCountry(id) {
       const country = countryById.get(id);

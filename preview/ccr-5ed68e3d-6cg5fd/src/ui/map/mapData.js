@@ -6,6 +6,7 @@
 
 import { boxOf, longerSide } from './box.js';
 import { colorGraph } from './coloring.js';
+import { mercator } from './projection.js';
 import { arcsUsedBy, decodeArcs, featuresOf } from './topology.js';
 
 /** Width in world units of the theater; also the pixel width of the sharpest baked texture. */
@@ -32,7 +33,9 @@ export const ARC = { OUTER: 0, REGION: 1, BORDER: 2, CONTEXT: 3, EDGE: 4 };
  *   regions: MapRegion[], countries: MapCountry[], context: Array<{ id: string, polygons: Polygon[] }>,
  *   arcs: Float64Array[], arcKind: Uint8Array,
  *   countryNeighbours: Map<string, Set<string>>, colorOf: Map<string, number>,
+ *   project: (lon: number, lat: number) => [number, number],
  * }} MapGeometry
+ *   `project` puts a longitude and latitude on the map, in world units
  */
 
 /** @param {Polygon[]} polygons Unsigned exterior area (holes ignored), good enough to rank regions. */
@@ -148,5 +151,6 @@ export function buildMapGeometry(topology, worldTopology = null, worldWidth = WO
   const colorOf = colorGraph(countries.map((c) => c.id), countryNeighbours);
 
   const world = worldTopology ? buildWorld(/** @type {any} */ (worldTopology), toWorld) : null;
-  return { width: worldWidth, height, theater: { minX: 0, minY: 0, maxX: worldWidth, maxY: height }, world, regions, countries, context, arcs, arcKind, countryNeighbours, colorOf };
+  const project = (/** @type {number} */ lon, /** @type {number} */ lat) => /** @type {[number, number]} */ (toWorld(mercator(lon, lat)));
+  return { width: worldWidth, height, theater: { minX: 0, minY: 0, maxX: worldWidth, maxY: height }, world, regions, countries, context, arcs, arcKind, countryNeighbours, colorOf, project };
 }

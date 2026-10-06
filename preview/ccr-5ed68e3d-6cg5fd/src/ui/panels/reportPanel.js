@@ -4,15 +4,17 @@
 
 import { t } from '../../util/i18n.js';
 import { h } from '../dom.js';
-import { formatDate, formatMoneyMn, formatPercent, newsText, toneOf } from '../format.js';
-import { alertParagraphs } from '../components/alerts.js';
+import { countryFlows } from '../../systems/resourceFlows.js';
+import { formatDate, formatMoneyMn, formatPercent, formatPrice, newsText, toneOf } from '../format.js';
+import { lastsText, positionText } from '../resourceText.js';
+import { alertParagraphs, resourceAlertParagraphs } from '../components/alerts.js';
 import { sheetHead } from '../components/sheetHead.js';
 import { whyList } from '../components/why.js';
 
 /**
- * @param {{ game: import('../../game.js').Game, countryId: string, onClose: () => void }} options
+ * @param {{ game: import('../../game.js').Game, countryId: string, onClose: () => void, onOpenResources: () => void }} options
  */
-export function createReportPanel({ game, countryId, onClose }) {
+export function createReportPanel({ game, countryId, onClose, onOpenResources }) {
   const el = h('aside', { class: 'sheet sheet--tall report', role: 'region', 'aria-label': t('report.title'), hidden: true });
   /** The lines whose "why" is open, kept between redraws so a turn does not close what the player was reading. @type {Set<string>} */
   const open = new Set();
@@ -50,6 +52,42 @@ export function createReportPanel({ game, countryId, onClose }) {
   /** @param {string} caption @param {Node} list */
   const captioned = (caption, list) => h('div', { class: 'why__block' }, h('p', { class: 'why__caption' }, caption), list);
 
+  /**
+   * How each resource stands: its world price and how it moved, what the country sells or buys, how long its
+   * reserve lasts; and a way into the Resources panel.
+   */
+  function resourcesBlock() {
+    const { state, data } = game;
+    const flows = countryFlows(state, data, countryId).byResource;
+    return h(
+      'section',
+      { class: 'report__resources' },
+      h('h3', null, t('report.resources')),
+      ...resourceAlertParagraphs(state, data, countryId),
+      h(
+        'ul',
+        { class: 'report__res' },
+        data.activeResources.map((/** @type {any} */ resource) => {
+          const market = state.world.market[resource.id];
+          const flow = flows[resource.id];
+          const change = market.last ? market.price / market.last.previous - 1 : 0;
+          const lasts = lastsText({ production: flow.production, consumption: flow.consumption, stock: state.countries[countryId].resources[resource.id].stock });
+          return h(
+            'li',
+            { 'data-resource': resource.id },
+            h('strong', null, `${resource.icon} ${resource.name}`),
+            ' ',
+            formatPrice(resource, market.price),
+            Math.abs(change) >= 0.0005 ? h('small', { class: 'muted' }, ` ${t(change > 0 ? 'res.change.up' : 'res.change.down', { percent: formatPercent(Math.abs(change), { decimals: 1 }) })}`) : null,
+            h('br'),
+            h('span', { class: 'muted' }, positionText(flow), lasts ? ` · ${lasts}` : ''),
+          );
+        }),
+      ),
+      h('button', { class: 'btn btn--small report__open', type: 'button', onclick: onOpenResources }, t('report.openResources')),
+    );
+  }
+
   function render() {
     const { state, data } = game;
     const scrolled = el.scrollTop;
@@ -78,7 +116,8 @@ export function createReportPanel({ game, countryId, onClose }) {
         h(
           'div',
           { class: 'report__lines' },
-          line({ id: 'revenue', label: t('report.income'), value: formatMoneyMn(last.revenueMn, { signed: true }), signed: 1, why: [whyList('revenue', why.revenue)] }),
+          line({ id: 'taxes', label: t('report.taxes'), value: formatMoneyMn(last.taxMn, { signed: true }), signed: 1, why: [whyList('taxes', why.taxes)] }),
+          last.resourceMn > 0 ? line({ id: 'resources', label: t('report.resourceIncome'), value: formatMoneyMn(last.resourceMn, { signed: true }), signed: 1, why: [whyList('resources', why.resources)] }) : null,
           line({ id: 'spending', label: t('report.spending'), value: formatMoneyMn(-last.spendingMn, { signed: true }), signed: -1, why: [whyList('spending', why.spending)] }),
           line({
             id: 'interest',
@@ -100,6 +139,8 @@ export function createReportPanel({ game, countryId, onClose }) {
         h('p', { class: 'muted report__tip' }, t('report.tapHint')),
       );
     }
+
+    parts.push(resourcesBlock());
 
     const news = state.news.filter((/** @type {any} */ entry) => entry.turn === state.clock.turn && entry.refs?.includes(countryId));
     if (news.length > 0) {

@@ -9,12 +9,14 @@ import { checkStateShape, createInitialState } from './core/state.js';
 import { createTurnRunner } from './core/turn.js';
 import { economySystem } from './systems/economy.js';
 import { economyCommands } from './systems/economyCommands.js';
+import { resourceCommands } from './systems/resourceCommands.js';
+import { resourcesSystem } from './systems/resources.js';
 
 /** Systems registered in the real game, in no particular order (they declare their own). */
-export const SYSTEMS = [economySystem];
+export const SYSTEMS = [economySystem, resourcesSystem];
 
 /** Commands registered in the real game. */
-export const COMMANDS = { ...economyCommands };
+export const COMMANDS = { ...economyCommands, ...resourceCommands };
 
 /**
  * Start a new game, or continue one from a loaded state.
