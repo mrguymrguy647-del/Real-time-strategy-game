@@ -27,6 +27,9 @@ const IDLE_SLEEP_MS = 500;
 /** @param {number} p 0..1 */
 const ease = (p) => (p < 0.5 ? 4 * p * p * p : 1 - (-2 * p + 2) ** 3 / 2);
 
+/** People who ask their phone for less motion get camera moves that just jump. */
+const prefersReducedMotion = () => globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+
 /**
  * @typedef {{ countryId: string | null, regionId: string | null }} Selection
  */
@@ -112,7 +115,7 @@ export async function createMapView({ container, topology, countryName, regionNa
       fling = step.moving ? { vx: step.vx, vy: step.vy } : null;
     }
     if (animation) {
-      const p = Math.min((now - animation.start) / animation.ms, 1);
+      const p = Math.min(Math.max((now - animation.start) / animation.ms, 0), 1);
       const e = ease(p);
       const { from, to } = animation;
       view = { cx: from.cx + (to.cx - from.cx) * e, cy: from.cy + (to.cy - from.cy) * e, zoom: from.zoom * (to.zoom / from.zoom) ** e };
@@ -144,7 +147,7 @@ export async function createMapView({ container, topology, countryName, regionNa
   /** @param {import('./view.js').View} target @param {number} [ms] */
   function animateTo(target, ms = 320) {
     fling = null;
-    animation = { from: view, to: clampView(target, viewport, world, range, insets), start: performance.now(), ms };
+    animation = { from: view, to: clampView(target, viewport, world, range, insets), start: performance.now(), ms: prefersReducedMotion() ? 1 : ms };
     schedule();
   }
 
