@@ -26,7 +26,7 @@ export const COMMANDS = { ...economyCommands, ...resourceCommands };
  */
 export function createGame({ data, seed = 1, scenarioId = 'me_2026', playerId = null, state, systems = SYSTEMS, commands = COMMANDS, checkInvariants = false }) {
   if (state) {
-    const problems = checkStateShape(state);
+    const problems = checkStateShape(state, data);
     if (problems.length > 0) throw new Error(`Cannot continue from this state: ${problems.join(', ')}`);
   }
   const initial = state ?? createInitialState({ data, scenarioId, seed, playerId });
