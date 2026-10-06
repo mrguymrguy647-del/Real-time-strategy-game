@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { createGame } from '../../src/game.js';
-import { previewEconomy } from '../../src/systems/economy.js';
+import { economyAlerts, previewEconomy } from '../../src/systems/economy.js';
 import { loadTestData } from '../helpers/data.js';
 
 const data = await loadTestData();
@@ -70,7 +70,7 @@ describe('the monthly economy', () => {
   it('applies the government\'s growth modifier from data (a democracy grows 10% faster than the same trend)', () => {
     const game = newGame();
     const democracy = previewEconomy(game.state, data, 'TUR').growth;
-    close(democracy.value, data.countries.byId.TUR.start.economy.growth * 1.1 - 0.0 + democracy.parts.find((p) => p.id === 'debt').value * 0.1, 1e-9);
+    close(democracy.value, data.countries.byId.TUR.start.economy.growth * 1.1, 1e-9); // at the start every policy is what the trend already includes
     assert.equal(democracy.parts.at(-1).id, 'government');
   });
 
@@ -173,5 +173,48 @@ describe('the budget levers', () => {
   it('news is only about the player\'s own country', () => {
     const game = endTurns(newGame('TUR'), 24);
     for (const entry of game.state.news) assert.deepEqual(entry.refs, ['TUR']);
+  });
+});
+
+describe('alerts about the treasury and the debt', () => {
+  const alertsFor = (game, id) => economyAlerts(game.state, data, id);
+  const yemen = () => newGame('YEM'); // a small deficit every month
+
+  it('say nothing while the money is comfortable', () => {
+    assert.deepEqual(alertsFor(newGame('TUR'), 'TUR'), []);
+    assert.deepEqual(alertsFor(yemen(), 'YEM'), [], 'a deficit with years of money left is not an alert');
+  });
+
+  it('warn when the treasury would last at most six months at this rate', () => {
+    const game = yemen();
+    const deficit = -previewEconomy(game.state, data, 'YEM').balanceMn;
+    game.state.countries.YEM.economy.treasuryMn = deficit * 4.5;
+    assert.deepEqual(alertsFor(game, 'YEM'), [{ id: 'runway', params: { n: 4 } }]);
+    game.state.countries.YEM.economy.treasuryMn = deficit * 7.5;
+    assert.deepEqual(alertsFor(game, 'YEM'), [], 'seven months of money is not yet an alert');
+  });
+
+  it('say what the state must borrow when the treasury cannot pay next month', () => {
+    const game = yemen();
+    const deficit = -previewEconomy(game.state, data, 'YEM').balanceMn;
+    game.state.countries.YEM.economy.treasuryMn = deficit * 0.5;
+    let [alert] = alertsFor(game, 'YEM');
+    assert.equal(alert.id, 'borrowing');
+    close(alert.params.amountMn, deficit * 0.5);
+    game.state.countries.YEM.economy.treasuryMn = 0;
+    [alert] = alertsFor(game, 'YEM');
+    close(alert.params.amountMn, deficit);
+    game.state.countries.YEM.economy.treasuryMn = deficit * 1.2; // just enough for one more month
+    assert.deepEqual(alertsFor(game, 'YEM'), [{ id: 'runway', params: { n: 1 } }]);
+  });
+
+  it('warn about debt at or above the limit, with what the interest costs', () => {
+    const game = newGame('TUR');
+    const { economy } = game.state.countries.TUR;
+    economy.debtMn = economy.gdpBn * 1000 * 1.1;
+    const [alert] = alertsFor(game, 'TUR');
+    assert.equal(alert.id, 'debt');
+    assert.equal(alert.params.percent, 110);
+    assert.ok(alert.params.interestMn > 0);
   });
 });

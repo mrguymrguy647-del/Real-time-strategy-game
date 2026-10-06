@@ -94,7 +94,7 @@ export function growthRate({ trend, taxRate, budget, debtRatio, reference, modif
     { id: 'taxes', value: params.taxDrag * (reference.taxRate - taxRate) },
     { id: 'infrastructure', value: params.infrastructure * (budget.infrastructure - reference.budget.infrastructure) },
     { id: 'research', value: params.research * (budget.research - reference.budget.research) },
-    { id: 'debt', value: params.debtDrag * (reference.debtRatio - debtRatio) },
+    { id: 'debtLoad', value: params.debtDrag * (reference.debtRatio - debtRatio) },
   ];
   const subtotal = terms.reduce((total, term) => total + term.value, 0);
   terms.push({ id: 'government', value: modifierPart(subtotal, modifiers) });

@@ -4,7 +4,7 @@
 // The player's country also keeps the explanation of each number for the report's "why?".
 
 import { modifiersFor } from '../core/modifiers.js';
-import { economyMonth } from '../formulas/economy.js';
+import { economyMonth, runwayMonths } from '../formulas/economy.js';
 
 /**
  * Everything economyMonth needs for one country, read from the state and the data.
@@ -40,6 +40,32 @@ function inputsFor(state, data, countryId) {
 export function previewEconomy(state, data, countryId) {
   const { input, params } = inputsFor(state, data, countryId);
   return economyMonth(input, params);
+}
+
+/**
+ * Warnings about a country's money, for the report and the budget screen (GAME_DESIGN §1: alerts and
+ * forecasts). Read-only. Money values are USD millions in params whose names end in "Mn".
+ * @param {any} state
+ * @param {import('../core/data.js').GameData} data
+ * @param {string} countryId
+ * @returns {Array<{ id: 'borrowing' | 'runway' | 'debt', params: Record<string, number> }>}
+ */
+export function economyAlerts(state, data, countryId) {
+  const { economy } = state.countries[countryId];
+  const forecast = previewEconomy(state, data, countryId);
+  const warnings = data.balance.economy.warnings;
+  /** @type {Array<{ id: 'borrowing' | 'runway' | 'debt', params: Record<string, number> }>} */
+  const alerts = [];
+  if (forecast.borrowedMn >= 1) {
+    alerts.push({ id: 'borrowing', params: { amountMn: forecast.borrowedMn } });
+  } else {
+    // The treasury covers next month (or the state would be borrowing); how many months more at this rate?
+    const months = runwayMonths({ treasuryMn: economy.treasuryMn, balanceMn: forecast.balanceMn });
+    if (months !== null && months <= warnings.runwayMonths) alerts.push({ id: 'runway', params: { n: months } });
+  }
+  const ratio = economy.debtMn / (economy.gdpBn * 1000);
+  if (ratio >= warnings.debtRatio) alerts.push({ id: 'debt', params: { percent: Math.round(ratio * 100), interestMn: forecast.interest.value } });
+  return alerts;
 }
 
 /** @type {import('../core/turn.js').System} */

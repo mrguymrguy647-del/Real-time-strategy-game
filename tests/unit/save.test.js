@@ -62,7 +62,7 @@ describe('save manager', () => {
     assert.notEqual((await manager.load('manual-1')).state.countries.TUR.economy.treasuryMn, 999);
   });
 
-  it('skips a save from the early test game and loads the newest one it can read', async () => {
+  it('leaves out saves of the early test game: Continue loads the newest one that can be played, with nothing "skipped"', async () => {
     const { manager, storage } = setup();
     await manager.save('manual-1', stateAfter(2));
     const old = { slot: 'manual-2', savedAt: 9_999_999_999, saveVersion: 1, dataVersion: 'old', meta: { countryId: null, year: 2026, month: 3, week: 1, turn: 2, scenarioId: 'scaffold_test', difficulty: 'normal' }, state: { meta: { saveVersion: 1 } } };
@@ -70,7 +70,17 @@ describe('save manager', () => {
     await assert.rejects(manager.load('manual-2'), code('too_old'));
     const latest = await manager.loadLatest();
     assert.equal(latest?.slot, 'manual-1');
-    assert.deepEqual(latest?.skipped, ['manual-2']);
+    assert.deepEqual(latest?.skipped, []);
+  });
+
+  it('says the saves are too old, not damaged, when the early test game is all there is', async () => {
+    const { manager, storage } = setup();
+    const meta = { countryId: null, year: 2026, month: 3, week: 1, turn: 2, scenarioId: 'scaffold_test', difficulty: 'normal' };
+    await storage.putMany([
+      { store: 'saves', key: 'manual-1', value: { slot: 'manual-1', savedAt: 1, saveVersion: 1, dataVersion: 'old', meta, state: { meta: { saveVersion: 1 } } } },
+      { store: 'slots', key: 'manual-1', value: { slot: 'manual-1', savedAt: 1, saveVersion: 1, dataVersion: 'old', meta } },
+    ]);
+    await assert.rejects(manager.loadLatest(), code('too_old'));
   });
 
   it('rotates through three autosave slots', async () => {
