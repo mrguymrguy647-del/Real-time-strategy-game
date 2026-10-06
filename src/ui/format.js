@@ -71,11 +71,12 @@ const signOf = (n) => (n > 0 ? '+' : n < 0 ? '\u2212' : '');
 
 /**
  * A sum of money for the report: three significant digits at most, "$29.8 billion", "$152 billion",
- * "$1.31 trillion", "$850 million".
+ * "$1.31 trillion", "$850 million". With `precise`, anything from a billion up to a trillion gets one
+ * decimal ("$149.6 billion"), so a number that moves by a few hundred million a month visibly moves.
  * @param {number} millions an amount in USD millions (G-25)
- * @param {{ signed?: boolean }} [options] signed: "+$29.8 billion" / "−$1.2 billion"
+ * @param {{ signed?: boolean, precise?: boolean }} [options] signed: "+$29.8 billion" / "−$1.2 billion"
  */
-export function formatMoneyMn(millions, { signed = false } = {}) {
+export function formatMoneyMn(millions, { signed = false, precise = false } = {}) {
   const abs = Math.abs(millions);
   if (abs < 999.5) {
     const n = Math.round(abs);
@@ -83,7 +84,8 @@ export function formatMoneyMn(millions, { signed = false } = {}) {
     return (n === 0 ? '' : signed ? signOf(millions) : millions < 0 ? '\u2212' : '') + t('units.money.million', { n });
   }
   const sign = signed ? signOf(millions) : millions < 0 ? '\u2212' : '';
-  if (abs >= 999_500) return sign + t('units.money.trillion', { n: trimmed2(abs / 1e6) });
+  if (abs >= 999_500 || (precise && abs >= 999_950)) return sign + t('units.money.trillion', { n: trimmed2(abs / 1e6) });
+  if (precise) return sign + t('units.money.billion', { n: trimmed(abs / 1e3) });
   if (abs >= 1e5) return sign + t('units.money.billion', { n: Math.round(abs / 1e3) });
   return sign + t('units.money.billion', { n: trimmed(abs / 1e3) });
 }

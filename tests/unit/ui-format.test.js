@@ -40,6 +40,22 @@ describe('money for the report', () => {
   });
 });
 
+describe('money with one decimal for the treasury', () => {
+  it('shows a few hundred million of movement on a big treasury', () => {
+    assert.equal(formatMoneyMn(149_570, { precise: true }), '$149.6 billion');
+    assert.equal(formatMoneyMn(149_140, { precise: true }), '$149.1 billion');
+    assert.equal(formatMoneyMn(450_000, { precise: true }), '$450 billion', 'a whole number of billions has no ".0"');
+    assert.equal(formatMoneyMn(451_230, { precise: true }), '$451.2 billion');
+    assert.equal(formatMoneyMn(29_520, { precise: true }), '$29.5 billion');
+  });
+
+  it('keeps small amounts in millions and large ones in trillions, without a "$1000.0 billion"', () => {
+    assert.equal(formatMoneyMn(850, { precise: true }), '$850 million');
+    assert.equal(formatMoneyMn(999_960, { precise: true }), '$1 trillion');
+    assert.equal(formatMoneyMn(1_310_000, { precise: true }), '$1.31 trillion');
+  });
+});
+
 describe('percentages', () => {
   it('trims to the decimals asked for and signs on request', () => {
     assert.equal(formatPercent(0.27), '27%');

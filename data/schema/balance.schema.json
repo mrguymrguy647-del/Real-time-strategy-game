@@ -20,7 +20,7 @@
         },
         "economy": {
           "type": "object",
-          "required": ["taxRange", "taxMin", "taxMax", "taxStep", "budgetStep", "budgetRange", "interest", "growth", "warnings"],
+          "required": ["taxRange", "taxMin", "taxMax", "taxStep", "budgetStep", "budgetRange", "interest", "growth", "repayShare", "warnings"],
           "additionalProperties": false,
           "properties": {
             "_note": { "type": "string" },
@@ -54,6 +54,7 @@
                 "max": { "type": "number", "minimum": 0, "maximum": 1 }
               }
             },
+            "repayShare": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
             "warnings": {
               "type": "object",
               "required": ["debtRatio", "runwayMonths"],

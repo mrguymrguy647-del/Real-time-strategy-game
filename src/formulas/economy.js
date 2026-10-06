@@ -4,8 +4,10 @@
 // year (G-25).
 //
 // A month, in order: the state collects taxes, pays for its budget and the interest on its debt;
-// what is left (or missing) changes the treasury; a missing amount is borrowed, a surplus first
-// repays debt; the economy grows by this month's share of its yearly growth rate.
+// what is left goes into the treasury, and a shortfall comes out of it. The treasury never goes below
+// zero: what it cannot cover is borrowed at once. Debt is repaid only when the player says so (the
+// REPAY_DEBT command), never by itself, so the treasury moves by exactly what the month earned or
+// lost. The economy then grows by this month's share of its yearly growth rate.
 
 import { limitSum, modifierPart, productOf, sumOf } from './explain.js';
 
@@ -123,16 +125,26 @@ export function economyMonth({ economy, budget, trend, reference, modifiers, inc
   const growth = growthRate({ trend, taxRate, budget, debtRatio: debtMn / (gdpBn * 1000), reference, modifiers }, params.growth);
 
   const balanceMn = income.value - costs.value - interestPaid.value;
-  // The treasury never goes below zero: a shortfall is borrowed at once, a surplus repays debt first.
-  const repaidMn = Math.min(debtMn, Math.max(0, balanceMn));
+  // The treasury takes the surplus and pays the shortfall; what it cannot pay is borrowed.
   const borrowedMn = Math.max(0, -(treasuryMn + balanceMn));
   const next = {
     gdpBn: gdpBn * (1 + growth.value / 12),
-    treasuryMn: Math.max(0, treasuryMn + balanceMn - repaidMn),
-    debtMn: debtMn - repaidMn + borrowedMn,
+    treasuryMn: Math.max(0, treasuryMn + balanceMn),
+    debtMn: debtMn + borrowedMn,
     growth: growth.value,
   };
-  return { revenue: income, spending: costs, interestRate: rate, interest: interestPaid, growth, balanceMn, borrowedMn, repaidMn, next };
+  return { revenue: income, spending: costs, interestRate: rate, interest: interestPaid, growth, balanceMn, borrowedMn, next };
+}
+
+/**
+ * What the two Repay buttons pay: a share of the debt (a tenth, say), or as much as the treasury
+ * allows. Never more than is owed or held.
+ * @param {{ debtMn: number, treasuryMn: number }} economy
+ * @param {number} share the share of the debt the first button pays
+ * @returns {{ shareMn: number, allMn: number }}
+ */
+export function repayAmounts({ debtMn, treasuryMn }, share) {
+  return { shareMn: Math.min(debtMn * share, treasuryMn), allMn: Math.min(debtMn, treasuryMn) };
 }
 
 /** Rounds to four decimals, so a share such as 0.1 + 0.005 stays 0.105 and not 0.10500000000000001 (and never gives -0, which a save file would turn into 0). @param {number} value */

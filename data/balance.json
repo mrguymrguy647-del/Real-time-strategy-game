@@ -14,6 +14,7 @@
       "budgetRange": { "military": 0.05, "research": 0.02, "welfare": 0.08, "infrastructure": 0.04 },
       "interest": { "base": 0.04, "riskStart": 0.6, "riskSlope": 0.02, "max": 0.12 },
       "growth": { "taxDrag": 0.4, "infrastructure": 0.8, "research": 1.0, "debtDrag": 0.01, "min": -0.15, "max": 0.15 },
+      "repayShare": 0.1,
       "warnings": { "debtRatio": 1.0, "runwayMonths": 6 }
     },
     "combat": {

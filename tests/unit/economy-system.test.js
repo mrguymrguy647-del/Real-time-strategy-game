@@ -96,6 +96,89 @@ describe('the monthly economy', () => {
   });
 });
 
+describe('the treasury moves every month by exactly what the month earned or lost', () => {
+  it('also for a country with a surplus and a debt (Saudi Arabia): the surplus is not hidden in the debt', () => {
+    const game = newGame('SAU');
+    const start = game.state.countries.SAU.economy;
+    const [treasury0, debt0] = [start.treasuryMn, start.debtMn];
+    let last = treasury0;
+    for (let turn = 1; turn <= 6; turn++) {
+      endTurns(game, 1);
+      const { economy } = game.state.countries.SAU;
+      close(economy.treasuryMn - last, economy.last.balanceMn, 1e-9);
+      assert.ok(economy.treasuryMn > last, `month ${turn}: the treasury grew`);
+      last = economy.treasuryMn;
+    }
+    assert.equal(game.state.countries.SAU.economy.debtMn, debt0, 'debt is untouched until the player repays it');
+  });
+
+  it('for every country: the treasury changes by the balance, plus whatever had to be borrowed', () => {
+    const game = newGame();
+    const before = Object.fromEntries(Object.entries(game.state.countries).map(([id, c]) => [id, { treasury: c.economy.treasuryMn, debt: c.economy.debtMn }]));
+    endTurns(game, 1);
+    for (const [id, country] of Object.entries(game.state.countries)) {
+      const { economy } = country;
+      close(economy.treasuryMn - before[id].treasury, economy.last.balanceMn + economy.last.borrowedMn, 1e-9);
+      close(economy.debtMn - before[id].debt, economy.last.borrowedMn, 1e-9);
+    }
+  });
+});
+
+describe('repaying debt', () => {
+  const ok = { ok: true };
+
+  it('moves money from the treasury to the debt at once, and lowers next month\'s interest', () => {
+    const game = newGame('TUR');
+    const { economy } = game.state.countries.TUR;
+    const [treasury, debt] = [economy.treasuryMn, economy.debtMn];
+    const interestBefore = previewEconomy(game.state, data, 'TUR').interest.value;
+    assert.deepEqual(game.dispatch({ type: 'REPAY_DEBT', countryId: 'TUR', amountMn: 39_000 }), ok);
+    assert.equal(economy.treasuryMn, treasury - 39_000);
+    assert.equal(economy.debtMn, debt - 39_000);
+    assert.ok(previewEconomy(game.state, data, 'TUR').interest.value < interestBefore);
+    assert.deepEqual(findProblems(game.state), []);
+  });
+
+  it('can pay back everything the treasury holds, leaving exactly zero (never -0 or a hair below)', () => {
+    const game = newGame('TUR');
+    const { economy } = game.state.countries.TUR;
+    const all = Math.min(economy.debtMn, economy.treasuryMn);
+    assert.deepEqual(game.dispatch({ type: 'REPAY_DEBT', countryId: 'TUR', amountMn: all }), ok);
+    assert.ok(Object.is(economy.treasuryMn, 0));
+    assert.deepEqual(findProblems(game.state), []);
+    // with nothing left in the treasury, nothing more can be paid
+    assert.equal(game.dispatch({ type: 'REPAY_DEBT', countryId: 'TUR', amountMn: 1 }).error.code, 'out_of_range');
+  });
+
+  it('refuses more than is held or owed, nothing, and things that are not amounts, changing nothing', () => {
+    const game = newGame('TUR');
+    const before = JSON.stringify(game.state);
+    const { economy } = game.state.countries.TUR;
+    const refused = [
+      [{ amountMn: economy.treasuryMn + 1 }, 'out_of_range'],
+      [{ amountMn: economy.debtMn + 1 }, 'out_of_range'],
+      [{ amountMn: 0 }, 'bad_value'],
+      [{ amountMn: -5 }, 'bad_value'],
+      [{ amountMn: Number.NaN }, 'bad_value'],
+      [{ amountMn: '100' }, 'bad_value'],
+      [{ amountMn: 100, countryId: 'ZZZ' }, 'unknown_country'],
+      [{ amountMn: 100, countryId: 'constructor' }, 'unknown_country'],
+    ];
+    for (const [fields, code] of refused) {
+      const result = game.dispatch({ type: 'REPAY_DEBT', countryId: 'TUR', ...fields });
+      assert.equal(result.ok, false, JSON.stringify(fields));
+      assert.equal(result.error.code, code, JSON.stringify(fields));
+    }
+    assert.equal(JSON.stringify(game.state), before);
+  });
+
+  it('a country with no debt cannot repay any', () => {
+    const game = newGame('KWT');
+    game.state.countries.KWT.economy.debtMn = 0;
+    assert.equal(game.dispatch({ type: 'REPAY_DEBT', countryId: 'KWT', amountMn: 100 }).error.code, 'out_of_range');
+  });
+});
+
 describe('the budget levers', () => {
   const ok = { ok: true };
 

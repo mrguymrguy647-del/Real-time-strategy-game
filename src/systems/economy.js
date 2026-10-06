@@ -94,7 +94,6 @@ export const economySystem = {
         growth: result.growth.value,
         balanceMn: result.balanceMn,
         borrowedMn: result.borrowedMn,
-        repaidMn: result.repaidMn,
       };
       if (id !== state.player.countryId) continue;
 

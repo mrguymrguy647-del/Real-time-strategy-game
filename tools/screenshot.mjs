@@ -62,7 +62,13 @@ try {
     await page.waitForSelector('.budget:not([hidden])');
     for (let i = 0; i < 3; i++) await page.getByRole('button', { name: t('budget.raise', { name: t('budget.military') }), exact: true }).click();
     await page.waitForTimeout(300);
-    if (only.includes('budget')) await shot('budget');
+    if (only.includes('budget')) {
+      await shot('budget');
+      await page.evaluate(() => void (document.querySelector('.budget').scrollTop = 1e6)); // the debt section is at the bottom
+      await page.waitForTimeout(200);
+      await shot('budget-debt');
+      await page.evaluate(() => void (document.querySelector('.budget').scrollTop = 0));
+    }
     await page.getByRole('button', { name: t('play.budget'), exact: true }).click(); // close it
     if (only.includes('play')) await shot('play');
 

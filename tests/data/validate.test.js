@@ -161,6 +161,8 @@ describe('economy and scenarios', () => {
     expectError((f) => void (f.balance.values.economy.taxStep = 0), /must be > 0/);
     expectError((f) => void delete f.balance.values.economy.budgetStep.research, /must have required property 'research'/);
     expectError((f) => void (f.balance.values.economy.growth.min = 0.1), /must be <= 0/);
+    expectError((f) => void (f.balance.values.economy.repayShare = 0), /must be > 0/);
+    expectError((f) => void delete f.balance.values.economy.repayShare, /must have required property 'repayShare'/);
   });
 
   it('requires a scenario to name real theaters and playable countries inside them', () => {

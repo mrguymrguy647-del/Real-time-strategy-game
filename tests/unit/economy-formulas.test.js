@@ -10,6 +10,7 @@ import {
   interest,
   interestRate,
   monthlyGdpMn,
+  repayAmounts,
   revenue,
   runwayMonths,
   spending,
@@ -152,20 +153,19 @@ describe('one month of the economy', () => {
   /** @param {object} economy */
   const month = (economy, extra = {}) => economyMonth({ economy: { gdpBn: 1200, taxRate: 0.25, treasuryMn: 10_000, debtMn: 0, ...economy }, budget, trend: 0.03, reference, ...extra }, monthParams);
 
-  it('a surplus grows the treasury once there is no debt', () => {
+  it('a surplus goes into the treasury', () => {
     const result = month({ taxRate: 0.3 });
     const expected = 100_000 * (0.3 - 0.215);
     close(result.balanceMn, expected);
     close(result.next.treasuryMn, 10_000 + expected);
     assert.equal(result.borrowedMn, 0);
-    assert.equal(result.repaidMn, 0);
   });
 
-  it('a surplus repays debt before it grows the treasury', () => {
+  it('and it stays there while there is debt: debt is repaid only by order, never by itself', () => {
     const result = month({ taxRate: 0.3, debtMn: 5_000 });
-    assert.equal(result.repaidMn, 5_000);
-    assert.equal(result.next.debtMn, 0);
-    close(result.next.treasuryMn, 10_000 + result.balanceMn - 5_000);
+    close(result.next.treasuryMn, 10_000 + result.balanceMn);
+    assert.equal(result.next.debtMn, 5_000);
+    assert.equal('repaidMn' in result, false);
   });
 
   it('a deficit eats the treasury', () => {
@@ -205,10 +205,10 @@ describe('one month of the economy', () => {
       const result = month(economy, { budget: b });
       const label = JSON.stringify({ economy, b });
       assert.ok(result.next.treasuryMn >= 0 && result.next.debtMn >= 0 && result.next.gdpBn > 0, label);
-      assert.ok(result.borrowedMn >= 0 && result.repaidMn >= 0 && result.repaidMn <= economy.debtMn + 1e-9, label);
-      assert.ok(!(result.borrowedMn > 0 && result.repaidMn > 0), `never borrows and repays in one month: ${label}`);
-      close(result.next.treasuryMn - economy.treasuryMn, result.balanceMn + result.borrowedMn - result.repaidMn, 1e-9);
-      close(result.next.debtMn - economy.debtMn, result.borrowedMn - result.repaidMn, 1e-9);
+      assert.ok(result.borrowedMn >= 0, label);
+      assert.ok(!(result.borrowedMn > 0 && result.next.treasuryMn > 0), `it only borrows when the treasury is empty: ${label}`);
+      close(result.next.treasuryMn - economy.treasuryMn, result.balanceMn + result.borrowedMn, 1e-9);
+      close(result.next.debtMn - economy.debtMn, result.borrowedMn, 1e-9);
       for (const value of Object.values(result.next)) assert.ok(Number.isFinite(value), label);
     }
   });
@@ -218,6 +218,16 @@ describe('one month of the economy', () => {
     const taxed = month({ taxRate: 0.3 });
     assert.ok(taxed.balanceMn > base.balanceMn);
     assert.ok(taxed.growth.value < base.growth.value);
+  });
+});
+
+describe('the repay buttons', () => {
+  it('pay a share of the debt, or all the treasury allows, never more than is owed or held', () => {
+    assert.deepEqual(repayAmounts({ debtMn: 390_000, treasuryMn: 150_000 }, 0.1), { shareMn: 39_000, allMn: 150_000 });
+    assert.deepEqual(repayAmounts({ debtMn: 390_000, treasuryMn: 20_000 }, 0.1), { shareMn: 20_000, allMn: 20_000 }, 'the treasury limits the share');
+    assert.deepEqual(repayAmounts({ debtMn: 5_000, treasuryMn: 150_000 }, 0.1), { shareMn: 500, allMn: 5_000 }, 'the debt limits "all"');
+    assert.deepEqual(repayAmounts({ debtMn: 0, treasuryMn: 150_000 }, 0.1), { shareMn: 0, allMn: 0 });
+    assert.deepEqual(repayAmounts({ debtMn: 390_000, treasuryMn: 0 }, 0.1), { shareMn: 0, allMn: 0 });
   });
 });
 

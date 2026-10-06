@@ -261,6 +261,55 @@ describe('panels', () => {
   });
 });
 
+describe('the treasury', () => {
+  it('moves every turn, with a decimal so a few hundred million show, even on a big treasury with a debt (Saudi Arabia)', async () => {
+    const { context, page } = await freshPage(env.browser);
+    await openApp(page, env.site.url);
+    await newGame(page, 0, 'SAU');
+    const seen = [await page.textContent('.play-hud__treasury')];
+    const changes = [];
+    for (let turn = 1; turn <= 3; turn++) {
+      await endTurn(page);
+      await page.waitForFunction((n) => /** @type {any} */ (globalThis).__app.ctx.session.game.state.clock.turn === n, turn);
+      seen.push(await page.textContent('.play-hud__treasury'));
+      changes.push(await page.textContent('.play-hud__change'));
+    }
+    assert.equal(new Set(seen).size, seen.length, `a different treasury after every turn: ${seen.join(' | ')}`);
+    assert.ok(seen.every((text) => /^Treasury \$4\d\d(\.\d)? billion$/.test(text)), seen.join(' | '));
+    assert.ok(changes.every((text) => /^\+\$1\.\d billion$/.test(text)), `and what each month added: ${changes.join(' | ')}`);
+    await context.close();
+  });
+
+  it('repays debt on a button: money moves from the treasury to the debt at once, and the strip follows', async () => {
+    const { context, page } = await freshPage(env.browser);
+    await openApp(page, env.site.url);
+    await newGame(page, 0, 'TUR');
+    await button(page, t('play.budget')).click();
+    await page.waitForSelector('.budget:not([hidden])');
+    const economy = /** @type {{ treasuryMn: number, debtMn: number }} */ (await stateAt(page, 'countries.TUR.economy'));
+    const forecastInterest = () => page.locator('.budget .fact', { hasText: t('report.interest') }).locator('dd').textContent();
+    const interestBefore = await forecastInterest();
+    assert.ok((await page.textContent('[data-debt]')).includes('30%'), 'Türkiye starts at 30% of GDP in debt');
+
+    await page.locator('[data-repay="share"]').click();
+    const after = /** @type {{ treasuryMn: number, debtMn: number }} */ (await stateAt(page, 'countries.TUR.economy'));
+    assert.ok(Math.abs(after.debtMn - economy.debtMn * 0.9) < 1e-6 && Math.abs(economy.treasuryMn - after.treasuryMn - economy.debtMn * 0.1) < 1e-6, 'a tenth of the debt came out of the treasury');
+    assert.match(await page.textContent('.play-hud__treasury'), /^Treasury \$111(\.\d)? billion$/, 'the strip follows at once');
+    assert.ok((await page.textContent('[data-debt]')).includes('27%'));
+    assert.notEqual(await forecastInterest(), interestBefore, 'and next month\'s interest is lower');
+    assert.deepEqual((/** @type {any[]} */ (await stateAt(page, 'log'))).map((entry) => entry.type), ['REPAY_DEBT']);
+
+    // "All you can": the treasury is emptied, and the buttons have nothing left to pay with.
+    await page.locator('[data-repay="all"]').click();
+    assert.equal(await stateAt(page, 'countries.TUR.economy.treasuryMn'), 0);
+    assert.equal(await page.locator('[data-repay="share"]').isDisabled(), true);
+    assert.equal(await page.locator('[data-repay="all"]').isDisabled(), true);
+    // Less debt, less interest: the monthly shortfall Türkiye started with has turned into a small surplus.
+    assert.match(await page.locator('.budget .fact', { hasText: t('report.balance') }).locator('dd').textContent(), /^\+/);
+    await context.close();
+  });
+});
+
 describe('the budget', () => {
   it('moves a lever one step at a time, as a command, and the forecast follows', async () => {
     const { context, page, problems } = await freshPage(env.browser);
