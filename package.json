@@ -13,6 +13,7 @@
     "validate": "node tools/validate-data.mjs",
     "build": "node tools/build.mjs",
     "build:single": "node tools/bundle-single.mjs",
+    "build:map": "node tools/build-map.mjs",
     "serve": "node tools/build.mjs && node tools/serve.mjs",
     "simulate": "node tools/simulate.mjs",
     "e2e": "node --test --test-concurrency=1 \"tests/e2e/**/*.e2e.mjs\"",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "ajv": "^8.20.0",
+    "mapshaper": "^0.7.78",
     "playwright-core": "^1.63.0",
     "typescript": "^7.0.2"
   }

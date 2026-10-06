@@ -87,6 +87,57 @@ describe('data validation', () => {
   });
 });
 
+describe('countries and regions', () => {
+  /** @param {any} f @param {string} id */
+  const region = (f, id) => f.regions.items.find((/** @type {any} */ r) => r.id === id);
+  /** @param {any} f @param {string} id */
+  const country = (f, id) => f.countries.items.find((/** @type {any} */ c) => c.id === id);
+
+  it('requires a region id to start with its country, and the country to exist', () => {
+    expectError((f) => void (region(f, 'IRQ-basra').id = 'KWT-basra'), /id must start with its country "IRQ-"/);
+    expectError((f) => void (region(f, 'IRQ-basra').country = 'ZZZ'), /unknown country "ZZZ"/);
+  });
+
+  it('requires neighbors to exist, to be symmetric, and never to be the region itself', () => {
+    expectError((f) => void region(f, 'IRQ-basra').neighbors.push('IRQ-atlantis'), /neighbor "IRQ-atlantis" does not exist/);
+    expectError((f) => void region(f, 'IRQ-basra').neighbors.push('SAU-tabuk'), /must be symmetric: "SAU-tabuk" does not list "IRQ-basra"/);
+    expectError((f) => void region(f, 'IRQ-basra').neighbors.push('IRQ-basra'), /cannot be its own neighbor/);
+  });
+
+  it('requires a contested region to carry a neutral note (G-22)', () => {
+    expectError((f) => void delete region(f, 'PSX-gaza').note, /contested region needs a neutral "note"/);
+  });
+
+  it('requires a known government, and at least one region per country', () => {
+    expectError((f) => void (country(f, 'KWT').government = 'pirates'), /unknown government "pirates"/);
+    expectError((f) => void (f.regions.items = f.regions.items.filter((/** @type {any} */ r) => r.country !== 'BHR')), /\(BHR\).*has no regions/);
+  });
+
+  it('requires the capital to be a real city of tier "capital" in the right country, and to be the only one', () => {
+    expectError((f) => void (country(f, 'IRQ').capital.region = 'IRN-tehran'), /belongs to another country/);
+    expectError((f) => void (country(f, 'IRQ').capital.name = 'Atlantis'), /has no "Atlantis" with tier "capital"/);
+    expectError((f) => void region(f, 'IRQ-basra').cities.push({ name: 'Basra Two', tier: 'capital' }), /exactly one city with tier "capital"/);
+  });
+
+  it('checks shares: all or none per country, and summing to 1', () => {
+    expectError((f) => void (region(f, 'KWT-ahmadi').popShare = 0.5), /popShare must be set on every region or on none/);
+    expectError((f) => void f.regions.items.filter((/** @type {any} */ r) => r.country === 'KWT').forEach((/** @type {any} */ r) => void (r.gdpShare = 0.5)), /gdpShare must sum to 1/);
+    expectError((f) => void (region(f, 'KWT-ahmadi').output = { oil: 0.5 }), /output of "oil" must sum to 1/);
+    expectError((f) => void (region(f, 'KWT-ahmadi').output = { unobtainium: 1 }), /unknown resource "unobtainium"/);
+  });
+
+  it('accepts shares that are complete', () => {
+    const { errors } = check((f) => {
+      const own = f.regions.items.filter((/** @type {any} */ r) => r.country === 'KWT');
+      own.forEach((/** @type {any} */ r, /** @type {number} */ i) => {
+        r.popShare = i === 0 ? 0.5 : 0.25;
+        r.output = { oil: i === 0 ? 0.5 : 0.25 };
+      });
+    });
+    assert.deepEqual(errors, []);
+  });
+});
+
 describe('duplicate key detection', () => {
   it('finds a repeated key and reports its line', () => {
     assert.deepEqual(findDuplicateKeys('{\n  "a": 1,\n  "b": 2,\n  "a": 3\n}'), ['duplicate key "a" at line 4']);

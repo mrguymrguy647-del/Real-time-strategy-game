@@ -8,7 +8,7 @@ import { ACTIONS, isAction } from '../../src/core/actions.js';
 import { DATA_FILES } from '../../src/core/data.js';
 import { STATS, isStat } from '../../src/core/stats.js';
 
-const SCHEMA_NAMES = ['balance', 'resources', 'governments', 'scenarios', 'i18n'];
+const SCHEMA_NAMES = ['balance', 'resources', 'governments', 'countries', 'regions', 'scenarios', 'i18n'];
 
 /**
  * Read every data file and schema from a repository root.
@@ -197,6 +197,65 @@ export function validateDataset({ files, schemas, rawTexts = {} }) {
     }
     if (v.combat.moraleMin > v.combat.moraleMax) fail(where, 'combat.moraleMin must not exceed moraleMax');
     if (!(v.endurance.warnMonths[0] > v.endurance.warnMonths[1])) fail(where, 'endurance.warnMonths must be [earlier, later] with the first larger');
+  }
+
+  if (schemaOk.has('countries') && schemaOk.has('regions')) {
+    const countries = files.countries.items;
+    const regions = files.regions.items;
+    checkUniqueIds(countries, pathOf.countries);
+    checkUniqueIds(regions, pathOf.regions);
+    /** @type {Map<string, any>} */
+    const countryById = new Map(countries.map((/** @type {any} */ c) => [c.id, c]));
+    /** @type {Map<string, any>} */
+    const regionById = new Map(regions.map((/** @type {any} */ r) => [r.id, r]));
+    const governmentIds = schemaOk.has('governments') ? new Set(files.governments.items.map((/** @type {any} */ g) => g.id)) : null;
+    const resourceIds = schemaOk.has('resources') ? new Set(files.resources.items.map((/** @type {any} */ r) => r.id)) : null;
+
+    for (const region of regions) {
+      const label = `${pathOf.regions} (${region.id})`;
+      if (!region.id.startsWith(`${region.country}-`)) fail(label, `the id must start with its country "${region.country}-"`);
+      const owner = countryById.get(region.country);
+      if (!owner) fail(label, `unknown country "${region.country}"`);
+      else if (owner.theater !== region.theater) fail(label, `theater "${region.theater}" differs from its country's "${owner.theater}"`);
+      for (const n of region.neighbors) {
+        const other = regionById.get(n);
+        if (n === region.id) fail(label, 'a region cannot be its own neighbor');
+        else if (!other) fail(label, `neighbor "${n}" does not exist`);
+        else if (!other.neighbors.includes(region.id)) fail(label, `neighbors must be symmetric: "${n}" does not list "${region.id}"`);
+      }
+      for (const n of region.seaLinks ?? []) if (!regionById.has(n)) fail(label, `seaLink "${n}" does not exist`);
+      if (region.contested && !region.note) fail(label, 'a contested region needs a neutral "note" (G-22)');
+      if (resourceIds) for (const resource of Object.keys(region.output ?? {})) if (!resourceIds.has(resource)) fail(label, `output names unknown resource "${resource}"`);
+    }
+
+    for (const country of countries) {
+      const label = `${pathOf.countries} (${country.id})`;
+      if (governmentIds && !governmentIds.has(country.government)) fail(label, `unknown government "${country.government}"`);
+      const own = regions.filter((/** @type {any} */ r) => r.country === country.id);
+      if (own.length === 0) fail(label, 'has no regions');
+      const capital = regionById.get(country.capital.region);
+      if (!capital) fail(label, `capital region "${country.capital.region}" does not exist`);
+      else {
+        if (capital.country !== country.id) fail(label, `capital region "${capital.id}" belongs to another country`);
+        if (!capital.cities.some((/** @type {any} */ c) => c.tier === 'capital' && c.name === country.capital.name)) fail(label, `region "${capital.id}" has no "${country.capital.name}" with tier "capital"`);
+      }
+      const capitals = own.flatMap((/** @type {any} */ r) => r.cities.filter((/** @type {any} */ c) => c.tier === 'capital'));
+      if (capitals.length !== 1) fail(label, `needs exactly one city with tier "capital" (found ${capitals.length})`);
+
+      // Shares: set on every region of the country or on none, and summing to 1.
+      for (const field of ['popShare', 'gdpShare']) {
+        const given = own.filter((/** @type {any} */ r) => field in r);
+        if (given.length === 0) continue;
+        const sum = given.reduce((a, /** @type {any} */ r) => a + r[field], 0);
+        if (given.length !== own.length) fail(label, `${field} must be set on every region or on none`);
+        else if (Math.abs(sum - 1) > 1e-6) fail(label, `${field} must sum to 1 across its regions (got ${sum})`);
+      }
+      const produced = new Set(own.flatMap((/** @type {any} */ r) => Object.keys(r.output ?? {})));
+      for (const resource of produced) {
+        const sum = own.reduce((a, /** @type {any} */ r) => a + (r.output?.[resource] ?? 0), 0);
+        if (Math.abs(sum - 1) > 1e-6) fail(label, `output of "${resource}" must sum to 1 across its regions (got ${sum})`);
+      }
+    }
   }
 
   if (schemaOk.has('scenarios')) checkUniqueIds(files.scenarios.items, pathOf.scenarios);

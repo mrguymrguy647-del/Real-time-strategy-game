@@ -1,0 +1,283 @@
+{
+  "schema": "countries",
+  "version": 1,
+  "_note": "Phase 1, milestone M1.1a: identity, government, capital, population and GDP. The economy, military, resource and internal blocks (DATA_SCHEMAS §4) arrive with M1.1b and later. Numbers are rounded, game-balanced approximations (G-22).",
+  "items": [
+    {
+      "id": "TUR",
+      "name": "Türkiye",
+      "adjective": "Turkish",
+      "theater": "middle_east",
+      "capital": { "name": "Ankara", "region": "TUR-central_anatolia" },
+      "government": "democracy",
+      "aiTier": 1,
+      "population": 85300,
+      "start": {
+        "economy": { "gdpBn": 1300 }
+      },
+      "sources": {
+        "population": "UN World Population Prospects 2024, rounded",
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+      }
+    },
+    {
+      "id": "IRN",
+      "name": "Iran",
+      "adjective": "Iranian",
+      "theater": "middle_east",
+      "capital": { "name": "Tehran", "region": "IRN-tehran" },
+      "government": "authoritarian",
+      "aiTier": 1,
+      "population": 89000,
+      "start": {
+        "economy": { "gdpBn": 430 }
+      },
+      "sources": {
+        "population": "UN World Population Prospects 2024, rounded",
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+      }
+    },
+    {
+      "id": "SAU",
+      "name": "Saudi Arabia",
+      "adjective": "Saudi",
+      "theater": "middle_east",
+      "capital": { "name": "Riyadh", "region": "SAU-riyadh" },
+      "government": "monarchy",
+      "aiTier": 1,
+      "population": 35000,
+      "start": {
+        "economy": { "gdpBn": 1100 }
+      },
+      "sources": {
+        "population": "UN World Population Prospects 2024, rounded",
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+      }
+    },
+    {
+      "id": "EGY",
+      "name": "Egypt",
+      "adjective": "Egyptian",
+      "theater": "middle_east",
+      "capital": { "name": "Cairo", "region": "EGY-cairo_giza" },
+      "government": "authoritarian",
+      "aiTier": 1,
+      "population": 114000,
+      "start": {
+        "economy": { "gdpBn": 350 }
+      },
+      "sources": {
+        "population": "UN World Population Prospects 2024, rounded",
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+      }
+    },
+    {
+      "id": "ISR",
+      "name": "Israel",
+      "adjective": "Israeli",
+      "theater": "middle_east",
+      "capital": { "name": "Jerusalem", "region": "ISR-jerusalem" },
+      "government": "democracy",
+      "aiTier": 1,
+      "population": 9900,
+      "start": {
+        "economy": { "gdpBn": 530 }
+      },
+      "note": "The status of Jerusalem is disputed; it is listed as the seat of government.",
+      "sources": {
+        "population": "UN World Population Prospects 2024, rounded",
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+      }
+    },
+    {
+      "id": "IRQ",
+      "name": "Iraq",
+      "adjective": "Iraqi",
+      "theater": "middle_east",
+      "capital": { "name": "Baghdad", "region": "IRQ-baghdad" },
+      "government": "democracy",
+      "aiTier": 1,
+      "population": 46000,
+      "start": {
+        "economy": { "gdpBn": 270 }
+      },
+      "sources": {
+        "population": "UN World Population Prospects 2024, rounded",
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+      }
+    },
+    {
+      "id": "SYR",
+      "name": "Syria",
+      "adjective": "Syrian",
+      "theater": "middle_east",
+      "capital": { "name": "Damascus", "region": "SYR-damascus" },
+      "government": "authoritarian",
+      "aiTier": 2,
+      "population": 24000,
+      "start": {
+        "economy": { "gdpBn": 20 }
+      },
+      "note": "A transitional authority governs.",
+      "sources": {
+        "population": "UN World Population Prospects 2024, rounded",
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+      }
+    },
+    {
+      "id": "JOR",
+      "name": "Jordan",
+      "adjective": "Jordanian",
+      "theater": "middle_east",
+      "capital": { "name": "Amman", "region": "JOR-amman" },
+      "government": "monarchy",
+      "aiTier": 2,
+      "population": 11500,
+      "start": {
+        "economy": { "gdpBn": 52 }
+      },
+      "sources": {
+        "population": "UN World Population Prospects 2024, rounded",
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+      }
+    },
+    {
+      "id": "YEM",
+      "name": "Yemen",
+      "adjective": "Yemeni",
+      "theater": "middle_east",
+      "capital": { "name": "Sanaa", "region": "YEM-sanaa" },
+      "government": "junta",
+      "aiTier": 2,
+      "population": 35000,
+      "start": {
+        "economy": { "gdpBn": 18 }
+      },
+      "note": "Authority is divided between armed factions; the classification is approximate.",
+      "sources": {
+        "population": "UN World Population Prospects 2024, rounded",
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+      }
+    },
+    {
+      "id": "ARE",
+      "name": "United Arab Emirates",
+      "adjective": "Emirati",
+      "theater": "middle_east",
+      "capital": { "name": "Abu Dhabi", "region": "ARE-abu_dhabi" },
+      "government": "monarchy",
+      "aiTier": 2,
+      "population": 11000,
+      "start": {
+        "economy": { "gdpBn": 540 }
+      },
+      "sources": {
+        "population": "UN World Population Prospects 2024, rounded",
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+      }
+    },
+    {
+      "id": "LBN",
+      "name": "Lebanon",
+      "adjective": "Lebanese",
+      "theater": "middle_east",
+      "capital": { "name": "Beirut", "region": "LBN-beirut_mount_lebanon" },
+      "government": "democracy",
+      "aiTier": 3,
+      "population": 5800,
+      "start": {
+        "economy": { "gdpBn": 20 }
+      },
+      "sources": {
+        "population": "UN World Population Prospects 2024, rounded",
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+      }
+    },
+    {
+      "id": "KWT",
+      "name": "Kuwait",
+      "adjective": "Kuwaiti",
+      "theater": "middle_east",
+      "capital": { "name": "Kuwait City", "region": "KWT-kuwait_city" },
+      "government": "monarchy",
+      "aiTier": 3,
+      "population": 4900,
+      "start": {
+        "economy": { "gdpBn": 160 }
+      },
+      "sources": {
+        "population": "UN World Population Prospects 2024, rounded",
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+      }
+    },
+    {
+      "id": "QAT",
+      "name": "Qatar",
+      "adjective": "Qatari",
+      "theater": "middle_east",
+      "capital": { "name": "Doha", "region": "QAT-doha" },
+      "government": "monarchy",
+      "aiTier": 3,
+      "population": 3000,
+      "start": {
+        "economy": { "gdpBn": 220 }
+      },
+      "sources": {
+        "population": "UN World Population Prospects 2024, rounded",
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+      }
+    },
+    {
+      "id": "BHR",
+      "name": "Bahrain",
+      "adjective": "Bahraini",
+      "theater": "middle_east",
+      "capital": { "name": "Manama", "region": "BHR-capital" },
+      "government": "monarchy",
+      "aiTier": 3,
+      "population": 1600,
+      "start": {
+        "economy": { "gdpBn": 46 }
+      },
+      "sources": {
+        "population": "UN World Population Prospects 2024, rounded",
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+      }
+    },
+    {
+      "id": "OMN",
+      "name": "Oman",
+      "adjective": "Omani",
+      "theater": "middle_east",
+      "capital": { "name": "Muscat", "region": "OMN-muscat_batinah" },
+      "government": "monarchy",
+      "aiTier": 3,
+      "population": 5200,
+      "start": {
+        "economy": { "gdpBn": 105 }
+      },
+      "sources": {
+        "population": "UN World Population Prospects 2024, rounded",
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+      }
+    },
+    {
+      "id": "PSX",
+      "name": "Palestinian territories",
+      "adjective": "Palestinian",
+      "theater": "middle_east",
+      "capital": { "name": "Ramallah", "region": "PSX-west_bank" },
+      "government": "authoritarian",
+      "aiTier": 3,
+      "population": 5500,
+      "start": {
+        "economy": { "gdpBn": 14 }
+      },
+      "note": "The seat of the Palestinian Authority; the status of the territories is disputed.",
+      "sources": {
+        "population": "UN World Population Prospects 2024, rounded",
+        "economy": "IMF and World Bank 2024 nominal GDP, rounded and game-balanced"
+      }
+    }
+  ]
+}

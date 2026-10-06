@@ -1,0 +1,49 @@
+{
+  "$id": "regions",
+  "type": "object",
+  "required": ["schema", "version", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "regions" },
+    "version": { "type": "integer", "minimum": 1 },
+    "_note": { "type": "string" },
+    "items": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/region" } }
+  },
+  "definitions": {
+    "regionId": { "type": "string", "pattern": "^[A-Z]{3}-[a-z][a-z0-9_]*$" },
+    "region": {
+      "type": "object",
+      "required": ["id", "name", "country", "theater", "neighbors", "terrain", "size", "infrastructure", "cities", "lonlat"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/definitions/regionId" },
+        "name": { "$ref": "common#/definitions/text" },
+        "country": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "theater": { "$ref": "common#/definitions/id" },
+        "neighbors": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/definitions/regionId" } },
+        "seaLinks": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/definitions/regionId" } },
+        "terrain": { "enum": ["plains", "desert", "forest", "marsh", "mountain", "urban"] },
+        "size": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "infrastructure": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "cities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "tier"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "$ref": "common#/definitions/text" },
+              "tier": { "enum": ["capital", "major", "minor"] }
+            }
+          }
+        },
+        "lonlat": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number" } },
+        "popShare": { "$ref": "common#/definitions/fraction" },
+        "gdpShare": { "$ref": "common#/definitions/fraction" },
+        "output": { "type": "object", "additionalProperties": { "$ref": "common#/definitions/fraction" } },
+        "contested": { "type": "boolean" },
+        "note": { "type": "string" }
+      }
+    }
+  }
+}
