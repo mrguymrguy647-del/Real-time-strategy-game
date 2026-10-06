@@ -13,6 +13,9 @@ import { hashJson } from '../util/hash.js';
  *   resources: Indexed,
  *   governments: Indexed,
  *   scenarios: Indexed,
+ *   countries: Indexed,
+ *   regions: Indexed,
+ *   regionsByCountry: Record<string, string[]>,
  *   i18n: { lang: string, strings: Record<string, string> },
  * }} GameData
  */
@@ -22,6 +25,8 @@ export const DATA_FILES = [
   { key: 'balance', schema: 'balance', path: 'data/balance.json', shape: 'values' },
   { key: 'resources', schema: 'resources', path: 'data/resources.json', shape: 'items' },
   { key: 'governments', schema: 'governments', path: 'data/governments.json', shape: 'items' },
+  { key: 'countries', schema: 'countries', path: 'data/countries.json', shape: 'items' },
+  { key: 'regions', schema: 'regions', path: 'data/regions.json', shape: 'items' },
   { key: 'scenarios', schema: 'scenarios', path: 'data/scenarios.json', shape: 'items' },
   { key: 'i18n', schema: 'i18n', path: 'data/i18n/en.json', shape: 'strings' },
 ];
@@ -83,14 +88,22 @@ export function buildData(raw) {
     balance: raw.balance.values,
     resources: raw.resources.items,
     governments: raw.governments.items,
+    countries: raw.countries.items,
+    regions: raw.regions.items,
     scenarios: raw.scenarios.items,
   };
+  /** @type {Record<string, string[]>} */
+  const regionsByCountry = {};
+  for (const region of content.regions) (regionsByCountry[region.country] ??= []).push(region.id);
   return deepFreeze({
     // UI text is deliberately left out: editing a sentence must not invalidate saves.
     version: hashJson(content).slice(0, 12),
     balance: content.balance,
     resources: indexList(content.resources, 'resources'),
     governments: indexList(content.governments, 'governments'),
+    countries: indexList(content.countries, 'countries'),
+    regions: indexList(content.regions, 'regions'),
+    regionsByCountry,
     scenarios: indexList(content.scenarios, 'scenarios'),
     i18n: { lang: raw.i18n.lang, strings: raw.i18n.strings },
   });

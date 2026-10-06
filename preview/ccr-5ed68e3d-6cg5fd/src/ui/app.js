@@ -10,6 +10,7 @@ import { saveErrorText } from './errors.js';
 import { slotLabel } from './format.js';
 import { detectPlatform } from './platform.js';
 import { mountDiagnostics } from './screens/diagnostics.js';
+import { mountMap } from './screens/map.js';
 import { mountPlay } from './screens/play.js';
 import { mountSaves } from './screens/saves.js';
 import { mountSettings } from './screens/settings.js';
@@ -17,6 +18,7 @@ import { mountTitle } from './screens/title.js';
 
 const ROUTES = {
   title: mountTitle,
+  map: mountMap,
   play: mountPlay,
   saves: mountSaves,
   settings: mountSettings,
@@ -34,9 +36,9 @@ function randomSeed() {
  *   settings: ReturnType<typeof import('../core/settings.js').createSettings>,
  *   pwa: ReturnType<typeof import('./pwa.js').createPwa>,
  *   storage: import('../core/storage/types.js').Storage, storageError: string | null,
- *   buildInfo: any }} options
+ *   buildInfo: any, readJson: (path: string) => Promise<any> }} options
  */
-export function createApp({ root, data, saves, settings, pwa, storage, storageError, buildInfo }) {
+export function createApp({ root, data, saves, settings, pwa, storage, storageError, buildInfo, readJson }) {
   const toasts = createToasts(document.body);
   /** @type {{ game: import('../game.js').Game | null, lastManualSlot: string, persistAsked: boolean }} */
   const session = { game: null, lastManualSlot: 'manual-1', persistAsked: false };
@@ -77,6 +79,7 @@ export function createApp({ root, data, saves, settings, pwa, storage, storageEr
     storageKind: storage.kind,
     storageError,
     buildInfo,
+    readJson,
     platform: detectPlatform(),
     session,
     toast: toasts.show,

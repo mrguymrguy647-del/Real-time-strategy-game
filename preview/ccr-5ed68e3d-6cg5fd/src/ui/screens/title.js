@@ -18,6 +18,7 @@ export function mountTitle(ctx) {
 
   menu.append(
     button(t('title.newGame'), () => ctx.newGame(), ctx.session.game ? '' : 'btn--primary'),
+    button(t('title.map'), () => ctx.navigate('map')),
     button(t('title.saves'), () => ctx.navigate('saves')),
     button(t('title.settings'), () => ctx.navigate('settings')),
     button(t('title.diagnostics'), () => ctx.navigate('diagnostics')),
