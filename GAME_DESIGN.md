@@ -2,7 +2,7 @@
 
 **Modern-era offline grand strategy for phones** · working title *Grand Strategy (TBD)*
 
-> **Status:** Phase 0b approved on 2026-10-06 after your test on an Android phone. Phase 1 is in progress; M1.1 starts with the interactive map (G-32).
+> **Status:** Phase 0b approved on 2026-10-06 after your test on an Android phone. Phase 1 is in progress: the interactive map (M1.1a, G-32, G-33) is built and published as a preview; the economy skeleton, country picker and report (M1.1b) follow your feedback on it.
 > This file says **what the game is**. How it is built: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Data formats: [docs/DATA_SCHEMAS.md](docs/DATA_SCHEMAS.md). Open questions and risks: [docs/RISKS_AND_QUESTIONS.md](docs/RISKS_AND_QUESTIONS.md).
 >
 > Section numbers match your original spec (§1–§12). `[P1]`–`[P7]` mark the roadmap phase where a feature first appears. `G-nn` marks a decision I made where the spec was ambiguous (Appendix A) — tell me to change any of them.
