@@ -27,7 +27,7 @@ data/
   governments.json   the six government types                   P0b ✔ data, P2 logic
   traits.json        national traits and starting challenges    P1 few, P6 full
   personalities.json AI leader archetypes                       P1
-  chokepoints.json   Hormuz, Suez, Bab-el-Mandeb              P1
+  chokepoints.json   Hormuz, Suez, Bab-el-Mandeb              P1 ✔ M1.2
   countries.json     one entry per country                      P1: 16, P5: ~195
   regions.json       one entry per region                       P1: ~100, P5: ~1,200
   scenarios.json     start date, roster, goal                   P0b ✔ one scaffold scenario, M1.1b ✔ me_2026
@@ -80,7 +80,7 @@ Comparison keys: `lt`, `lte`, `gt`, `gte`, `eq`. `chance` uses the seeded RNG. C
 
 One entry per country. Phase 1 has 16.
 
-**Status (M1.1b):** the file carries identity, `capital`, `government`, `aiTier`, `population`, `sources`, and the **economy skeleton**: `start.economy` (`gdpBn`, `growth`, `taxRate`, `debtPctGdp`, `treasuryMn` are required; `inflation` is accepted but not used yet) and `start.budget` (the four shares, required). The `traits`, `start.military`, `start.resources`, `start.internal`, `start.tech`, `chokepoints` and `leader` blocks arrive with later milestones, and each is validated as a whole when it appears. Until M1.2, `taxRate` stands for **all** state income, including what the state earns from resources, which is why the Gulf states show high ones (G-35). The validator checks that a starting budget roughly balances (between −8% and +10% of GDP, with interest at the base rate), so a slipped decimal point cannot start a country bankrupt.
+**Status (M1.2):** the file carries identity, `capital`, `government`, `aiTier`, `population`, `sources`, the **economy skeleton** — `start.economy` (`gdpBn`, `growth`, `taxRate`, `debtPctGdp`, `treasuryMn` are required; `inflation` is accepted but not used yet) and `start.budget` (the four shares, required) — and the **resources**: `start.resources` (required) and `chokepoints`. The `traits`, `start.military`, `start.internal`, `start.tech` and `leader` blocks arrive with later milestones, and each is validated as a whole when it appears. Since M1.2 `taxRate` is **the taxes alone**: what the state earns from selling resources abroad is worked out from `start.resources` (G-39), and the Gulf states' rates were cut by that amount so every starting balance stayed as approved. The validator checks that a starting budget roughly balances (between −8% and +10% of GDP, counting taxes plus resource income, with interest at the base rate), so a slipped decimal point cannot start a country bankrupt.
 
 **Fields**
 - `id` — Natural Earth `ADM0_A3`. `name`, `adjective` (used in news: "Kuwaiti forces…").
@@ -91,13 +91,13 @@ One entry per country. Phase 1 has 16.
 - `traits` — ids in `traits.json`.
 - `population` — thousands.
 - `color` — optional `#rrggbb`; otherwise assigned by the map-coloring pass.
-- `start.economy` — `gdpBn`, `growth` (annual real growth: the country's own trend, which already includes its starting policies), `taxRate` (state income as a share of GDP), `debtPctGdp` (of GDP), `treasuryMn` (cash and liquid reserves the state can use), `inflation` (annual; not used until M1.4).
+- `start.economy` — `gdpBn`, `growth` (annual real growth: the country's own trend, which already includes its starting policies), `taxRate` (taxes as a share of GDP, without resource income), `debtPctGdp` (of GDP), `treasuryMn` (cash and liquid reserves the state can use), `inflation` (annual; not used until M1.4).
 - `start.budget` — spending by category as a **share of GDP**: `military`, `research`, `welfare`, `infrastructure`.
 - `start.military` — `forces` (abstract strength points by class: `land`, `armor`, `air`; G-02), `techLevel` (0–10), `morale`, `training`, `comms` (0–100 each).
-- `start.resources` — four maps, each keyed by resource id: `production` and `consumption` (units per month), `stockpile` (units), and `stateShare` (share of that resource's income that goes to the state; missing entries default from `resources.json`).
+- `start.resources` — `production` and `consumption` (units per month) and `stockpile` (units), each with an entry for every enabled resource; and optionally `stateShare`, keyed by resource id (the share of what the country sells abroad that the state takes; missing entries default from `resources.json`). A country sells its surplus (production − consumption) and buys its deficit; the stockpile may not exceed what the stores hold (`storageMonths` × the larger of production and consumption).
 - `start.internal` — `approval` for `army`, `business`, `people`; `cohesion`; `warSupport`.
 - `start.tech` — levels 0–10 for `military`, `economy`, `cyber`, `energy` (used from Phase 4).
-- `chokepoints` — share (0–1) of this country's seaborne trade that passes each chokepoint. A blockade hurts in proportion.
+- `chokepoints` — share (0–1) of this country's trade that passes each chokepoint (keys are ids in `chokepoints.json`; the shares may add up to more than 1, because a cargo can pass two straits). A blockade stops that share of the trade, and shares combine as `1 − Π(1 − blockade × share)`.
 - `leader` — `{ "personality": "random" }` or a `personalities.json` id (G-18).
 - `sources` — provenance strings per block.
 - Reserved for Phase 2: `capital.districts` (airport, port, TV station, industrial zone, palace) with a default template in `balance.json`.
@@ -139,7 +139,7 @@ One entry per country. Phase 1 has 16.
 
 One entry per region. Regions are groups of Natural Earth admin-1 units chosen by the map tool's grouping file; a handful of regions per small country, tens for large ones.
 
-**Status (M1.1a):** 96 regions with `id`, `name`, `country`, `theater`, `neighbors` and `lonlat` *(generated by `npm run build:map`; a test fails if they are out of date)*, `terrain`, `size`, `infrastructure` and `cities`. The economy fields (`popShare`, `gdpShare`, `output`, `sites`) arrive with M1.1b/M1.2; the validator then requires them for every region of a country at once and checks that the shares sum to 1.
+**Status (M1.2):** 96 regions with `id`, `name`, `country`, `theater`, `neighbors` and `lonlat` *(generated by `npm run build:map`; a test fails if they are out of date)*, `terrain`, `size`, `infrastructure`, `cities`, and the shares `popShare`, `gdpShare` and `output` (for every region of a country at once; the validator checks that each sums to 1, and that a resource a country does not produce has no output at all). `sites` arrive with M1.3, when capture and occupation need targets. The shares are rounded game approximations of each region's weight in its country (G-22).
 
 **Fields**
 - `id` — `<COUNTRY>-<slug>`. `name`. `country`. `theater`.
@@ -186,10 +186,12 @@ One entry per region. Regions are groups of Natural Earth admin-1 units chosen b
 Defines each resource's role, unit, market behavior and shortage effects. Phase 1 has `oil`, `food`, `steel`, `rare`; `water` exists but is disabled (G-12).
 
 **Fields**
-- `id`, `name`, `icon`, `unit` (a label such as "10 million barrels"), `enabled`, `module` (`core` or `water`), `tradeable`.
-- `basePrice` — USD millions per unit. `price` — `elasticity`, `tensionSensitivity`, `inertia`, `volatility` (Appendix B of the design).
+- `id`, `name`, `icon`, `unit` (a label such as "10 million barrels"), `priceUnit` (`{ label, perGameUnit }`: how a price is written for people, "$77 per barrel" — a game unit is `perGameUnit` of the label's unit), `enabled`, `module` (`core` or `water`), `tradeable`.
+- `basePrice` — USD millions per unit (the price in a world in balance at zero tension). `price` — `elasticity`, `tensionSensitivity`, `inertia`, `volatility` (Appendix B of the design).
 - `defaultStateShare` — default share of this resource's income that accrues to the state.
-- `reserveTargetMonths` — what a prudent country tries to stockpile.
+- `reserveTargetMonths` — what a prudent country tries to stockpile, in months of its shortfall (or of its own use when it has none); the Resources panel warns below half of it.
+- `storageMonths` — what the stores hold, in months of what the country makes or uses, whichever is more.
+- `restOfWorld` — `{ production, consumption }` of everyone outside the 16 countries, units a month; with the countries' own figures they make the world's supply and demand, and the validator checks that the world starts in balance (within 2%).
 - `shortage` — a ladder of steps. Each step has `coverageBelow` (available supply ÷ demand, 0–1), a `label` and `effects` (§3.2). **Only the deepest step reached applies.** This is how "shortage slows, then stops, mechanized units and grounds aircraft" is data.
 
 **Example (illustrative)**
@@ -201,13 +203,16 @@ Defines each resource's role, unit, market behavior and shortage effects. Phase 
     "name": "Oil",
     "icon": "🛢️",
     "unit": "10 million barrels",
+    "priceUnit": { "label": "barrel", "perGameUnit": 10000000 },
     "enabled": true,
     "module": "core",
     "tradeable": true,
-    "basePrice": 800,
-    "price": { "elasticity": 0.5, "tensionSensitivity": 0.004, "inertia": 0.7, "volatility": 0.03 },
+    "basePrice": 700,
+    "price": { "elasticity": 3, "tensionSensitivity": 0.004, "inertia": 0.7, "volatility": 0.05 },
     "defaultStateShare": 0.3,
     "reserveTargetMonths": 6,
+    "storageMonths": 6,
+    "restOfWorld": { "production": 224.6, "consumption": 266.7 },
     "shortage": [
       { "coverageBelow": 0.8, "label": "Fuel rationing",
         "effects": [ { "stat": "country.mechanized.mobility", "op": "mul", "value": 0.8 } ] },
@@ -219,7 +224,7 @@ Defines each resource's role, unit, market behavior and shortage effects. Phase 
                      { "stat": "country.air.sorties", "op": "mul", "value": 0 } ] }
     ]
   },
-  { "id": "water", "name": "Water", "icon": "💧", "unit": "abstract", "enabled": false, "module": "water", "tradeable": false, "basePrice": 0 }
+  { "id": "water", "name": "Water", "icon": "💧", "unit": "abstract", "enabled": false, "module": "water", "tradeable": false, "basePrice": 0 }  // (the real file gives it zeros for every field)
 ]
 ```
 
@@ -338,7 +343,7 @@ Six types in v1: `democracy`, `authoritarian`, `monarchy`, `junta`, `communist`,
     },
     "endurance": { "warnMonths": [6, 3], "homeSoilBonus": 0.25, "supportFloor": 20 },
     "stability": { "cohesionMaxDrift": 3, "stages": { "stable": 70, "troubled": 50, "crisis": 30, "failed": 10 } },
-    "market": { "inertia": 0.7 },
+    "market": { "startTension": 25, "shockPersistence": 0.85, "priceFloor": 0.4, "priceCeiling": 4, "spread": 0.05, "newsChange": 0.06, "warnShare": 0.5, "captureTaxYield": 0.5 },
     "difficulty": { "easy": { "aiIncome": 0.9, "intel": 1.2 }, "normal": {}, "hard": { "aiIncome": 1.15, "intel": 0.8 } }
   }
 }
@@ -370,19 +375,23 @@ Six types in v1: `democracy`, `authoritarian`, `monarchy`, `junta`, `communist`,
 }
 ```
 
-**`chokepoints.json`** — straits whose control can choke trade.
+**`chokepoints.json`** — straits whose control can choke trade. `shortName` is the label on the map marker; `blurb` is one line for the Resources panel; `position` is `[longitude, latitude]`; `controlRegions` are the regions that border it (whoever holds them will be able to blockade it, M1.3); `worldTradeShare` is the share of the world's trade of each resource that passes, for the text only.
 
 ```jsonc
 {
   "id": "hormuz",
   "name": "Strait of Hormuz",
+  "shortName": "Hormuz",
+  "blurb": "The only sea exit of the Gulf: about a fifth of the world's oil passes here.",
   "position": [56.5, 26.6],
   "controlRegions": ["IRN-hormozgan", "OMN-musandam"],
   "worldTradeShare": { "oil": 0.2 }
 }
 ```
 
-**`balance.json` → `economy`** (G-35; every number the economy skeleton uses): `taxRange` (how far a tax rate may move from the start, 0.10), `taxMin`, `taxMax`, `taxStep`; `budgetStep` and `budgetRange` per category (the step of a lever and how far above its start it may go; a share may always go to nothing); `interest` (`base`, `riskStart`, `riskSlope`, `max`: the yearly rate is the base plus `riskSlope` for every 100% of GDP of debt above `riskStart`, at most `max`); `growth` (`taxDrag`, `infrastructure`, `research`, `debtDrag`: points of yearly growth per point of GDP, or per 100% of GDP of debt, away from the start; `min`, `max`: the bounds of growth); `repayShare` (the share of the debt the Budget's first repay button pays, 0.1); `warnings` (`debtRatio` for the debt alert and news, `runwayMonths` for the treasury alert).
+**`balance.json` → `economy`** (G-35; every number the economy skeleton uses): `taxRange` (how far a tax rate may move from the start, 0.10), `taxMin`, `taxMax`, `taxStep`; `budgetStep` and `budgetRange` per category (the step of a lever and how far above its start it may go; a share may always go to nothing); `interest` (`base`, `riskStart`, `riskSlope`, `max`: the yearly rate is the base plus `riskSlope` for every 100% of GDP of debt above `riskStart`, at most `max`); `growth` (`taxDrag`, `infrastructure`, `research`, `debtDrag`: points of yearly growth per point of GDP, or per 100% of GDP of debt, away from the start; `resourcePrices`: points of growth per point of GDP a year that world prices add to or take from the country's trade bill; `min`, `max`: the bounds of growth); `repayShare` (the share of the debt the Budget's first repay button pays, 0.1); `warnings` (`debtRatio` for the debt alert and news, `runwayMonths` for the treasury alert).
+
+**`balance.json` → `market`** (G-38 to G-41): `startTension` (world tension at the start, 0–100), `shockPersistence` (how much of the market's mood carries over each month), `priceFloor` and `priceCeiling` (the bounds, as multiples of the base price, of what supply and demand can do to a price), `spread` (the cost of buying into or selling out of a reserve, each way), `newsChange` (a monthly price move this large is news), `warnShare` (a reserve under this share of `reserveTargetMonths` is a warning), `captureTaxYield` (the share of a captured region's tax base that counts in the capture estimate; provisional until M1.3).
 
 **`scenarios.json`** — start conditions (design §11). Phase 1 has one (`me_2026`, plus `scaffold_test`, an empty world that unit tests use and the game never offers); `playable: null` means every country in the listed theaters. Off-map patrons are the abstract great powers of G-29.
 
@@ -456,7 +465,8 @@ with the sentence itself in `i18n/en.json`: `"events.desertion.report": "{count}
 6. Ranges: meters 0–100; shares and rates 0–1 (debt ratios may exceed 1); `aiTier` is 1–3; `techLevel` 0–10.
 7. Government `powerCenters` sum to 1; `failure.center` is `army`, `business` or `people`.
 8. Every stat in an effect, condition or driver exists in the stat registry; every `do` action exists in the action registry.
-9. Scenario rosters are subsets of `countries.json`; chokepoint `controlRegions` exist.
+9. Scenario rosters are subsets of `countries.json`; chokepoint `controlRegions` exist, and their `worldTradeShare` names real resources; a country's `chokepoints` name real chokepoints.
+9b. Resources: every country gives `production`, `consumption` and `stockpile` for every enabled resource and the stock fits the stores; the world (all countries plus `restOfWorld`) starts within 2% of balance for each resource; a starting budget balances (−8% … +10% of GDP) once resource income at the starting prices counts.
 10. Geometry covers exactly the region ids of its theater (no missing and no extra polygons).
 
 ## 10. Adding content from your phone
