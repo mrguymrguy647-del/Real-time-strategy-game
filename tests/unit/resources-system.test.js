@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { shortageModifiers, shortagesOf } from '../../src/core/modifiers.js';
+import { createRng, seedRngState } from '../../src/core/rng.js';
 import { findProblems } from '../../src/core/invariants.js';
 import { checkStateShape } from '../../src/core/state.js';
 import { startPrice } from '../../src/formulas/market.js';
@@ -272,6 +273,41 @@ describe('a closed strait', () => {
     assert.equal(game.state.countries.KWT.resources.food.last.coverage, 1);
     assert.equal(game.state.countries.KWT.resources.food.step, 0);
     assert.ok(game.state.news.some((entry) => entry.template === 'news.resources.recovered' && entry.params.resource === 'Food'));
+  });
+});
+
+describe('a hard life for the market (random blockades and trades)', () => {
+  it('keeps every number sound: stocks within the stores, coverage within 0 … 1, prices positive, the state plain', () => {
+    for (let seed = 1; seed <= 6; seed++) {
+      const dice = createRng(seedRngState(1000 + seed));
+      const player = dice.pick(Object.keys(data.countries.byId));
+      const game = newGame(player, seed);
+      for (let turn = 1; turn <= 48; turn++) {
+        if (dice.chance(0.25)) for (const id of Object.keys(game.state.world.chokepoints)) game.state.world.chokepoints[id].blockade = dice.pick([0, 0, 0.5, 1]);
+        if (dice.chance(0.3)) {
+          const units = Math.round(dice.next() * 500) / 100 + 0.01;
+          game.dispatch({ type: dice.chance(0.5) ? 'BUY_RESOURCE' : 'SELL_RESOURCE', countryId: player, resource: dice.pick(RESOURCES), units }); // may be refused: that is fine
+        }
+        assert.deepEqual(game.endTurn(), { ok: true }, `seed ${seed}, turn ${turn}`);
+        for (const [id, country] of Object.entries(game.state.countries)) {
+          const flows = data.countries.byId[id].start.resources;
+          for (const resource of data.activeResources) {
+            const entry = country.resources[resource.id];
+            const room = resource.storageMonths * Math.max(flows.production[resource.id], flows.consumption[resource.id]);
+            assert.ok(entry.stock >= 0 && entry.stock <= room + 1e-3, `${id} ${resource.id} stock ${entry.stock} of ${room}`);
+            assert.ok(entry.last.coverage >= 0 && entry.last.coverage <= 1, `${id} ${resource.id} coverage`);
+            assert.ok(Number.isInteger(entry.step) && entry.step >= 0 && entry.step <= resource.shortage.length);
+          }
+        }
+        for (const resource of data.activeResources) {
+          const { price, shock } = game.state.world.market[resource.id];
+          assert.ok(price > 0 && Number.isFinite(price) && shock > 0, `${resource.id} price ${price}`);
+          assert.ok(price <= resource.basePrice * data.balance.market.priceCeiling * 1.5, `${resource.id} price ${price} is out of hand`);
+        }
+      }
+      assert.deepEqual(findProblems(game.state), []);
+      assert.deepEqual(checkStateShape(game.state), []);
+    }
   });
 });
 
