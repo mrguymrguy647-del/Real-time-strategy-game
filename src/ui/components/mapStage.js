@@ -140,6 +140,8 @@ export function createMapStage({ ctx, hint: hintText, bar, onSelect, onReady }) 
       measure();
     },
     measure,
+    /** Put the one-line hint away (the player is clearly past it). */
+    hideHint,
 
     /** The palette color of a playable country, as drawn on the map. @param {string} countryId */
     colorOf: (countryId) => COUNTRY_PALETTE[(view?.geometry.colorOf.get(countryId) ?? 0) % COUNTRY_PALETTE.length],
