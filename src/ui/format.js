@@ -33,6 +33,36 @@ export function formatTimestamp(ms) {
   return new Date(ms).toLocaleString('en', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
+/** One decimal at most, none when it would be ".0": 85.3, 9.9, 114. @param {number} n */
+const trimmed = (n) => String(Math.round(n * 10) / 10);
+
+/**
+ * "85.3 million" or "850 thousand".
+ * @param {number} thousands population in thousands (G-25)
+ */
+export function formatPopulation(thousands) {
+  return thousands >= 1000 ? t('units.population.million', { n: trimmed(thousands / 1000) }) : t('units.population.thousand', { n: Math.round(thousands) });
+}
+
+/**
+ * "$1.3 trillion", "$430 billion" or "$800 million".
+ * @param {number} billions an amount in USD billions (G-25)
+ */
+export function formatMoney(billions) {
+  if (billions >= 1000) return t('units.money.trillion', { n: trimmed(billions / 1000) });
+  if (billions >= 1) return t('units.money.billion', { n: Math.round(billions) });
+  return t('units.money.million', { n: Math.round(billions * 1000) });
+}
+
+/**
+ * "$15,200": GDP per person, rounded to the nearest hundred.
+ * @param {number} gdpBn GDP in USD billions @param {number} thousands population in thousands
+ */
+export function formatPerPerson(gdpBn, thousands) {
+  const dollars = (gdpBn * 1e9) / (thousands * 1e3);
+  return t('units.money.plain', { n: (Math.round(dollars / 100) * 100).toLocaleString('en-US') });
+}
+
 /** @param {number} bytes */
 export function formatBytes(bytes) {
   if (bytes < 1024) return `${bytes} B`;

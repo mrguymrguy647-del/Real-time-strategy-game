@@ -45,6 +45,20 @@ describe('the downloaded file', () => {
     await context.close();
   });
 
+  it('says plainly that the map is not in the file yet, instead of failing', async () => {
+    const { context, page, problems } = await freshPage(browser);
+    await page.goto(pathToFileURL(file).href);
+    await page.waitForSelector('.title');
+    await button(page, t('title.map')).click();
+    await page.waitForSelector('.map-status');
+    assert.ok(((await page.locator('.map-status').textContent()) ?? '').includes(t('map.notInFile')));
+    assert.equal(await page.locator('canvas').count(), 0, 'no half-started map');
+    await button(page, t('common.back')).click();
+    await page.waitForSelector('.title');
+    assert.deepEqual(problems, []);
+    await context.close();
+  });
+
   it('plays: new game, turns, autosaves, the Saves screen and Settings', async () => {
     const { context, page, problems } = await freshPage(browser);
     await page.goto(pathToFileURL(file).href);

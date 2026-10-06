@@ -50,7 +50,7 @@ async function boot() {
   const buildInfo = await readJson('build-info.json').catch(() => null);
 
   const pwa = createPwa({ enabled: !inline });
-  const app = createApp({ root: /** @type {HTMLElement} */ (document.getElementById('app')), data, saves, settings, pwa, storage, storageError, buildInfo });
+  const app = createApp({ root: /** @type {HTMLElement} */ (document.getElementById('app')), data, saves, settings, pwa, storage, storageError, buildInfo, readJson });
   app.start();
   document.getElementById('splash')?.remove();
   void pwa.start();
