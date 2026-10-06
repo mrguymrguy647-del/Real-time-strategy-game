@@ -250,7 +250,7 @@ h2 { font-size: 1.05rem; line-height: 1.25; color: var(--muted); font-weight: 60
 .chip__dot { display: inline-block; width: 0.7rem; height: 0.7rem; margin-right: 0.45rem; border: 1px solid rgb(255 255 255 / 0.55); border-radius: 50%; background: #5d7a99; vertical-align: -0.05rem; }
 .screen--bar .actionbar { position: relative; margin: 0; padding: 0.5rem calc(var(--safe-right) + 0.75rem) calc(var(--safe-bottom) + 0.5rem) calc(var(--safe-left) + 0.75rem); background: var(--surface); border-top: 1px solid var(--line); }
 .actionbar--game { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, 1.3fr) minmax(0, 1.05fr) minmax(0, 1.5fr); gap: 0.35rem; }
-.actionbar--game .btn { padding-inline: 0.2rem; font-size: 0.84rem; }
+.actionbar--game .btn { padding-inline: 0.2rem; font-size: min(0.84rem, 3.4vw); } /* five buttons must fit the width, even at the largest text size */
 .actionbar--game .btn[aria-pressed="true"] { border-color: var(--accent); }
 .play-hud { position: absolute; z-index: 5; top: calc(var(--safe-top) + 0.5rem); left: calc(var(--safe-left) + 0.5rem); right: calc(var(--safe-right) + 0.5rem); padding: 0.4rem 0.8rem; border: 1px solid var(--line); border-radius: 0.9rem; background: rgb(11 26 43 / 0.92); pointer-events: none; }
 .play-hud__row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
@@ -264,7 +264,6 @@ h2 { font-size: 1.05rem; line-height: 1.25; color: var(--muted); font-weight: 60
   .play-hud { padding-inline: 0.65rem; }
   .play-hud__row > * { white-space: nowrap; }
   .play-hud__treasury, .play-hud__change, .play-hud__date { font-size: 0.85rem; }
-  .actionbar--game .btn { font-size: 0.76rem; }
   .play-hud__chips { font-size: 0.78rem; }
 }
 @media (max-height: 900px) and (orientation: portrait) {
@@ -330,7 +329,7 @@ h2 { font-size: 1.05rem; line-height: 1.25; color: var(--muted); font-weight: 60
 }
 
 /* Resources (M1.2): the strip under the treasury, the country panel's resources, the capture estimate, the Resources panel */
-.play-hud__chips { display: flex; justify-content: space-between; gap: 0.35rem; margin: 0.25rem 0 0; padding: 0.3rem 0 0; border-top: 1px solid var(--line); font-size: 0.85rem; }
+.play-hud__chips { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.1rem 0.35rem; margin: 0.25rem 0 0; padding: 0.3rem 0 0; border-top: 1px solid var(--line); font-size: 0.85rem; }
 .chip-res { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .chip-res.is-low { color: var(--gold); }
 .chip-res.is-short { color: var(--danger); font-weight: 700; }
@@ -382,7 +381,7 @@ h2 { font-size: 1.05rem; line-height: 1.25; color: var(--muted); font-weight: 60
 .map__marker:active { filter: brightness(1.25); }
 @media (max-width: 340px) {
   .actionbar--game { gap: 0.25rem; }
-  .actionbar--game .btn { padding-inline: 0.1rem; font-size: 0.72rem; }
+  .actionbar--game .btn { padding-inline: 0.1rem; }
 }
 @media (max-height: 640px) and (orientation: portrait) {
   .map-area:has(.sheet--tall:not([hidden])) .map__hud { display: none; } /* no room for the zoom buttons beside a tall panel; pinching still works */
