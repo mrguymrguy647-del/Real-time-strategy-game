@@ -210,10 +210,9 @@ export function createChecks(ctx) {
     {
       id: 'mapBench',
       group: 'graphics',
-      manual: !ctx.platform.singleFile, // the downloaded file has no Phaser: show that at once instead of offering a button
+      manual: true,
       label: () => t('diag.mapBench.label'),
       async run() {
-        if (ctx.platform.singleFile) return { status: 'info', value: t('diag.mapBench.notIncluded') };
         const stage = document.querySelector('[data-bench-stage]');
         if (!stage) return { status: 'fail', value: t('diag.mapBench.failed', { error: 'no stage' }) };
         try {
