@@ -276,7 +276,9 @@ describe('the treasury', () => {
     }
     assert.equal(new Set(seen).size, seen.length, `a different treasury after every turn: ${seen.join(' | ')}`);
     assert.ok(seen.every((text) => /^Treasury \$4\d\d(\.\d)? billion$/.test(text)), seen.join(' | '));
-    assert.ok(changes.every((text) => /^\+\$1\.\d billion$/.test(text)), `and what each month added: ${changes.join(' | ')}`);
+    // Saudi Arabia earns about $1.4 billion a month more than it spends at the starting oil price; the price moves each month (and every
+    // game has its own seed), so the change is a gain of some hundreds of millions to a couple of billions, never a fixed figure.
+    assert.ok(changes.every((text) => /^\+\$\d+(\.\d)? (billion|million)$/.test(text)), `and what each month added: ${changes.join(' | ')}`);
     await context.close();
   });
 
