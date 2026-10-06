@@ -7,8 +7,9 @@ import Ajv from 'ajv';
 import { ACTIONS, isAction } from '../../src/core/actions.js';
 import { DATA_FILES } from '../../src/core/data.js';
 import { STATS, isStat } from '../../src/core/stats.js';
+import { startPrice } from '../../src/formulas/market.js';
 
-const SCHEMA_NAMES = ['balance', 'resources', 'governments', 'countries', 'regions', 'scenarios', 'i18n'];
+const SCHEMA_NAMES = ['balance', 'resources', 'chokepoints', 'governments', 'countries', 'regions', 'scenarios', 'i18n'];
 
 /**
  * Read every data file and schema from a repository root.
@@ -77,6 +78,24 @@ export function findDuplicateKeys(text) {
     i++;
   }
   return found;
+}
+
+
+/**
+ * What the state earns at the start from the resources its country sells abroad, as a share of GDP a
+ * year (the same arithmetic as the game: the surplus at the starting prices times the state's share).
+ * @param {any} country @param {any[]} resources enabled resources @param {any} market balance.json → market
+ */
+function startResourceIncome(country, resources, market) {
+  const flows = country.start.resources;
+  if (!flows) return 0;
+  let monthly = 0;
+  for (const resource of resources) {
+    const surplus = Math.max(0, (flows.production[resource.id] ?? 0) - (flows.consumption[resource.id] ?? 0));
+    const share = flows.stateShare?.[resource.id] ?? resource.defaultStateShare;
+    monthly += surplus * startPrice(resource, market.startTension, market) * share;
+  }
+  return (monthly * 12) / (country.start.economy.gdpBn * 1000);
 }
 
 /**
@@ -210,6 +229,9 @@ export function validateDataset({ files, schemas, rawTexts = {} }) {
     const regionById = new Map(regions.map((/** @type {any} */ r) => [r.id, r]));
     const governmentIds = schemaOk.has('governments') ? new Set(files.governments.items.map((/** @type {any} */ g) => g.id)) : null;
     const resourceIds = schemaOk.has('resources') ? new Set(files.resources.items.map((/** @type {any} */ r) => r.id)) : null;
+    /** The resources the game plays with (water is a disabled module). */
+    const enabledResources = schemaOk.has('resources') ? files.resources.items.filter((/** @type {any} */ r) => r.enabled) : [];
+    const chokepointIds = schemaOk.has('chokepoints') ? new Set(files.chokepoints.items.map((/** @type {any} */ c) => c.id)) : null;
 
     for (const region of regions) {
       const label = `${pathOf.regions} (${region.id})`;
@@ -250,7 +272,8 @@ export function validateDataset({ files, schemas, rawTexts = {} }) {
         if (economy.taxRate < params.taxMin || economy.taxRate > params.taxMax) fail(label, `start.economy.taxRate ${economy.taxRate} is outside ${params.taxMin}..${params.taxMax}`);
         const spent = Object.values(budget).reduce((a, /** @type {any} */ share) => a + share, 0);
         const rate = Math.min(params.interest.max, params.interest.base + params.interest.riskSlope * Math.max(0, economy.debtPctGdp - params.interest.riskStart));
-        const balance = economy.taxRate - spent - economy.debtPctGdp * rate;
+        const resourceIncome = schemaOk.has('resources') ? startResourceIncome(country, enabledResources, files.balance.values.market) : 0;
+        const balance = economy.taxRate + resourceIncome - spent - economy.debtPctGdp * rate;
         if (balance < -0.08 || balance > 0.1) fail(label, `the starting budget balance is ${(balance * 100).toFixed(1)}% of GDP, outside -8%..+10%`);
       }
 
@@ -262,11 +285,55 @@ export function validateDataset({ files, schemas, rawTexts = {} }) {
         if (given.length !== own.length) fail(label, `${field} must be set on every region or on none`);
         else if (Math.abs(sum - 1) > 1e-6) fail(label, `${field} must sum to 1 across its regions (got ${sum})`);
       }
-      const produced = new Set(own.flatMap((/** @type {any} */ r) => Object.keys(r.output ?? {})));
-      for (const resource of produced) {
-        const sum = own.reduce((a, /** @type {any} */ r) => a + (r.output?.[resource] ?? 0), 0);
-        if (Math.abs(sum - 1) > 1e-6) fail(label, `output of "${resource}" must sum to 1 across its regions (got ${sum})`);
+      // Resources: the country's flows and stock (start.resources) and the regions' shares of its production.
+      const flows = country.start.resources;
+      if (flows && resourceIds) {
+        for (const kind of /** @type {const} */ (['production', 'consumption', 'stockpile'])) {
+          for (const { id } of enabledResources) if (!(id in flows[kind])) fail(label, `start.resources.${kind} is missing "${id}"`);
+          for (const id of Object.keys(flows[kind])) if (!resourceIds.has(id)) fail(label, `start.resources.${kind} names unknown resource "${id}"`);
+        }
+        for (const id of Object.keys(flows.stateShare ?? {})) if (!resourceIds.has(id)) fail(label, `start.resources.stateShare names unknown resource "${id}"`);
+        for (const resource of enabledResources) {
+          const made = flows.production[resource.id] ?? 0;
+          const used = flows.consumption[resource.id] ?? 0;
+          const room = resource.storageMonths * Math.max(made, used);
+          if ((flows.stockpile[resource.id] ?? 0) > room + 1e-9) fail(label, `the starting stock of "${resource.id}" (${flows.stockpile[resource.id]}) is more than its storage holds (${room})`);
+        }
       }
+      if (chokepointIds) for (const id of Object.keys(country.chokepoints ?? {})) if (!chokepointIds.has(id)) fail(label, `unknown chokepoint "${id}"`);
+      // Output shares: sum to 1 where the country produces the resource, and are all 0 where it does not.
+      const produced = new Set(own.flatMap((/** @type {any} */ r) => Object.keys(r.output ?? {})));
+      for (const resource of new Set([...produced, ...(flows ? enabledResources.map((/** @type {any} */ r) => r.id) : [])])) {
+        const sum = own.reduce((a, /** @type {any} */ r) => a + (r.output?.[resource] ?? 0), 0);
+        const expected = flows ? ((flows.production[resource] ?? 0) > 0 ? 1 : 0) : 1;
+        if (Math.abs(sum - expected) > 1e-6) fail(label, `output of "${resource}" must sum to ${expected} across its regions (got ${sum})${flows ? ` because its production is ${flows.production[resource] ?? 0}` : ''}`);
+      }
+    }
+  }
+
+  // The world starts in balance for each resource: what the countries and the rest of the world make is
+  // about what they use (a slipped decimal point in one country would start the market in a crisis).
+  if (schemaOk.has('countries') && schemaOk.has('resources')) {
+    for (const resource of files.resources.items.filter((/** @type {any} */ r) => r.enabled)) {
+      let supply = resource.restOfWorld.production;
+      let demand = resource.restOfWorld.consumption;
+      for (const country of files.countries.items) {
+        supply += country.start.resources?.production[resource.id] ?? 0;
+        demand += country.start.resources?.consumption[resource.id] ?? 0;
+      }
+      if (Math.abs(supply - demand) > 0.02 * demand) fail(`${pathOf.resources} (${resource.id})`, `the world starts out of balance: it makes ${supply.toFixed(1)} and uses ${demand.toFixed(1)} a month (more than 2% apart)`);
+    }
+  }
+
+  if (schemaOk.has('chokepoints')) {
+    const where = pathOf.chokepoints;
+    checkUniqueIds(files.chokepoints.items, where);
+    const regionIds = schemaOk.has('regions') ? new Set(files.regions.items.map((/** @type {any} */ r) => r.id)) : null;
+    const resourceIds = schemaOk.has('resources') ? new Set(files.resources.items.map((/** @type {any} */ r) => r.id)) : null;
+    for (const chokepoint of files.chokepoints.items) {
+      const label = `${where} (${chokepoint.id})`;
+      if (regionIds) for (const id of chokepoint.controlRegions) if (!regionIds.has(id)) fail(label, `control region "${id}" does not exist`);
+      if (resourceIds) for (const id of Object.keys(chokepoint.worldTradeShare)) if (!resourceIds.has(id)) fail(label, `worldTradeShare names unknown resource "${id}"`);
     }
   }
 

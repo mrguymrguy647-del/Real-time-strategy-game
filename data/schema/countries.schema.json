@@ -49,6 +49,17 @@
                 "infrastructure": { "$ref": "common#/definitions/fraction" }
               }
             },
+            "resources": {
+              "type": "object",
+              "required": ["production", "consumption", "stockpile"],
+              "additionalProperties": false,
+              "properties": {
+                "production": { "$ref": "#/definitions/perResource" },
+                "consumption": { "$ref": "#/definitions/perResource" },
+                "stockpile": { "$ref": "#/definitions/perResource" },
+                "stateShare": { "type": "object", "additionalProperties": { "$ref": "common#/definitions/fraction" } }
+              }
+            },
             "economy": {
               "type": "object",
               "required": ["gdpBn", "growth", "taxRate", "debtPctGdp", "treasuryMn"],
@@ -64,9 +75,11 @@
             }
           }
         },
+        "chokepoints": { "type": "object", "additionalProperties": { "$ref": "common#/definitions/fraction" } },
         "sources": { "type": "object", "additionalProperties": { "type": "string" } },
         "note": { "type": "string" }
       }
-    }
+    },
+    "perResource": { "type": "object", "additionalProperties": { "type": "number", "minimum": 0 } }
   }
 }

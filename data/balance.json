@@ -13,7 +13,7 @@
       "budgetStep": { "military": 0.005, "research": 0.0025, "welfare": 0.005, "infrastructure": 0.0025 },
       "budgetRange": { "military": 0.05, "research": 0.02, "welfare": 0.08, "infrastructure": 0.04 },
       "interest": { "base": 0.04, "riskStart": 0.6, "riskSlope": 0.02, "max": 0.12 },
-      "growth": { "taxDrag": 0.4, "infrastructure": 0.8, "research": 1.0, "debtDrag": 0.01, "min": -0.15, "max": 0.15 },
+      "growth": { "taxDrag": 0.4, "infrastructure": 0.8, "research": 1.0, "debtDrag": 0.01, "resourcePrices": 0.5, "min": -0.15, "max": 0.15 },
       "repayShare": 0.1,
       "warnings": { "debtRatio": 1.0, "runwayMonths": 6 }
     },
@@ -37,7 +37,17 @@
       "cohesionMaxDrift": 3,
       "stages": { "stable": 70, "troubled": 50, "crisis": 30, "failed": 10 }
     },
-    "market": { "inertia": 0.7 },
+    "market": {
+      "_note": "The world market for resources (G-38), draft v0, tuned with the simulator in M1.5. Each resource's own price behaviour (elasticity, tension, inertia, volatility) is in resources.json.",
+      "startTension": 25,
+      "shockPersistence": 0.85,
+      "priceFloor": 0.4,
+      "priceCeiling": 4,
+      "spread": 0.05,
+      "newsChange": 0.06,
+      "warnShare": 0.5,
+      "captureTaxYield": 0.5
+    },
     "difficulty": {
       "easy": { "aiIncome": 0.9, "intel": 1.2 },
       "normal": {},

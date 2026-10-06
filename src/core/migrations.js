@@ -14,6 +14,11 @@ export const MIGRATIONS = {
   1: () => {
     throw new SaveError('too_old', 'saves of the early test game (version 1) have no country and cannot be continued');
   },
+  // Version 2 was the first economy preview: countries and a budget, but no resources and no market.
+  // Their stocks and the world's prices would have to be invented, so it is refused the same way.
+  2: () => {
+    throw new SaveError('too_old', 'saves of the first economy preview (version 2) have no resources or market and cannot be continued');
+  },
 };
 
 /**

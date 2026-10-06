@@ -11,6 +11,8 @@ import { hashJson } from '../util/hash.js';
  *   version: string,
  *   balance: any,
  *   resources: Indexed,
+ *   activeResources: any[],
+ *   chokepoints: Indexed,
  *   governments: Indexed,
  *   scenarios: Indexed,
  *   countries: Indexed,
@@ -24,6 +26,7 @@ import { hashJson } from '../util/hash.js';
 export const DATA_FILES = [
   { key: 'balance', schema: 'balance', path: 'data/balance.json', shape: 'values' },
   { key: 'resources', schema: 'resources', path: 'data/resources.json', shape: 'items' },
+  { key: 'chokepoints', schema: 'chokepoints', path: 'data/chokepoints.json', shape: 'items' },
   { key: 'governments', schema: 'governments', path: 'data/governments.json', shape: 'items' },
   { key: 'countries', schema: 'countries', path: 'data/countries.json', shape: 'items' },
   { key: 'regions', schema: 'regions', path: 'data/regions.json', shape: 'items' },
@@ -87,6 +90,7 @@ export function buildData(raw) {
   const content = {
     balance: raw.balance.values,
     resources: raw.resources.items,
+    chokepoints: raw.chokepoints.items,
     governments: raw.governments.items,
     countries: raw.countries.items,
     regions: raw.regions.items,
@@ -100,6 +104,9 @@ export function buildData(raw) {
     version: hashJson(content).slice(0, 12),
     balance: content.balance,
     resources: indexList(content.resources, 'resources'),
+    // the resources the game plays with: water is a disabled module (G-12)
+    activeResources: content.resources.filter((/** @type {any} */ resource) => resource.enabled),
+    chokepoints: indexList(content.chokepoints, 'chokepoints'),
     governments: indexList(content.governments, 'governments'),
     countries: indexList(content.countries, 'countries'),
     regions: indexList(content.regions, 'regions'),

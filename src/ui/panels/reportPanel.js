@@ -78,7 +78,8 @@ export function createReportPanel({ game, countryId, onClose }) {
         h(
           'div',
           { class: 'report__lines' },
-          line({ id: 'revenue', label: t('report.income'), value: formatMoneyMn(last.revenueMn, { signed: true }), signed: 1, why: [whyList('revenue', why.revenue)] }),
+          line({ id: 'taxes', label: t('report.taxes'), value: formatMoneyMn(last.taxMn, { signed: true }), signed: 1, why: [whyList('taxes', why.taxes)] }),
+          last.resourceMn > 0 ? line({ id: 'resources', label: t('report.resourceIncome'), value: formatMoneyMn(last.resourceMn, { signed: true }), signed: 1, why: [whyList('resources', why.resources)] }) : null,
           line({ id: 'spending', label: t('report.spending'), value: formatMoneyMn(-last.spendingMn, { signed: true }), signed: -1, why: [whyList('spending', why.spending)] }),
           line({
             id: 'interest',

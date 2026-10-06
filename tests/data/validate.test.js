@@ -26,7 +26,7 @@ describe('data validation', () => {
 
   it('rejects a misspelled or extra field (strict schemas)', () => {
     expectError((f) => void (f.governments.items[0].rules.hasCapitol = true), /additional properties/);
-    expectError((f) => void (f.balance.values.market.inertiaa = 0.5), /additional properties/);
+    expectError((f) => void (f.balance.values.market.spreadd = 0.5), /additional properties/);
   });
 
   it('rejects wrong types and out-of-range numbers', () => {
@@ -120,9 +120,9 @@ describe('countries and regions', () => {
   });
 
   it('checks shares: all or none per country, and summing to 1', () => {
-    expectError((f) => void (region(f, 'KWT-ahmadi').popShare = 0.5), /popShare must be set on every region or on none/);
+    expectError((f) => void delete region(f, 'KWT-ahmadi').popShare, /popShare must be set on every region or on none/);
     expectError((f) => void f.regions.items.filter((/** @type {any} */ r) => r.country === 'KWT').forEach((/** @type {any} */ r) => void (r.gdpShare = 0.5)), /gdpShare must sum to 1/);
-    expectError((f) => void (region(f, 'KWT-ahmadi').output = { oil: 0.5 }), /output of "oil" must sum to 1/);
+    expectError((f) => void (region(f, 'KWT-ahmadi').output = { oil: 0.5, food: 0.3, steel: 0.7, rare: 0 }), /output of "oil" must sum to 1/);
     expectError((f) => void (region(f, 'KWT-ahmadi').output = { unobtainium: 1 }), /unknown resource "unobtainium"/);
   });
 
@@ -131,10 +131,70 @@ describe('countries and regions', () => {
       const own = f.regions.items.filter((/** @type {any} */ r) => r.country === 'KWT');
       own.forEach((/** @type {any} */ r, /** @type {number} */ i) => {
         r.popShare = i === 0 ? 0.5 : 0.25;
-        r.output = { oil: i === 0 ? 0.5 : 0.25 };
       });
     });
     assert.deepEqual(errors, []);
+  });
+
+  it('requires a region to produce exactly what its country produces', () => {
+    // Kuwait makes no rare minerals: no region may claim a share of them
+    expectError((f) => void (region(f, 'KWT-ahmadi').output.rare = 1), /output of "rare" must sum to 0 across its regions \(got 1\) because its production is 0/);
+    // and a country that makes oil must give all of it to some region
+    expectError((f) => void (country(f, 'TUR').start.resources.production.rare = 0), /output of "rare" must sum to 0/);
+    expectError((f) => void (country(f, 'ISR').start.resources.production.oil = 1), /output of "oil" must sum to 1 across its regions \(got 0\) because its production is 1/);
+  });
+});
+
+describe('resources and chokepoints', () => {
+  /** @param {any} f @param {string} id */
+  const country = (f, id) => f.countries.items.find((/** @type {any} */ c) => c.id === id);
+  /** @param {any} f @param {string} id */
+  const resource = (f, id) => f.resources.items.find((/** @type {any} */ r) => r.id === id);
+
+  it('requires every country to give production, consumption and stock for every resource', () => {
+    expectError((f) => void delete country(f, 'KWT').start.resources.production.steel, /start\.resources\.production is missing "steel"/);
+    expectError((f) => void (country(f, 'KWT').start.resources.stockpile.unobtainium = 3), /stockpile names unknown resource "unobtainium"/);
+    expectError((f) => void (country(f, 'KWT').start.resources.stateShare = { gold: 0.5 }), /stateShare names unknown resource "gold"/);
+    expectError((f) => void (country(f, 'KWT').start.resources.consumption.oil = -1), /must be >= 0/);
+  });
+
+  it('keeps the starting stock within what a country can store', () => {
+    expectError((f) => void (country(f, 'TUR').start.resources.stockpile.oil = 9999), /starting stock of "oil" .* is more than its storage holds/);
+  });
+
+  it('checks which chokepoints a country trades through', () => {
+    expectError((f) => void (country(f, 'KWT').chokepoints = { panama: 0.5 }), /unknown chokepoint "panama"/);
+    expectError((f) => void (country(f, 'KWT').chokepoints = { hormuz: 1.5 }), /must be <= 1/);
+  });
+
+  it('checks the chokepoints themselves: unique, with real regions and resources', () => {
+    expectError((f) => void f.chokepoints.items.push(structuredClone(f.chokepoints.items[0])), /duplicate id "hormuz"/);
+    expectError((f) => void (f.chokepoints.items[0].controlRegions = ['IRN-atlantis']), /control region "IRN-atlantis" does not exist/);
+    expectError((f) => void (f.chokepoints.items[0].worldTradeShare = { gold: 0.1 }), /worldTradeShare names unknown resource "gold"/);
+  });
+
+  it('requires the price unit, storage and the rest of the world for each resource', () => {
+    expectError((f) => void delete resource(f, 'oil').priceUnit, /must have required property 'priceUnit'/);
+    expectError((f) => void delete resource(f, 'oil').restOfWorld, /must have required property 'restOfWorld'/);
+    expectError((f) => void (resource(f, 'oil').price.elasticity = 9), /must be <= 6/);
+  });
+
+  it('starts the world in balance for each resource (a slipped decimal point would start a crisis)', () => {
+    expectError((f) => void (country(f, 'SAU').start.resources.production.oil = 270), /\(oil\): the world starts out of balance/);
+    expectError((f) => void (resource(f, 'steel').restOfWorld.consumption = 1), /\(steel\): the world starts out of balance/);
+  });
+
+  it('checks the market section of balance.json', () => {
+    expectError((f) => void (f.balance.values.market.spread = 0.9), /must be <= 0\.5/);
+    expectError((f) => void delete f.balance.values.market.startTension, /must have required property 'startTension'/);
+    expectError((f) => void delete f.balance.values.economy.growth.resourcePrices, /must have required property 'resourcePrices'/);
+  });
+
+  it('counts the state\'s resource income in the starting budget', () => {
+    // Kuwait's taxes are 11.5% of GDP and its oil another 33%: with the old all-in rate of 45% on top it would start 33 points in surplus,
+    expectError((f) => void (country(f, 'KWT').start.economy.taxRate = 0.45), /starting budget balance is 3\d\.\d% of GDP, outside/);
+    // and with nearly all of its oil income taken away it would start deep in deficit.
+    expectError((f) => void (country(f, 'KWT').start.resources.stateShare = { oil: 0.1 }), /starting budget balance is -\d+\.\d% of GDP/);
   });
 });
 

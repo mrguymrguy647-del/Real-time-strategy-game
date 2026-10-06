@@ -56,8 +56,9 @@ describe('save migrations', () => {
     }
   });
 
-  it('refuses a save from the Phase 0b test game (version 1) with its own reason, since it has no country', () => {
-    assert.equal(SAVE_VERSION, 2);
+  it('refuses a save of the early test game (version 1) and of the first economy preview (version 2), each with its own reason', () => {
+    assert.equal(SAVE_VERSION, 3);
     assert.throws(() => migrateRecord(record(1), { migrations: MIGRATIONS }), (err) => code('too_old')(err) && /no country/.test(err.message));
+    assert.throws(() => migrateRecord(record(2), { migrations: MIGRATIONS }), (err) => code('too_old')(err) && /no resources or market/.test(err.message));
   });
 });

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { setStrings } from '../../src/util/i18n.js';
 import { economyMonth } from '../../src/formulas/economy.js';
 import { whyLines } from '../../src/ui/components/why.js';
-import { formatMoneyMn, formatParams, formatPercent, newsText, toneOf } from '../../src/ui/format.js';
+import { formatMoneyMn, formatParams, formatPercent, formatUsd, newsText, toneOf } from '../../src/ui/format.js';
 import { loadTestData } from '../helpers/data.js';
 
 const data = await loadTestData();
@@ -79,6 +79,14 @@ describe('texts with numbers in them', () => {
     assert.deepEqual(formatParams(undefined), {});
   });
 
+  it('writes params named ...Usd as dollars', () => {
+    assert.deepEqual(formatParams({ priceUsd: 77.43, other: 5 }), { priceUsd: '$77.4', other: 5 });
+    assert.equal(formatUsd(735.4), '$735');
+    assert.equal(formatUsd(172_500), '$172,500');
+    assert.equal(formatUsd(77), '$77');
+    assert.equal(formatUsd(8.05), '$8.1');
+  });
+
   it('fills a news template', () => {
     assert.equal(newsText({ template: 'news.economy.borrowing', params: { amountMn: 3_400 } }), 'The treasury ran dry. The state borrowed $3.4 billion to pay its bills.');
     assert.equal(newsText({ template: 'news.economy.debtHigh', params: { percent: 101 } }), 'Public debt passed 101% of GDP.');
@@ -93,11 +101,20 @@ describe('the "why" of a number', () => {
     { interest: data.balance.economy.interest, growth: data.balance.economy.growth },
   );
 
-  it('income: GDP this month times the tax rate, ending in the total', () => {
-    assert.deepEqual(whyLines('revenue', month.revenue), [
+  it('taxes: GDP this month times the tax rate, ending in the total', () => {
+    assert.deepEqual(whyLines('taxes', month.taxes), [
       { label: 'GDP this month', text: '$100 billion' },
       { label: '× Tax rate', text: '27%' },
       { label: 'Total', text: '$27 billion', total: true },
+    ]);
+  });
+
+  it('resource income: a line for each resource that earns anything, in money', () => {
+    const lines = whyLines('resources', { value: 5_300, op: 'sum', parts: [{ id: 'oil', value: 5_000 }, { id: 'steel', value: 300 }] });
+    assert.deepEqual(lines, [
+      { label: 'Oil sold abroad (the state\'s share)', text: '$5 billion' },
+      { label: 'Steel sold abroad (the state\'s share)', text: '$300 million' },
+      { label: 'Total', text: '$5.3 billion', total: true },
     ]);
   });
 
@@ -129,6 +146,6 @@ describe('the "why" of a number', () => {
   });
 
   it('refuses a number it has no words for', () => {
-    assert.throws(() => whyLines('mystery', month.revenue), /Unknown number "mystery"/);
+    assert.throws(() => whyLines('mystery', month.taxes), /Unknown number "mystery"/);
   });
 });

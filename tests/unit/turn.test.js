@@ -105,10 +105,11 @@ describe('turn runner', () => {
 
   it('turns a broken invariant into a rolled-back failure', () => {
     const game = makeGame([system('bad', 1, 'any', (ctx) => void (ctx.state.world.tension = NaN))]);
+    const before = game.state.world.tension;
     const result = game.endTurn();
     assert.equal(result.ok, false);
     assert.match(result.error.message, /invariant failed after bad.*tension/);
-    assert.equal(game.state.world.tension, 0);
+    assert.equal(game.state.world.tension, before);
   });
 
   it('rejects duplicate system ids', () => {

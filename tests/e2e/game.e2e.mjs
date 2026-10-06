@@ -154,19 +154,19 @@ describe('a month of play', () => {
     await page.waitForSelector('.report:not([hidden])');
     assert.ok((await page.textContent('.play-hud__date')).includes(`${t('month.2')} 2026`));
     assert.ok((await page.locator('.report .sheet__title').textContent()).includes(`${t('month.1')} 2026`), 'the report is for the month that just ended');
-    for (const line of ['revenue', 'spending', 'interest', 'balance', 'growth']) assert.equal(await page.locator(`[data-line="${line}"]`).count(), 1, line);
+    for (const line of ['taxes', 'spending', 'interest', 'balance', 'growth']) assert.equal(await page.locator(`[data-line="${line}"]`).count(), 1, line);
     assert.ok(treasuryBefore, 'the strip shows the treasury');
     const change = await page.textContent('.play-hud__change');
     assert.match(change, /^\u2212\$\d+ million$/, 'and what the month did to it (Türkiye starts with a small deficit)');
 
     // "Why?": tapping the income line shows the GDP and the tax rate it is made of, and again closes it.
-    await page.locator('[data-line="revenue"] .report__toggle').click();
-    const why = page.locator('[data-line="revenue"] .why');
+    await page.locator('[data-line="taxes"] .report__toggle').click();
+    const why = page.locator('[data-line="taxes"] .why');
     await why.waitFor();
     const text = await why.textContent();
-    assert.ok(text.includes(t('why.revenue.gdp')) && text.includes(t('why.revenue.taxRate')) && text.includes(t('why.total')));
+    assert.ok(text.includes(t('why.taxes.gdp')) && text.includes(t('why.taxes.taxRate')) && text.includes(t('why.total')));
     assert.ok(text.includes('27%'), 'Türkiye starts with a 27% tax rate');
-    await page.locator('[data-line="revenue"] .report__toggle').click();
+    await page.locator('[data-line="taxes"] .report__toggle').click();
     assert.equal(await why.count(), 0);
 
     // Close, and bring it back with the Report button.
@@ -341,7 +341,7 @@ describe('the budget', () => {
     await endTurn(page);
     await page.waitForSelector('.report:not([hidden])');
     await waitForSaved(page, 1);
-    assert.equal(await stateAt(page, 'countries.TUR.economy.last.why.revenue.parts.1.value'), 0.275);
+    assert.equal(await stateAt(page, 'countries.TUR.economy.last.why.taxes.parts.1.value'), 0.275);
     assert.deepEqual(problems, []);
     await context.close();
   });

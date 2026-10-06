@@ -11,6 +11,9 @@
       "terrain": "urban",
       "size": 2,
       "infrastructure": 5,
+      "popShare": 0.208,
+      "gdpShare": 0.322,
+      "output": { "oil": 0.05, "food": 0.06, "steel": 0.04, "rare": 0 },
       "cities": [
         { "name": "Istanbul", "tier": "major" },
         { "name": "Edirne", "tier": "minor" },
@@ -27,6 +30,9 @@
       "terrain": "plains",
       "size": 3,
       "infrastructure": 4,
+      "popShare": 0.108,
+      "gdpShare": 0.152,
+      "output": { "oil": 0, "food": 0.08, "steel": 0.3, "rare": 0.15 },
       "cities": [
         { "name": "Bursa", "tier": "major" },
         { "name": "Izmit", "tier": "minor" },
@@ -43,6 +49,9 @@
       "terrain": "plains",
       "size": 3,
       "infrastructure": 4,
+      "popShare": 0.128,
+      "gdpShare": 0.114,
+      "output": { "oil": 0, "food": 0.13, "steel": 0.28, "rare": 0.35 },
       "cities": [
         { "name": "Izmir", "tier": "major" },
         { "name": "Denizli", "tier": "minor" }
@@ -65,6 +74,9 @@
       "terrain": "mountain",
       "size": 3,
       "infrastructure": 4,
+      "popShare": 0.114,
+      "gdpShare": 0.085,
+      "output": { "oil": 0, "food": 0.17, "steel": 0.14, "rare": 0 },
       "cities": [
         { "name": "Antalya", "tier": "major" },
         { "name": "Adana", "tier": "major" },
@@ -90,6 +102,9 @@
       "terrain": "plains",
       "size": 4,
       "infrastructure": 4,
+      "popShare": 0.16,
+      "gdpShare": 0.161,
+      "output": { "oil": 0, "food": 0.22, "steel": 0.04, "rare": 0.4 },
       "cities": [
         { "name": "Ankara", "tier": "capital" },
         { "name": "Konya", "tier": "major" },
@@ -106,6 +121,9 @@
       "terrain": "forest",
       "size": 3,
       "infrastructure": 3,
+      "popShare": 0.057,
+      "gdpShare": 0.043,
+      "output": { "oil": 0, "food": 0.08, "steel": 0.2, "rare": 0 },
       "cities": [
         { "name": "Samsun", "tier": "major" },
         { "name": "Zonguldak", "tier": "minor" }
@@ -121,6 +139,9 @@
       "terrain": "mountain",
       "size": 3,
       "infrastructure": 3,
+      "popShare": 0.033,
+      "gdpShare": 0.024,
+      "output": { "oil": 0, "food": 0.04, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Trabzon", "tier": "major" }
       ],
@@ -141,6 +162,9 @@
       "terrain": "mountain",
       "size": 4,
       "infrastructure": 2,
+      "popShare": 0.069,
+      "gdpShare": 0.038,
+      "output": { "oil": 0, "food": 0.06, "steel": 0, "rare": 0.1 },
       "cities": [
         { "name": "Erzurum", "tier": "major" },
         { "name": "Van", "tier": "minor" }
@@ -163,6 +187,9 @@
       "terrain": "plains",
       "size": 4,
       "infrastructure": 3,
+      "popShare": 0.123,
+      "gdpShare": 0.061,
+      "output": { "oil": 0.95, "food": 0.16, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Gaziantep", "tier": "major" },
         { "name": "Diyarbakır", "tier": "major" }
@@ -178,6 +205,9 @@
       "terrain": "urban",
       "size": 2,
       "infrastructure": 3,
+      "popShare": 0.243,
+      "gdpShare": 0.34,
+      "output": { "oil": 0, "food": 0.04, "steel": 0.3, "rare": 0 },
       "cities": [
         { "name": "Damascus", "tier": "capital" }
       ],
@@ -192,6 +222,9 @@
       "terrain": "plains",
       "size": 2,
       "infrastructure": 3,
+      "popShare": 0.186,
+      "gdpShare": 0.14,
+      "output": { "oil": 0, "food": 0.12, "steel": 0.4, "rare": 0 },
       "cities": [
         { "name": "Aleppo", "tier": "major" }
       ],
@@ -206,6 +239,9 @@
       "terrain": "plains",
       "size": 2,
       "infrastructure": 3,
+      "popShare": 0.195,
+      "gdpShare": 0.1,
+      "output": { "oil": 0, "food": 0.2, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Hama", "tier": "major" },
         { "name": "Idlib", "tier": "minor" }
@@ -230,6 +266,9 @@
       "terrain": "desert",
       "size": 3,
       "infrastructure": 3,
+      "popShare": 0.08,
+      "gdpShare": 0.1,
+      "output": { "oil": 0.1, "food": 0.1, "steel": 0.3, "rare": 0 },
       "cities": [
         { "name": "Homs", "tier": "major" },
         { "name": "Palmyra", "tier": "minor" }
@@ -245,6 +284,9 @@
       "terrain": "mountain",
       "size": 2,
       "infrastructure": 3,
+      "popShare": 0.08,
+      "gdpShare": 0.12,
+      "output": { "oil": 0, "food": 0.08, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Latakia", "tier": "major" },
         { "name": "Tartus", "tier": "minor" }
@@ -268,6 +310,9 @@
       "terrain": "desert",
       "size": 3,
       "infrastructure": 2,
+      "popShare": 0.141,
+      "gdpShare": 0.12,
+      "output": { "oil": 0.9, "food": 0.35, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Raqqa", "tier": "minor" },
         { "name": "Deir ez-Zor", "tier": "minor" },
@@ -284,6 +329,9 @@
       "terrain": "plains",
       "size": 2,
       "infrastructure": 2,
+      "popShare": 0.071,
+      "gdpShare": 0.07,
+      "output": { "oil": 0, "food": 0.1, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Daraa", "tier": "minor" },
         { "name": "As-Suwayda", "tier": "minor" }
@@ -299,10 +347,13 @@
       "terrain": "mountain",
       "size": 1,
       "infrastructure": 2,
-      "cities": [],
-      "lonlat": [35.88, 33.12],
       "contested": true,
-      "note": "Status disputed; includes the UN buffer zone."
+      "note": "Status disputed; includes the UN buffer zone.",
+      "popShare": 0.004,
+      "gdpShare": 0.01,
+      "output": { "oil": 0, "food": 0.01, "steel": 0, "rare": 0 },
+      "cities": [],
+      "lonlat": [35.88, 33.12]
     },
     {
       "id": "LBN-beirut_mount_lebanon",
@@ -313,6 +364,9 @@
       "terrain": "urban",
       "size": 1,
       "infrastructure": 4,
+      "popShare": 0.479,
+      "gdpShare": 0.62,
+      "output": { "oil": 0, "food": 0.1, "steel": 0.5, "rare": 0 },
       "cities": [
         { "name": "Beirut", "tier": "capital" }
       ],
@@ -327,6 +381,9 @@
       "terrain": "mountain",
       "size": 1,
       "infrastructure": 3,
+      "popShare": 0.188,
+      "gdpShare": 0.13,
+      "output": { "oil": 0, "food": 0.25, "steel": 0.5, "rare": 0 },
       "cities": [
         { "name": "Tripoli", "tier": "major" }
       ],
@@ -341,6 +398,9 @@
       "terrain": "plains",
       "size": 1,
       "infrastructure": 3,
+      "popShare": 0.146,
+      "gdpShare": 0.1,
+      "output": { "oil": 0, "food": 0.4, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Baalbek", "tier": "minor" },
         { "name": "Zahle", "tier": "minor" }
@@ -356,6 +416,9 @@
       "terrain": "mountain",
       "size": 1,
       "infrastructure": 3,
+      "popShare": 0.187,
+      "gdpShare": 0.15,
+      "output": { "oil": 0, "food": 0.25, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Sidon", "tier": "minor" },
         { "name": "Tyre", "tier": "minor" }
@@ -371,6 +434,9 @@
       "terrain": "mountain",
       "size": 2,
       "infrastructure": 4,
+      "popShare": 0.156,
+      "gdpShare": 0.1,
+      "output": { "oil": 0, "food": 0.3, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Nazareth", "tier": "minor" },
         { "name": "Tiberias", "tier": "minor" }
@@ -386,6 +452,9 @@
       "terrain": "urban",
       "size": 1,
       "infrastructure": 5,
+      "popShare": 0.122,
+      "gdpShare": 0.1,
+      "output": { "oil": 0, "food": 0.05, "steel": 0.5, "rare": 0 },
       "cities": [
         { "name": "Haifa", "tier": "major" }
       ],
@@ -400,6 +469,9 @@
       "terrain": "plains",
       "size": 1,
       "infrastructure": 5,
+      "popShare": 0.267,
+      "gdpShare": 0.22,
+      "output": { "oil": 0, "food": 0.25, "steel": 0.2, "rare": 0 },
       "cities": [
         { "name": "Netanya", "tier": "minor" },
         { "name": "Rishon LeZion", "tier": "minor" }
@@ -415,6 +487,9 @@
       "terrain": "urban",
       "size": 1,
       "infrastructure": 5,
+      "popShare": 0.167,
+      "gdpShare": 0.38,
+      "output": { "oil": 0, "food": 0.02, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Tel Aviv", "tier": "major" }
       ],
@@ -429,12 +504,15 @@
       "terrain": "urban",
       "size": 1,
       "infrastructure": 5,
+      "contested": true,
+      "note": "The status of Jerusalem is disputed.",
+      "popShare": 0.133,
+      "gdpShare": 0.1,
+      "output": { "oil": 0, "food": 0.03, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Jerusalem", "tier": "capital" }
       ],
-      "lonlat": [35.03, 31.75],
-      "contested": true,
-      "note": "The status of Jerusalem is disputed."
+      "lonlat": [35.03, 31.75]
     },
     {
       "id": "ISR-south",
@@ -454,6 +532,9 @@
       "terrain": "desert",
       "size": 2,
       "infrastructure": 3,
+      "popShare": 0.155,
+      "gdpShare": 0.1,
+      "output": { "oil": 0, "food": 0.35, "steel": 0.3, "rare": 0 },
       "cities": [
         { "name": "Beersheba", "tier": "major" },
         { "name": "Eilat", "tier": "minor" }
@@ -469,12 +550,15 @@
       "terrain": "urban",
       "size": 1,
       "infrastructure": 2,
+      "contested": true,
+      "note": "Status disputed.",
+      "popShare": 0.389,
+      "gdpShare": 0.25,
+      "output": { "oil": 0, "food": 0.3, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Gaza City", "tier": "major" }
       ],
-      "lonlat": [34.35, 31.39],
-      "contested": true,
-      "note": "Status disputed."
+      "lonlat": [34.35, 31.39]
     },
     {
       "id": "PSX-west_bank",
@@ -485,14 +569,17 @@
       "terrain": "mountain",
       "size": 2,
       "infrastructure": 2,
+      "contested": true,
+      "note": "Status disputed.",
+      "popShare": 0.611,
+      "gdpShare": 0.75,
+      "output": { "oil": 0, "food": 0.7, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Ramallah", "tier": "capital" },
         { "name": "Nablus", "tier": "major" },
         { "name": "Hebron", "tier": "major" }
       ],
-      "lonlat": [35.25, 31.95],
-      "contested": true,
-      "note": "Status disputed."
+      "lonlat": [35.25, 31.95]
     },
     {
       "id": "JOR-amman",
@@ -503,6 +590,9 @@
       "terrain": "urban",
       "size": 2,
       "infrastructure": 4,
+      "popShare": 0.616,
+      "gdpShare": 0.7,
+      "output": { "oil": 0, "food": 0.3, "steel": 0.85, "rare": 0.3 },
       "cities": [
         { "name": "Amman", "tier": "capital" },
         { "name": "Zarqa", "tier": "major" }
@@ -528,6 +618,9 @@
       "terrain": "plains",
       "size": 3,
       "infrastructure": 3,
+      "popShare": 0.298,
+      "gdpShare": 0.14,
+      "output": { "oil": 0, "food": 0.5, "steel": 0, "rare": 0.2 },
       "cities": [
         { "name": "Irbid", "tier": "major" },
         { "name": "Mafraq", "tier": "minor" }
@@ -543,6 +636,9 @@
       "terrain": "desert",
       "size": 3,
       "infrastructure": 3,
+      "popShare": 0.067,
+      "gdpShare": 0.07,
+      "output": { "oil": 0, "food": 0.15, "steel": 0, "rare": 0.5 },
       "cities": [
         { "name": "Karak", "tier": "minor" },
         { "name": "Ma’an", "tier": "minor" }
@@ -558,6 +654,9 @@
       "terrain": "desert",
       "size": 2,
       "infrastructure": 3,
+      "popShare": 0.019,
+      "gdpShare": 0.09,
+      "output": { "oil": 0, "food": 0.05, "steel": 0.15, "rare": 0 },
       "cities": [
         { "name": "Aqaba", "tier": "major" }
       ],
@@ -572,6 +671,9 @@
       "terrain": "urban",
       "size": 1,
       "infrastructure": 3,
+      "popShare": 0.203,
+      "gdpShare": 0.27,
+      "output": { "oil": 0.02, "food": 0.04, "steel": 0.1, "rare": 0 },
       "cities": [
         { "name": "Baghdad", "tier": "capital" }
       ],
@@ -594,6 +696,9 @@
       "terrain": "mountain",
       "size": 3,
       "infrastructure": 3,
+      "popShare": 0.155,
+      "gdpShare": 0.12,
+      "output": { "oil": 0.09, "food": 0.12, "steel": 0.2, "rare": 0 },
       "cities": [
         { "name": "Erbil", "tier": "major" },
         { "name": "Sulaymaniyah", "tier": "major" },
@@ -610,6 +715,9 @@
       "terrain": "plains",
       "size": 3,
       "infrastructure": 3,
+      "popShare": 0.098,
+      "gdpShare": 0.05,
+      "output": { "oil": 0.02, "food": 0.25, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Mosul", "tier": "major" }
       ],
@@ -632,6 +740,9 @@
       "terrain": "plains",
       "size": 3,
       "infrastructure": 3,
+      "popShare": 0.125,
+      "gdpShare": 0.12,
+      "output": { "oil": 0.09, "food": 0.17, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Kirkuk", "tier": "major" },
         { "name": "Tikrit", "tier": "minor" },
@@ -657,6 +768,9 @@
       "terrain": "desert",
       "size": 4,
       "infrastructure": 2,
+      "popShare": 0.048,
+      "gdpShare": 0.03,
+      "output": { "oil": 0.01, "food": 0.05, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Ramadi", "tier": "minor" },
         { "name": "Fallujah", "tier": "minor" }
@@ -672,6 +786,9 @@
       "terrain": "plains",
       "size": 3,
       "infrastructure": 3,
+      "popShare": 0.155,
+      "gdpShare": 0.08,
+      "output": { "oil": 0, "food": 0.18, "steel": 0.25, "rare": 0 },
       "cities": [
         { "name": "Najaf", "tier": "major" },
         { "name": "Karbala", "tier": "major" },
@@ -689,6 +806,9 @@
       "terrain": "marsh",
       "size": 3,
       "infrastructure": 2,
+      "popShare": 0.068,
+      "gdpShare": 0.05,
+      "output": { "oil": 0.08, "food": 0.06, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Kut", "tier": "minor" },
         { "name": "Amarah", "tier": "minor" }
@@ -704,6 +824,9 @@
       "terrain": "marsh",
       "size": 2,
       "infrastructure": 4,
+      "popShare": 0.073,
+      "gdpShare": 0.2,
+      "output": { "oil": 0.62, "food": 0.03, "steel": 0.45, "rare": 0 },
       "cities": [
         { "name": "Basra", "tier": "major" }
       ],
@@ -718,6 +841,9 @@
       "terrain": "desert",
       "size": 3,
       "infrastructure": 2,
+      "popShare": 0.075,
+      "gdpShare": 0.08,
+      "output": { "oil": 0.07, "food": 0.1, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Nasiriyah", "tier": "major" },
         { "name": "Samawah", "tier": "minor" }
@@ -733,6 +859,9 @@
       "terrain": "urban",
       "size": 3,
       "infrastructure": 5,
+      "popShare": 0.257,
+      "gdpShare": 0.3,
+      "output": { "oil": 0, "food": 0.05, "steel": 0.06, "rare": 0 },
       "cities": [
         { "name": "Tehran", "tier": "capital" },
         { "name": "Karaj", "tier": "major" },
@@ -750,6 +879,9 @@
       "terrain": "mountain",
       "size": 4,
       "infrastructure": 3,
+      "popShare": 0.118,
+      "gdpShare": 0.07,
+      "output": { "oil": 0, "food": 0.14, "steel": 0.05, "rare": 0.15 },
       "cities": [
         { "name": "Tabriz", "tier": "major" },
         { "name": "Urmia", "tier": "major" },
@@ -767,6 +899,9 @@
       "terrain": "forest",
       "size": 3,
       "infrastructure": 3,
+      "popShare": 0.096,
+      "gdpShare": 0.07,
+      "output": { "oil": 0, "food": 0.2, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Rasht", "tier": "major" },
         { "name": "Sari", "tier": "minor" },
@@ -791,6 +926,9 @@
       "terrain": "mountain",
       "size": 4,
       "infrastructure": 3,
+      "popShare": 0.095,
+      "gdpShare": 0.05,
+      "output": { "oil": 0.02, "food": 0.15, "steel": 0, "rare": 0.05 },
       "cities": [
         { "name": "Kermanshah", "tier": "major" },
         { "name": "Hamadan", "tier": "major" },
@@ -807,6 +945,9 @@
       "terrain": "plains",
       "size": 3,
       "infrastructure": 4,
+      "popShare": 0.057,
+      "gdpShare": 0.12,
+      "output": { "oil": 0.735, "food": 0.1, "steel": 0.2, "rare": 0 },
       "cities": [
         { "name": "Ahvaz", "tier": "major" },
         { "name": "Abadan", "tier": "minor" }
@@ -822,6 +963,9 @@
       "terrain": "mountain",
       "size": 4,
       "infrastructure": 3,
+      "popShare": 0.083,
+      "gdpShare": 0.1,
+      "output": { "oil": 0.204, "food": 0.12, "steel": 0.05, "rare": 0.05 },
       "cities": [
         { "name": "Shiraz", "tier": "major" },
         { "name": "Bushehr", "tier": "minor" }
@@ -837,6 +981,9 @@
       "terrain": "desert",
       "size": 3,
       "infrastructure": 3,
+      "popShare": 0.023,
+      "gdpShare": 0.04,
+      "output": { "oil": 0.041, "food": 0, "steel": 0.12, "rare": 0 },
       "cities": [
         { "name": "Bandar Abbas", "tier": "major" }
       ],
@@ -851,6 +998,9 @@
       "terrain": "desert",
       "size": 4,
       "infrastructure": 3,
+      "popShare": 0.039,
+      "gdpShare": 0.04,
+      "output": { "oil": 0, "food": 0.03, "steel": 0.1, "rare": 0.3 },
       "cities": [
         { "name": "Kerman", "tier": "major" }
       ],
@@ -865,6 +1015,9 @@
       "terrain": "desert",
       "size": 4,
       "infrastructure": 2,
+      "popShare": 0.034,
+      "gdpShare": 0.02,
+      "output": { "oil": 0, "food": 0.01, "steel": 0, "rare": 0.1 },
       "cities": [
         { "name": "Zahedan", "tier": "minor" },
         { "name": "Chabahar", "tier": "minor" }
@@ -888,6 +1041,9 @@
       "terrain": "desert",
       "size": 5,
       "infrastructure": 4,
+      "popShare": 0.098,
+      "gdpShare": 0.12,
+      "output": { "oil": 0, "food": 0.06, "steel": 0.35, "rare": 0.25 },
       "cities": [
         { "name": "Isfahan", "tier": "major" },
         { "name": "Yazd", "tier": "minor" },
@@ -904,6 +1060,9 @@
       "terrain": "desert",
       "size": 4,
       "infrastructure": 3,
+      "popShare": 0.1,
+      "gdpShare": 0.07,
+      "output": { "oil": 0, "food": 0.14, "steel": 0.07, "rare": 0.1 },
       "cities": [
         { "name": "Mashhad", "tier": "major" }
       ],
@@ -926,6 +1085,9 @@
       "terrain": "desert",
       "size": 5,
       "infrastructure": 4,
+      "popShare": 0.265,
+      "gdpShare": 0.3,
+      "output": { "oil": 0.08, "food": 0.25, "steel": 0.15, "rare": 0.1 },
       "cities": [
         { "name": "Riyadh", "tier": "capital" }
       ],
@@ -940,6 +1102,9 @@
       "terrain": "desert",
       "size": 4,
       "infrastructure": 3,
+      "popShare": 0.065,
+      "gdpShare": 0.04,
+      "output": { "oil": 0, "food": 0.3, "steel": 0, "rare": 0.15 },
       "cities": [
         { "name": "Buraydah", "tier": "minor" },
         { "name": "Ha’il", "tier": "minor" }
@@ -968,6 +1133,9 @@
       "terrain": "desert",
       "size": 5,
       "infrastructure": 4,
+      "popShare": 0.157,
+      "gdpShare": 0.33,
+      "output": { "oil": 0.92, "food": 0.08, "steel": 0.55, "rare": 0 },
       "cities": [
         { "name": "Dammam", "tier": "major" },
         { "name": "Dhahran", "tier": "minor" },
@@ -985,6 +1153,9 @@
       "terrain": "mountain",
       "size": 4,
       "infrastructure": 4,
+      "popShare": 0.261,
+      "gdpShare": 0.2,
+      "output": { "oil": 0, "food": 0.07, "steel": 0.2, "rare": 0 },
       "cities": [
         { "name": "Mecca", "tier": "major" },
         { "name": "Jeddah", "tier": "major" },
@@ -1001,6 +1172,9 @@
       "terrain": "desert",
       "size": 4,
       "infrastructure": 3,
+      "popShare": 0.064,
+      "gdpShare": 0.04,
+      "output": { "oil": 0, "food": 0.05, "steel": 0.1, "rare": 0.4 },
       "cities": [
         { "name": "Medina", "tier": "major" },
         { "name": "Yanbu", "tier": "minor" }
@@ -1016,6 +1190,9 @@
       "terrain": "desert",
       "size": 4,
       "infrastructure": 2,
+      "popShare": 0.028,
+      "gdpShare": 0.02,
+      "output": { "oil": 0, "food": 0.03, "steel": 0, "rare": 0.25 },
       "cities": [
         { "name": "Tabuk", "tier": "minor" }
       ],
@@ -1042,6 +1219,9 @@
       "terrain": "desert",
       "size": 4,
       "infrastructure": 2,
+      "popShare": 0.028,
+      "gdpShare": 0.01,
+      "output": { "oil": 0, "food": 0.02, "steel": 0, "rare": 0.1 },
       "cities": [
         { "name": "Arar", "tier": "minor" },
         { "name": "Sakaka", "tier": "minor" }
@@ -1057,6 +1237,9 @@
       "terrain": "mountain",
       "size": 3,
       "infrastructure": 3,
+      "popShare": 0.068,
+      "gdpShare": 0.03,
+      "output": { "oil": 0, "food": 0.1, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Abha", "tier": "minor" },
         { "name": "Khamis Mushait", "tier": "minor" }
@@ -1072,6 +1255,9 @@
       "terrain": "mountain",
       "size": 4,
       "infrastructure": 2,
+      "popShare": 0.064,
+      "gdpShare": 0.03,
+      "output": { "oil": 0, "food": 0.1, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Jazan", "tier": "minor" },
         { "name": "Najran", "tier": "minor" }
@@ -1087,6 +1273,9 @@
       "terrain": "urban",
       "size": 1,
       "infrastructure": 5,
+      "popShare": 0.667,
+      "gdpShare": 0.55,
+      "output": { "oil": 0.06, "food": 0.1, "steel": 0.3, "rare": 0 },
       "cities": [
         { "name": "Kuwait City", "tier": "capital" }
       ],
@@ -1101,6 +1290,9 @@
       "terrain": "desert",
       "size": 2,
       "infrastructure": 4,
+      "popShare": 0.222,
+      "gdpShare": 0.4,
+      "output": { "oil": 0.68, "food": 0.3, "steel": 0.7, "rare": 0 },
       "cities": [
         { "name": "Ahmadi", "tier": "minor" }
       ],
@@ -1115,6 +1307,9 @@
       "terrain": "desert",
       "size": 2,
       "infrastructure": 3,
+      "popShare": 0.111,
+      "gdpShare": 0.05,
+      "output": { "oil": 0.26, "food": 0.6, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Jahra", "tier": "minor" }
       ],
@@ -1129,6 +1324,9 @@
       "terrain": "urban",
       "size": 1,
       "infrastructure": 5,
+      "popShare": 0.25,
+      "gdpShare": 0.45,
+      "output": { "oil": 0, "food": 0.1, "steel": 1, "rare": 0 },
       "cities": [
         { "name": "Manama", "tier": "capital" },
         { "name": "Muharraq", "tier": "minor" }
@@ -1144,6 +1342,9 @@
       "terrain": "desert",
       "size": 1,
       "infrastructure": 4,
+      "popShare": 0.75,
+      "gdpShare": 0.55,
+      "output": { "oil": 1, "food": 0.9, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Riffa", "tier": "minor" }
       ],
@@ -1158,6 +1359,9 @@
       "terrain": "urban",
       "size": 2,
       "infrastructure": 5,
+      "popShare": 0.774,
+      "gdpShare": 0.5,
+      "output": { "oil": 0.5, "food": 0.4, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Doha", "tier": "capital" }
       ],
@@ -1172,6 +1376,9 @@
       "terrain": "desert",
       "size": 1,
       "infrastructure": 3,
+      "popShare": 0.097,
+      "gdpShare": 0.4,
+      "output": { "oil": 0.3, "food": 0.4, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Al Khor", "tier": "minor" }
       ],
@@ -1186,6 +1393,9 @@
       "terrain": "desert",
       "size": 1,
       "infrastructure": 4,
+      "popShare": 0.129,
+      "gdpShare": 0.1,
+      "output": { "oil": 0.2, "food": 0.2, "steel": 1, "rare": 0 },
       "cities": [
         { "name": "Al Wakrah", "tier": "minor" }
       ],
@@ -1200,6 +1410,9 @@
       "terrain": "desert",
       "size": 3,
       "infrastructure": 5,
+      "popShare": 0.38,
+      "gdpShare": 0.56,
+      "output": { "oil": 0.95, "food": 0.5, "steel": 0.7, "rare": 0 },
       "cities": [
         { "name": "Abu Dhabi", "tier": "capital" },
         { "name": "Al Ain", "tier": "major" }
@@ -1215,6 +1428,9 @@
       "terrain": "urban",
       "size": 1,
       "infrastructure": 5,
+      "popShare": 0.36,
+      "gdpShare": 0.3,
+      "output": { "oil": 0.03, "food": 0.05, "steel": 0.2, "rare": 0 },
       "cities": [
         { "name": "Dubai", "tier": "major" }
       ],
@@ -1229,6 +1445,9 @@
       "terrain": "urban",
       "size": 1,
       "infrastructure": 5,
+      "popShare": 0.21,
+      "gdpShare": 0.08,
+      "output": { "oil": 0.01, "food": 0.15, "steel": 0.05, "rare": 0 },
       "cities": [
         { "name": "Sharjah", "tier": "major" }
       ],
@@ -1243,6 +1462,9 @@
       "terrain": "mountain",
       "size": 2,
       "infrastructure": 4,
+      "popShare": 0.05,
+      "gdpShare": 0.06,
+      "output": { "oil": 0.01, "food": 0.3, "steel": 0.05, "rare": 0 },
       "cities": [
         { "name": "Ras Al Khaimah", "tier": "minor" },
         { "name": "Fujairah", "tier": "minor" }
@@ -1258,6 +1480,9 @@
       "terrain": "mountain",
       "size": 1,
       "infrastructure": 2,
+      "popShare": 0.01,
+      "gdpShare": 0.021,
+      "output": { "oil": 0, "food": 0.03, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Khasab", "tier": "minor" }
       ],
@@ -1272,6 +1497,9 @@
       "terrain": "plains",
       "size": 2,
       "infrastructure": 4,
+      "popShare": 0.559,
+      "gdpShare": 0.452,
+      "output": { "oil": 0.05, "food": 0.4, "steel": 1, "rare": 0.5 },
       "cities": [
         { "name": "Muscat", "tier": "capital" },
         { "name": "Sohar", "tier": "major" }
@@ -1295,6 +1523,9 @@
       "terrain": "mountain",
       "size": 3,
       "infrastructure": 3,
+      "popShare": 0.179,
+      "gdpShare": 0.129,
+      "output": { "oil": 0.4, "food": 0.25, "steel": 0, "rare": 0.5 },
       "cities": [
         { "name": "Nizwa", "tier": "minor" },
         { "name": "Buraimi", "tier": "minor" }
@@ -1310,6 +1541,9 @@
       "terrain": "desert",
       "size": 3,
       "infrastructure": 3,
+      "popShare": 0.14,
+      "gdpShare": 0.075,
+      "output": { "oil": 0.05, "food": 0.15, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Sur", "tier": "minor" }
       ],
@@ -1324,6 +1558,9 @@
       "terrain": "desert",
       "size": 3,
       "infrastructure": 2,
+      "popShare": 0.012,
+      "gdpShare": 0.108,
+      "output": { "oil": 0.25, "food": 0.02, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Duqm", "tier": "minor" }
       ],
@@ -1338,6 +1575,9 @@
       "terrain": "mountain",
       "size": 4,
       "infrastructure": 3,
+      "popShare": 0.1,
+      "gdpShare": 0.215,
+      "output": { "oil": 0.25, "food": 0.15, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Salalah", "tier": "major" }
       ],
@@ -1352,6 +1592,9 @@
       "terrain": "mountain",
       "size": 3,
       "infrastructure": 2,
+      "popShare": 0.322,
+      "gdpShare": 0.3,
+      "output": { "oil": 0, "food": 0.2, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Sanaa", "tier": "capital" }
       ],
@@ -1366,6 +1609,9 @@
       "terrain": "mountain",
       "size": 3,
       "infrastructure": 1,
+      "popShare": 0.132,
+      "gdpShare": 0.04,
+      "output": { "oil": 0.05, "food": 0.1, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Sa’dah", "tier": "minor" },
         { "name": "Hajjah", "tier": "minor" }
@@ -1381,6 +1627,9 @@
       "terrain": "plains",
       "size": 2,
       "infrastructure": 2,
+      "popShare": 0.11,
+      "gdpShare": 0.1,
+      "output": { "oil": 0, "food": 0.2, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Hodeidah", "tier": "major" }
       ],
@@ -1395,6 +1644,9 @@
       "terrain": "mountain",
       "size": 3,
       "infrastructure": 2,
+      "popShare": 0.242,
+      "gdpShare": 0.2,
+      "output": { "oil": 0, "food": 0.3, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Taiz", "tier": "major" },
         { "name": "Ibb", "tier": "minor" }
@@ -1410,6 +1662,9 @@
       "terrain": "plains",
       "size": 3,
       "infrastructure": 2,
+      "popShare": 0.106,
+      "gdpShare": 0.15,
+      "output": { "oil": 0, "food": 0.1, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Aden", "tier": "major" }
       ],
@@ -1424,6 +1679,9 @@
       "terrain": "desert",
       "size": 3,
       "infrastructure": 2,
+      "popShare": 0.035,
+      "gdpShare": 0.1,
+      "output": { "oil": 0.55, "food": 0.03, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Marib", "tier": "minor" },
         { "name": "Ataq", "tier": "minor" }
@@ -1439,6 +1697,9 @@
       "terrain": "desert",
       "size": 4,
       "infrastructure": 2,
+      "popShare": 0.053,
+      "gdpShare": 0.11,
+      "output": { "oil": 0.4, "food": 0.07, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Mukalla", "tier": "major" },
         { "name": "Seiyun", "tier": "minor" }
@@ -1454,6 +1715,9 @@
       "terrain": "urban",
       "size": 3,
       "infrastructure": 5,
+      "popShare": 0.25,
+      "gdpShare": 0.354,
+      "output": { "oil": 0, "food": 0.07, "steel": 0.15, "rare": 0 },
       "cities": [
         { "name": "Cairo", "tier": "capital" },
         { "name": "Giza", "tier": "major" }
@@ -1469,6 +1733,9 @@
       "terrain": "plains",
       "size": 2,
       "infrastructure": 4,
+      "popShare": 0.121,
+      "gdpShare": 0.135,
+      "output": { "oil": 0.05, "food": 0.18, "steel": 0.35, "rare": 0 },
       "cities": [
         { "name": "Alexandria", "tier": "major" },
         { "name": "Damanhur", "tier": "minor" }
@@ -1484,6 +1751,9 @@
       "terrain": "plains",
       "size": 2,
       "infrastructure": 4,
+      "popShare": 0.293,
+      "gdpShare": 0.208,
+      "output": { "oil": 0.1, "food": 0.3, "steel": 0.15, "rare": 0 },
       "cities": [
         { "name": "Mansoura", "tier": "major" },
         { "name": "Tanta", "tier": "major" },
@@ -1500,6 +1770,9 @@
       "terrain": "desert",
       "size": 2,
       "infrastructure": 4,
+      "popShare": 0.029,
+      "gdpShare": 0.073,
+      "output": { "oil": 0.05, "food": 0.03, "steel": 0.3, "rare": 0 },
       "cities": [
         { "name": "Port Said", "tier": "major" },
         { "name": "Ismailia", "tier": "major" },
@@ -1516,6 +1789,9 @@
       "terrain": "mountain",
       "size": 3,
       "infrastructure": 2,
+      "popShare": 0.007,
+      "gdpShare": 0.016,
+      "output": { "oil": 0.12, "food": 0.01, "steel": 0, "rare": 0.15 },
       "cities": [
         { "name": "El-Arish", "tier": "minor" },
         { "name": "Sharm El-Sheikh", "tier": "minor" }
@@ -1531,6 +1807,9 @@
       "terrain": "desert",
       "size": 4,
       "infrastructure": 2,
+      "popShare": 0.004,
+      "gdpShare": 0.037,
+      "output": { "oil": 0.25, "food": 0.01, "steel": 0, "rare": 0.45 },
       "cities": [
         { "name": "Hurghada", "tier": "minor" }
       ],
@@ -1545,6 +1824,9 @@
       "terrain": "desert",
       "size": 5,
       "infrastructure": 1,
+      "popShare": 0.008,
+      "gdpShare": 0.021,
+      "output": { "oil": 0.38, "food": 0.05, "steel": 0, "rare": 0.25 },
       "cities": [
         { "name": "Marsa Matruh", "tier": "minor" },
         { "name": "Kharga", "tier": "minor" }
@@ -1560,6 +1842,9 @@
       "terrain": "plains",
       "size": 3,
       "infrastructure": 3,
+      "popShare": 0.174,
+      "gdpShare": 0.083,
+      "output": { "oil": 0.05, "food": 0.2, "steel": 0, "rare": 0 },
       "cities": [
         { "name": "Asyut", "tier": "major" },
         { "name": "Minya", "tier": "major" }
@@ -1575,6 +1860,9 @@
       "terrain": "desert",
       "size": 2,
       "infrastructure": 3,
+      "popShare": 0.114,
+      "gdpShare": 0.073,
+      "output": { "oil": 0, "food": 0.15, "steel": 0.05, "rare": 0.15 },
       "cities": [
         { "name": "Luxor", "tier": "major" },
         { "name": "Aswan", "tier": "major" },

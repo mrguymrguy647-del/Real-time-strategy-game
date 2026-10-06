@@ -3,8 +3,9 @@
 // report can say why. Money is in USD millions, GDP in USD billions a year, rates are fractions a
 // year (G-25).
 //
-// A month, in order: the state collects taxes, pays for its budget and the interest on its debt;
-// what is left goes into the treasury, and a shortfall comes out of it. The treasury never goes below
+// A month, in order: the state collects taxes and what it earns from the resources it sells abroad
+// (formulas/market.js), pays for its budget and the interest on its debt; what is left goes into the
+// treasury, and a shortfall comes out of it. The treasury never goes below
 // zero: what it cannot cover is borrowed at once. Debt is repaid only when the player says so (the
 // REPAY_DEBT command), never by itself, so the treasury moves by exactly what the month earned or
 // lost. The economy then grows by this month's share of its yearly growth rate.
@@ -17,6 +18,9 @@ export const BUDGET_CATEGORIES = /** @type {const} */ (['military', 'research', 
 /** @typedef {typeof BUDGET_CATEGORIES[number]} BudgetCategory */
 /** @typedef {Record<BudgetCategory, number>} Budget */
 
+/** What a modifier list that does nothing comes to. */
+const NO_MODIFIERS = { add: 0, mul: 1 };
+
 /** GDP of one month, in USD millions. @param {number} gdpBn */
 export const monthlyGdpMn = (gdpBn) => (gdpBn * 1000) / 12;
 
@@ -26,7 +30,7 @@ export const monthlyGdpMn = (gdpBn) => (gdpBn * 1000) / 12;
  * @param {{ gdpBn: number, taxRate: number, incomeMultiplier?: number }} input
  * @returns {import('./explain.js').Explained}
  */
-export function revenue({ gdpBn, taxRate, incomeMultiplier = 1 }) {
+export function taxRevenue({ gdpBn, taxRate, incomeMultiplier = 1 }) {
   const parts = [
     { id: 'gdp', value: monthlyGdpMn(gdpBn) },
     { id: 'taxRate', value: taxRate },
@@ -80,17 +84,22 @@ export function interest({ debtMn, rate }) {
  * The yearly growth rate of the economy. It starts from the country's own trend (which already
  * includes its starting policies) and moves with how far today's policies are from those: heavier
  * taxes slow it, public investment and research speed it, a debt heavier than at the start slows
- * it. A government's growth modifiers then apply, and the result stays within sane bounds.
+ * it, and world prices help a country that sells resources and hurt one that buys them. A
+ * government's growth modifiers then apply, then those of the shortages the country is in, and the
+ * result stays within sane bounds.
  *
  * @param {{
  *   trend: number, taxRate: number, budget: Budget, debtRatio: number,
  *   reference: { taxRate: number, budget: Budget, debtRatio: number },
+ *   resourcePrices?: number,
  *   modifiers?: { add: number, mul: number },
+ *   shortages?: { add: number, mul: number },
  * }} input
- * @param {{ taxDrag: number, infrastructure: number, research: number, debtDrag: number, min: number, max: number }} params
+ *   `resourcePrices`: what world prices do to income, as a share of GDP a year (formulas/market.js priceWindfall)
+ * @param {{ taxDrag: number, infrastructure: number, research: number, debtDrag: number, resourcePrices: number, min: number, max: number }} params
  * @returns {import('./explain.js').Explained}
  */
-export function growthRate({ trend, taxRate, budget, debtRatio, reference, modifiers = { add: 0, mul: 1 } }, params) {
+export function growthRate({ trend, taxRate, budget, debtRatio, reference, resourcePrices = 0, modifiers = NO_MODIFIERS, shortages = NO_MODIFIERS }, params) {
   const terms = [
     { id: 'trend', value: trend },
     { id: 'taxes', value: params.taxDrag * (reference.taxRate - taxRate) },
@@ -98,8 +107,13 @@ export function growthRate({ trend, taxRate, budget, debtRatio, reference, modif
     { id: 'research', value: params.research * (budget.research - reference.budget.research) },
     { id: 'debtLoad', value: params.debtDrag * (reference.debtRatio - debtRatio) },
   ];
+  // these two parts appear only when they do something, so a list of reasons is not padded with zeros
+  if (resourcePrices !== 0) terms.push({ id: 'resourcePrices', value: params.resourcePrices * resourcePrices });
   const subtotal = terms.reduce((total, term) => total + term.value, 0);
-  terms.push({ id: 'government', value: modifierPart(subtotal, modifiers) });
+  const government = modifierPart(subtotal, modifiers);
+  terms.push({ id: 'government', value: government });
+  const shortage = modifierPart(subtotal + government, shortages);
+  if (shortage !== 0) terms.push({ id: 'shortages', value: shortage });
   return limitSum(sumOf(terms), params.min, params.max);
 }
 
@@ -112,17 +126,30 @@ export function growthRate({ trend, taxRate, budget, debtRatio, reference, modif
  *   trend: number,
  *   reference: { taxRate: number, budget: Budget, debtRatio: number },
  *   modifiers?: { add: number, mul: number },
+ *   shortages?: { add: number, mul: number },
  *   incomeMultiplier?: number,
+ *   resourceIncome?: import('./explain.js').Explained | null,
+ *   resourcePrices?: number,
  * }} input
+ *   `resourceIncome`: what the state earns from the resources it sells abroad this month, in USD millions, with its parts
+ *   (systems/resources.js; the same difficulty multiplier applies to it as to taxes);
+ *   `resourcePrices`: what world prices do to its income, as a share of GDP a year
  * @param {{ interest: Parameters<typeof interestRate>[1], growth: Parameters<typeof growthRate>[1] }} params
  */
-export function economyMonth({ economy, budget, trend, reference, modifiers, incomeMultiplier }, params) {
+export function economyMonth({ economy, budget, trend, reference, modifiers, shortages, incomeMultiplier = 1, resourceIncome = null, resourcePrices = 0 }, params) {
   const { gdpBn, taxRate, treasuryMn, debtMn } = economy;
-  const income = revenue({ gdpBn, taxRate, incomeMultiplier });
+  const taxes = taxRevenue({ gdpBn, taxRate, incomeMultiplier });
+  const resources = resourceIncome
+    ? sumOf(incomeMultiplier === 1 ? resourceIncome.parts : [...resourceIncome.parts, { id: 'difficulty', value: resourceIncome.value * (incomeMultiplier - 1) }])
+    : sumOf([]);
+  const income = sumOf([
+    { id: 'taxes', value: taxes.value },
+    { id: 'resources', value: resources.value },
+  ]);
   const costs = spending({ gdpBn, budget });
   const rate = interestRate({ debtMn, gdpBn }, params.interest);
   const interestPaid = interest({ debtMn, rate: rate.value });
-  const growth = growthRate({ trend, taxRate, budget, debtRatio: debtMn / (gdpBn * 1000), reference, modifiers }, params.growth);
+  const growth = growthRate({ trend, taxRate, budget, debtRatio: debtMn / (gdpBn * 1000), reference, resourcePrices, modifiers, shortages }, params.growth);
 
   const balanceMn = income.value - costs.value - interestPaid.value;
   // The treasury takes the surplus and pays the shortfall; what it cannot pay is borrowed.
@@ -133,7 +160,7 @@ export function economyMonth({ economy, budget, trend, reference, modifiers, inc
     debtMn: debtMn + borrowedMn,
     growth: growth.value,
   };
-  return { revenue: income, spending: costs, interestRate: rate, interest: interestPaid, growth, balanceMn, borrowedMn, next };
+  return { taxes, resources, revenue: income, spending: costs, interestRate: rate, interest: interestPaid, growth, balanceMn, borrowedMn, next };
 }
 
 /**

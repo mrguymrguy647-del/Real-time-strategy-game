@@ -1,0 +1,27 @@
+{
+  "$id": "chokepoints",
+  "type": "object",
+  "required": ["schema", "version", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "chokepoints" },
+    "version": { "type": "integer", "minimum": 1 },
+    "_note": { "type": "string" },
+    "items": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/chokepoint" } }
+  },
+  "definitions": {
+    "chokepoint": {
+      "type": "object",
+      "required": ["id", "name", "blurb", "position", "controlRegions", "worldTradeShare"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "common#/definitions/id" },
+        "name": { "$ref": "common#/definitions/text" },
+        "blurb": { "$ref": "common#/definitions/text" },
+        "position": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number" } },
+        "controlRegions": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^[A-Z]{3}-[a-z][a-z0-9_]*$" } },
+        "worldTradeShare": { "type": "object", "additionalProperties": { "$ref": "common#/definitions/fraction" } }
+      }
+    }
+  }
+}

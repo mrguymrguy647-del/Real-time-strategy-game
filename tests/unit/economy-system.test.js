@@ -47,7 +47,10 @@ describe('the monthly economy', () => {
       close(last.balanceMn, last.revenueMn - last.spendingMn - last.interestMn);
     }
     const { why } = game.state.countries.TUR.economy.last;
-    assert.deepEqual(Object.keys(why).sort(), ['growth', 'interest', 'interestRate', 'revenue', 'spending']);
+    assert.deepEqual(Object.keys(why).sort(), ['growth', 'interest', 'interestRate', 'resources', 'spending', 'taxes']);
+    for (const country of Object.values(game.state.countries)) close(country.economy.last.revenueMn, country.economy.last.taxMn + country.economy.last.resourceMn);
+    assert.ok(game.state.countries.SAU.economy.last.resourceMn > 0, 'an oil exporter earns resource income');
+    assert.equal(game.state.countries.EGY.economy.last.resourceMn, 0, 'a net importer of everything earns none');
   });
 
   it('matches the preview exactly: what the player was told is what happens', () => {
@@ -78,10 +81,13 @@ describe('the monthly economy', () => {
   it('gives AI countries the difficulty income multiplier, never the player', () => {
     const hard = createGame({ data, playerId: 'TUR', checkInvariants: true });
     hard.state.meta.difficulty = 'hard';
-    const ai = previewEconomy(hard.state, data, 'IRN').revenue;
-    assert.deepEqual(ai.parts.map((p) => p.id), ['gdp', 'taxRate', 'difficulty']);
-    assert.equal(ai.parts[2].value, data.balance.difficulty.hard.aiIncome);
-    assert.equal(previewEconomy(hard.state, data, 'TUR').revenue.parts.length, 2);
+    const ai = previewEconomy(hard.state, data, 'IRN');
+    assert.deepEqual(ai.taxes.parts.map((p) => p.id), ['gdp', 'taxRate', 'difficulty']);
+    assert.equal(ai.taxes.parts[2].value, data.balance.difficulty.hard.aiIncome);
+    assert.equal(ai.resources.parts.at(-1).id, 'difficulty', 'its resource income is scaled too');
+    const player = previewEconomy(hard.state, data, 'TUR');
+    assert.equal(player.taxes.parts.length, 2);
+    assert.ok(!player.resources.parts.some((p) => p.id === 'difficulty'));
   });
 
   it('runs a decade for all 16 countries without anything going wrong', () => {
@@ -189,7 +195,7 @@ describe('the budget levers', () => {
     assert.equal(game.state.countries.TUR.economy.taxRate, start + 0.05);
     endTurns(game, 1);
     const { why } = game.state.countries.TUR.economy.last;
-    close(why.revenue.parts.find((p) => p.id === 'taxRate').value, start + 0.05);
+    close(why.taxes.parts.find((p) => p.id === 'taxRate').value, start + 0.05);
   });
 
   it('SET_BUDGET changes one category and nothing else', () => {

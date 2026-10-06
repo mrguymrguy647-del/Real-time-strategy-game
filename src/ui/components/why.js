@@ -23,7 +23,8 @@ const WRITERS = {
  * @type {Record<string, { default: string, parts?: Record<string, string>, total: string }>}
  */
 const CONTEXTS = {
-  revenue: { default: 'money', parts: { taxRate: 'percent', difficulty: 'times' }, total: 'money' },
+  taxes: { default: 'money', parts: { taxRate: 'percent', difficulty: 'times' }, total: 'money' },
+  resources: { default: 'money', total: 'money' },
   spending: { default: 'money', total: 'money' },
   interestRate: { default: 'percent', total: 'percent' },
   interest: { default: 'money', parts: { rate: 'rate' }, total: 'money' },
@@ -31,7 +32,7 @@ const CONTEXTS = {
 };
 
 /**
- * @param {string} context for example "revenue"
+ * @param {string} context for example "taxes"
  * @param {import('../../formulas/explain.js').Explained} explained
  * @returns {{ label: string, text: string, total?: boolean }[]} one line per part, then the total
  */

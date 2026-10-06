@@ -106,8 +106,17 @@ export function formatPercent(fraction, { signed = false, decimals = 1 } = {}) {
 }
 
 /**
+ * A price or other small sum in dollars: "$77.4", "$735", "$172,500".
+ * @param {number} dollars
+ */
+export function formatUsd(dollars) {
+  const n = Math.abs(dollars) >= 100 ? Math.round(dollars).toLocaleString('en-US') : trimmed(dollars);
+  return t('units.money.plain', { n });
+}
+
+/**
  * Params for a text template: a param named ...Mn is an amount of money in USD millions and is written
- * out ("$3.4 billion"); everything else is used as it is.
+ * out ("$3.4 billion"), one named ...Usd is a sum in dollars ("$77.4"); everything else is used as it is.
  * @param {Record<string, unknown> | undefined} params
  * @returns {Record<string, string | number>}
  */
@@ -115,7 +124,9 @@ export function formatParams(params) {
   /** @type {Record<string, string | number>} */
   const out = {};
   for (const [key, value] of Object.entries(params ?? {})) {
-    out[key] = key.endsWith('Mn') && typeof value === 'number' ? formatMoneyMn(value) : /** @type {string | number} */ (value);
+    if (typeof value === 'number' && key.endsWith('Mn')) out[key] = formatMoneyMn(value);
+    else if (typeof value === 'number' && key.endsWith('Usd')) out[key] = formatUsd(value);
+    else out[key] = /** @type {string | number} */ (value);
   }
   return out;
 }

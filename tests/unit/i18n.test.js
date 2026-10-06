@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT, readJsonFromDisk } from '../helpers/data.js';
 import { economyMonth, BUDGET_CATEGORIES } from '../../src/formulas/economy.js';
+import { sumOf } from '../../src/formulas/explain.js';
 import { hasKey, setMissingHandler, setStrings, t, tn } from '../../src/util/i18n.js';
 
 afterEach(() => {
@@ -117,20 +118,22 @@ describe('the real string table (G-30)', () => {
     }
     for (const tier of [1, 2, 3]) need(`map.role.${tier}`);
 
-    // Run the economy where every kind of part shows up: a difficulty bonus, the growth and rate limits, a government.
+    // Run the economy where every kind of part shows up: a difficulty bonus, resource income from every resource,
+    // price windfalls, shortages, the growth and rate limits, a government.
     const params = { interest: data.balance.economy.interest, growth: data.balance.economy.growth };
     const budget = { military: 0.02, research: 0.005, welfare: 0.15, infrastructure: 0.04 };
     const reference = { taxRate: 0.25, budget, debtRatio: 0.4 };
+    const everyResource = sumOf(data.activeResources.map((resource) => ({ id: resource.id, value: 1000 })));
     const seen = new Set();
     for (const [economy, extra] of [
-      [{ gdpBn: 100, taxRate: 0.25, treasuryMn: 1000, debtMn: 10_000 }, { incomeMultiplier: 1.1, modifiers: { add: 0, mul: 1.1 } }],
+      [{ gdpBn: 100, taxRate: 0.25, treasuryMn: 1000, debtMn: 10_000 }, { incomeMultiplier: 1.1, modifiers: { add: 0, mul: 1.1 }, resourceIncome: everyResource, resourcePrices: 0.02, shortages: { add: 0, mul: 0.8 } }],
       [{ gdpBn: 100, taxRate: 0.6, treasuryMn: 1000, debtMn: 5_000_000 }, { trend: -0.2 }],
       [{ gdpBn: 100, taxRate: 0.1, treasuryMn: 1000, debtMn: 0 }, { trend: 0.4, budget: { ...budget, infrastructure: 0.3 } }],
     ]) {
       const result = economyMonth({ economy, budget, trend: 0.03, reference, ...extra }, params);
-      for (const context of ['revenue', 'spending', 'interestRate', 'interest', 'growth']) for (const part of result[context].parts) seen.add(`why.${context}.${part.id}`);
+      for (const context of ['taxes', 'resources', 'spending', 'interestRate', 'interest', 'growth']) for (const part of result[context].parts) seen.add(`why.${context}.${part.id}`);
     }
-    assert.equal(seen.size, 19, `saw ${seen.size} kinds of part (3 revenue, 4 spending, 3 rate, 2 interest, 7 growth)`);
+    assert.equal(seen.size, 26, `saw ${seen.size} kinds of part (3 taxes, 5 resources, 4 spending, 3 rate, 2 interest, 9 growth)`);
     for (const key of seen) need(key);
     for (const key of ['why.total', 'why.caption.interest', 'why.caption.interestRate']) need(key);
   });

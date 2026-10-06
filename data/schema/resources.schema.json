@@ -12,13 +12,22 @@
   "definitions": {
     "resource": {
       "type": "object",
-      "required": ["id", "name", "icon", "unit", "enabled", "module", "tradeable", "basePrice", "price", "defaultStateShare", "reserveTargetMonths", "shortage"],
+      "required": ["id", "name", "icon", "unit", "priceUnit", "enabled", "module", "tradeable", "basePrice", "price", "defaultStateShare", "reserveTargetMonths", "storageMonths", "restOfWorld", "shortage"],
       "additionalProperties": false,
       "properties": {
         "id": { "$ref": "common#/definitions/id" },
         "name": { "$ref": "common#/definitions/text" },
         "icon": { "$ref": "common#/definitions/text" },
         "unit": { "$ref": "common#/definitions/text" },
+        "priceUnit": {
+          "type": "object",
+          "required": ["label", "perGameUnit"],
+          "additionalProperties": false,
+          "properties": {
+            "label": { "$ref": "common#/definitions/text" },
+            "perGameUnit": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
         "enabled": { "type": "boolean" },
         "module": { "enum": ["core", "water"] },
         "tradeable": { "type": "boolean" },
@@ -28,7 +37,7 @@
           "required": ["elasticity", "tensionSensitivity", "inertia", "volatility"],
           "additionalProperties": false,
           "properties": {
-            "elasticity": { "type": "number", "minimum": 0, "maximum": 2 },
+            "elasticity": { "type": "number", "minimum": 0, "maximum": 6 },
             "tensionSensitivity": { "type": "number", "minimum": 0, "maximum": 0.05 },
             "inertia": { "$ref": "common#/definitions/fraction" },
             "volatility": { "type": "number", "minimum": 0, "maximum": 0.5 }
@@ -36,6 +45,16 @@
         },
         "defaultStateShare": { "$ref": "common#/definitions/fraction" },
         "reserveTargetMonths": { "type": "number", "minimum": 0, "maximum": 60 },
+        "storageMonths": { "type": "number", "minimum": 0, "maximum": 120 },
+        "restOfWorld": {
+          "type": "object",
+          "required": ["production", "consumption"],
+          "additionalProperties": false,
+          "properties": {
+            "production": { "type": "number", "minimum": 0 },
+            "consumption": { "type": "number", "minimum": 0 }
+          }
+        },
         "shortage": {
           "type": "array",
           "items": {

@@ -43,13 +43,14 @@
             },
             "growth": {
               "type": "object",
-              "required": ["taxDrag", "infrastructure", "research", "debtDrag", "min", "max"],
+              "required": ["taxDrag", "infrastructure", "research", "debtDrag", "resourcePrices", "min", "max"],
               "additionalProperties": false,
               "properties": {
                 "taxDrag": { "type": "number", "minimum": 0, "maximum": 5 },
                 "infrastructure": { "type": "number", "minimum": 0, "maximum": 5 },
                 "research": { "type": "number", "minimum": 0, "maximum": 5 },
                 "debtDrag": { "type": "number", "minimum": 0, "maximum": 1 },
+                "resourcePrices": { "type": "number", "minimum": 0, "maximum": 5 },
                 "min": { "type": "number", "minimum": -1, "maximum": 0 },
                 "max": { "type": "number", "minimum": 0, "maximum": 1 }
               }
@@ -134,9 +135,19 @@
         },
         "market": {
           "type": "object",
-          "required": ["inertia"],
+          "required": ["startTension", "shockPersistence", "priceFloor", "priceCeiling", "spread", "newsChange", "warnShare", "captureTaxYield"],
           "additionalProperties": false,
-          "properties": { "inertia": { "$ref": "common#/definitions/fraction" } }
+          "properties": {
+            "_note": { "type": "string" },
+            "startTension": { "$ref": "common#/definitions/meter" },
+            "shockPersistence": { "type": "number", "minimum": 0, "maximum": 0.99 },
+            "priceFloor": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+            "priceCeiling": { "type": "number", "minimum": 1, "maximum": 20 },
+            "spread": { "type": "number", "minimum": 0, "maximum": 0.5 },
+            "newsChange": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+            "warnShare": { "$ref": "common#/definitions/fraction" },
+            "captureTaxYield": { "$ref": "common#/definitions/fraction" }
+          }
         },
         "difficulty": {
           "type": "object",

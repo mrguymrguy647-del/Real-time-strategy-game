@@ -11,11 +11,11 @@ import {
   interestRate,
   monthlyGdpMn,
   repayAmounts,
-  revenue,
   runwayMonths,
   spending,
   stepValue,
   taxBounds,
+  taxRevenue,
   tidy,
 } from '../../src/formulas/economy.js';
 import { loadTestData } from '../helpers/data.js';
@@ -63,17 +63,17 @@ describe('explained values', () => {
   });
 });
 
-describe('revenue and spending', () => {
-  it('revenue is this month\'s GDP times the tax rate', () => {
-    const result = revenue({ gdpBn: 1200, taxRate: 0.25 });
+describe('taxes and spending', () => {
+  it('taxes are this month\'s GDP times the tax rate', () => {
+    const result = taxRevenue({ gdpBn: 1200, taxRate: 0.25 });
     close(monthlyGdpMn(1200), 100_000);
     close(result.value, 25_000);
-    assertReproduces(result, 'revenue');
+    assertReproduces(result, 'taxes');
     assert.deepEqual(result.parts.map((p) => p.id), ['gdp', 'taxRate']);
   });
 
   it('shows a difficulty multiplier as its own part, and only when it is not 1', () => {
-    const result = revenue({ gdpBn: 1200, taxRate: 0.25, incomeMultiplier: 1.15 });
+    const result = taxRevenue({ gdpBn: 1200, taxRate: 0.25, incomeMultiplier: 1.15 });
     close(result.value, 28_750);
     assert.deepEqual(result.parts.map((p) => p.id), ['gdp', 'taxRate', 'difficulty']);
   });
@@ -139,6 +139,25 @@ describe('growth', () => {
     assertReproduces(negative, 'negative growth');
   });
 
+  it('world prices help a seller of resources and hurt a buyer, and the part only appears when it does something', () => {
+    assert.deepEqual(growth().parts.map((p) => p.id), ['trend', 'taxes', 'infrastructure', 'research', 'debtLoad', 'government']);
+    const windfall = growth({ resourcePrices: 0.04 }); // prices have added 4% of GDP a year to its income
+    close(windfall.value, 0.03 + params.growth.resourcePrices * 0.04);
+    assert.ok(windfall.parts.some((p) => p.id === 'resourcePrices'));
+    assert.ok(growth({ resourcePrices: -0.04 }).value < 0.03);
+    assertReproduces(windfall, 'windfall');
+  });
+
+  it('a shortage multiplies growth after the government does, and shows as its own part', () => {
+    const famine = growth({ shortages: { add: 0, mul: 0.8 } });
+    close(famine.value, 0.03 * 0.8);
+    assert.equal(famine.parts.at(-1).id, 'shortages');
+    assertReproduces(famine, 'famine');
+    const both = growth({ modifiers: { add: 0, mul: 1.1 }, shortages: { add: 0, mul: 0.8 } });
+    close(both.value, 0.03 * 1.1 * 0.8);
+    assert.deepEqual(growth({ shortages: { add: 0, mul: 1 } }).parts.map((p) => p.id), growth().parts.map((p) => p.id), 'no shortage, no part');
+  });
+
   it('stays within the configured bounds, and the parts still add up', () => {
     const low = growth({ taxRate: 0.6, debtRatio: 20, trend: -0.1 });
     assert.equal(low.value, params.growth.min);
@@ -188,8 +207,35 @@ describe('one month of the economy', () => {
   });
 
   it('every explanation reproduces its value', () => {
-    const result = month({ debtMn: 700_000 });
-    for (const key of ['revenue', 'spending', 'interestRate', 'interest', 'growth']) assertReproduces(result[key], key);
+    const result = month({ debtMn: 700_000 }, { resourceIncome: sumOf([{ id: 'oil', value: 4_000 }]) });
+    for (const key of ['taxes', 'resources', 'revenue', 'spending', 'interestRate', 'interest', 'growth']) assertReproduces(result[key], key);
+  });
+
+  it('income is taxes plus what the state earns from resources, and the balance counts both', () => {
+    const without = month({ taxRate: 0.2 });
+    const income = sumOf([{ id: 'oil', value: 5_000 }, { id: 'steel', value: 300 }]);
+    const withOil = month({ taxRate: 0.2 }, { resourceIncome: income });
+    assert.deepEqual(withOil.revenue.parts.map((p) => p.id), ['taxes', 'resources']);
+    close(withOil.revenue.value, without.revenue.value + 5_300);
+    close(withOil.balanceMn, without.balanceMn + 5_300);
+    assert.equal(withOil.resources.value, 5_300);
+    assert.deepEqual(withOil.resources.parts.map((p) => p.id), ['oil', 'steel']);
+    assert.equal(without.resources.value, 0, 'no resource income given, none counted');
+  });
+
+  it('the difficulty multiplier applies to resource income as to taxes, and its part keeps the sum exact', () => {
+    const income = sumOf([{ id: 'oil', value: 5_000 }]);
+    const hard = month({ taxRate: 0.2 }, { resourceIncome: income, incomeMultiplier: 1.15 });
+    close(hard.resources.value, 5_750);
+    assert.deepEqual(hard.resources.parts.map((p) => p.id), ['oil', 'difficulty']);
+    assertReproduces(hard.resources, 'hard resources');
+    close(hard.taxes.value, 100_000 * 0.2 * 1.15);
+  });
+
+  it('a windfall from prices speeds the economy up (and the forecast of growth carries it)', () => {
+    const base = month({});
+    const windfall = month({}, { resourcePrices: 0.05 });
+    assert.ok(windfall.growth.value > base.growth.value);
   });
 
   it('keeps money in balance for any mix of inputs: treasury and debt change by exactly the flows, nothing goes negative or NaN', () => {
