@@ -62,6 +62,7 @@ You rank the 16 countries by a score (regional GDP share, controlled population,
 **Q16 · "Not yet" on the capital-battle dialog (G-05).**  ✔ Accepted. My addition to the spec's two buttons, so nobody is forced into a hopeless assault.
 **Q17 · Your phone: iPhone or Android?**  ✔ Decided: Android (Chrome). The app still supports both; my install and test instructions lead with Chrome.
 **Q18 · A real download file?**  You asked for a "download link" after the 0b hand-off, so there is now a **single-file download** (T-18): one HTML file, sent to you directly and published by CI as a GitHub Release asset. It plays offline but cannot be installed or update itself. An **Android APK** stays parked. Default: **no, not now** — the plan (spec §2) is an installable web app, and Chrome's Install puts it on your Home Screen like any app. An APK would need new build tools (for example Capacitor plus an Android build in CI), your approval for the new dependencies, and extra work so save export and the back button behave. Revisit in Phase 7 (polish) if you want it.
+**Q19 · The monthly report opens by itself after End turn.**  Open, not blocking. Default: yes (it is the point of the turn, and the action bar stays free, so a fast player just taps End turn again). If it gets in the way, a Settings switch is a ten-minute change. Related defaults I picked in M1.1b: a country's *role* label comes from its AI tier (major power, mid-size power, small state); the game autosaves when it starts and after every turn, not after each budget change.
 
 ---
 
